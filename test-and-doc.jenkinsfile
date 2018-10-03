@@ -1,0 +1,32 @@
+node {
+  properties([
+      buildDiscarder(logRotator(artifactDaysToKeepStr: '', artifactNumToKeepStr: '', daysToKeepStr: '5', numToKeepStr: '8')),
+      disableConcurrentBuilds(),
+      pipelineTriggers([cron('''0 6-18/3 * * *''')])])
+  timeout(time: 45) {
+    stage('Checkout') {
+      checkout([$class: 'GitSCM', branches: [[name: "*/master"]], doGenerateSubmoduleConfigurations: false, userRemoteConfigs: [[credentialsId: '14733f3b-5278-42d5-b2b4-fed8e9ec2545', url: 'git@github.com:erdos/stencil.git']]])
+    }
+    stage('Compile') {
+      sh 'lein compile'
+    }
+    stage('Java tests') {
+      sh 'lein pom'
+      sh 'mvn test -DexcludeGroupIds=stencil.IntegrationTest'
+    }
+    stage('Clojure tests') {
+      sh 'lein test'
+    }
+    stage('Generate Javadoc') {
+      sh './javadoc.sh'
+    }
+    stage('Report') {
+      junit 'target/surefire-reports/*.xml'
+      publishHTML([allowMissing: false, alwaysLinkToLastBuild: false, keepAll: true,
+        reportDir: 'javadoc', reportFiles: 'index.html', reportName: 'Javadoc', reportTitles: ''])
+    }
+    stage('Archive') {
+      archiveArtifacts 'javadoc/'
+    }
+  }
+}

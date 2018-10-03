@@ -1,0 +1,54 @@
+<!doctype html>
+<html>
+<body>
+<h1>Word processor compatible templating system</h1>
+
+<p>
+    This software allows clients to use office suite documents for templating automated document generation.
+</p>
+
+<h2>Template Syntax</h2>
+
+<p>Template files may contain the following expressions.</p>
+
+<section>
+    <h3>Value substitution</h3>
+
+    <p>Used to display value from the template data object.</p>
+    <b>Examples:</b>
+    <ul>
+        <li>Show value under a given key: <kbd>{%=key_name%}</kbd></li>
+        <li>Show value under a given key in a map under a given key: <kbd>{%=outer_key.inner_key %}</kbd></li>
+    </ul>
+</section>
+<section>
+    <h3>Conditional blocks</h3>
+    <p>
+        Put a value between conditional blocks to toggle its visibility depending on a value in the data object.
+    </p>
+    <b>Examples:</b>
+    <ul>
+        <li>if-then branching: <kbd>{%if condition %}THEN part comes here {%end%}</kbd></li>
+        <li>if-then-else branching: <kbd>{%if condition %}THEN part comes here {%else%} else part comes
+            here{%end%}</kbd></li>
+    </ul>
+</section>
+<section>
+    <h3>Repeating blocks</h3>
+    <p>Repeat a block for each item in a list in the data object.</p>
+    <p>For example if <kbd>xs</kbd> is a list then the following repeats the <i>BODY</i> part for every item: <kbd>{%for x in xs%} <i>BODY</i> {%end%}</kbd></p>
+    <p>The <i>BODY</i> part has a new binding on every iteration so you can access every element in a collection via the <kbd>x</kbd> iterator variable.</p>
+</section>
+<section>
+    <h3>Function calls and arithmetic</h3>
+    <p>You can call custom functions in expressions. For example: <kbd>{%=coalesce(x.price, x.cost, "N/A")%}</kbd></p>
+    <p>You can also call many arithmetic operators. For example: <kbd>{%= x*x+x+2%}</kbd></p>
+</section>
+
+<h3>Custom Functions</h3>
+<p>
+    See: {@link stencil.functions} package.
+</p>
+
+</body>
+</html>

@@ -1,0 +1,12 @@
+{"customerName": "John Doe",
+ "shopName": "Example Shop",
+ "items": [{"name": "Dog food",
+            "description": "It is said to taste good.",
+            "price": "$ 123"},
+           {"name": "Duct tape",
+            "description": "To fix things.",
+            "price": "$ 12"},
+           {"name": "WD-40Dog food",
+            "description": "To fix other things.",
+            "price": "$ 12"}],
+ "total": "$ 147"}

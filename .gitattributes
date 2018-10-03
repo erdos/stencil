@@ -1,0 +1,2 @@
+java-src/overview.html linguist-documentation
+*.sh linguist-detectable=false
