@@ -24,5 +24,15 @@
    By default it returns an InputStream of the rendered document."
   [template template-data & {:as opts}]
   (let [template      (prepare template)
-        template-data (make-template-data template-data)]
-    (API/render template ^TemplateData template-data)))
+        template-data (make-template-data template-data)
+        result (API/render template ^TemplateData template-data)]
+    (cond
+      (:output opts)
+      (let [f (clojure.java.io/file (:output opts))]
+        (if (.exists f)
+          (throw (ex-info "File already exists! " {:file f}))
+          (do (.writeToFile result f)
+              (str "Written to " f))))
+
+      :otherwise
+      result)))
