@@ -5,5 +5,6 @@
             :url "https://www.eclipse.org/legal/epl-2.0/"}
   :dependencies [[org.clojure/clojure "1.8.0"]
                  [io.github.erdos/stencil-core "0.2.3"]
-                 [http-kit "2.2.0"]]
+                 [http-kit "2.2.0"]
+                 [ring/ring-json "0.4.0"]]
   :main stencil.service.core)

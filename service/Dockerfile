@@ -11,7 +11,9 @@ RUN mv "$(lein uberjar | sed -n 's/^Created \(.*standalone\.jar\)/\1/p')" myapp-
 FROM openjdk:8-jre-alpine
 
 ENV STENCIL_HTTP_PORT 8080
-ENV STENCIL_TEMPLATE_DIR /tmp/templates
+ENV STENCIL_TEMPLATE_DIR /templates
+
+VOLUME /templates
 
 WORKDIR /myapp
 COPY --from=build-env /usr/src/myapp/myapp-standalone.jar /myapp/myapp.jar
