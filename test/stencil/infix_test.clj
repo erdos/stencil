@@ -143,11 +143,23 @@
 (deftest test-unexpected
   (is (thrown? ExceptionInfo (parse "aaaa:bbbb"))))
 
-;; TODO: fix this test case.
-#_
 (deftest tokenize-wrong-tokens
+  (testing "Misplaced operators and operands"
+    (are [x] (thrown? ExceptionInfo (infix/parse x))
+      "1++2" "1 2 3" "++" "1+" "+ 1" "+-2" "2 3 *" "+*" "/*" "*1*"))
+  (testing "Misplaced parentheses"
+    (are [x] (thrown? ExceptionInfo (infix/parse x))
+      "2)(3" "(23)3" "1(2)" "(2)(3)" ")2" ")" "(" ")(" ")()" "(())" "()" "()()" "1+(1" "(2"))
+  (testing "Illegal coma usage"
+    (are [x] (thrown? ExceptionInfo (infix/parse x))
+      "2,3,4" ",,,,2" ",3" "3," "+,-"))
   (testing "syntax errors should be thrown"
     (are [x] (thrown? ExceptionInfo (infix/parse x))
-      "1++2" "1 2 3" "++" "1+" "+ 1" "2)(3" "(23)3" "2,3,4" ",,,,2" ",3" "+,-" "+-2" "2 3 *" "* 3 4")))
+      "* 1 + 2 4"))
+
+  #_
+  (testing "syntax errors should be thrown"
+    (are [x] (thrown? ExceptionInfo (infix/parse x))
+      "* 3 4" "- 1 2")))
 
 :ok

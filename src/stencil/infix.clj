@@ -34,7 +34,7 @@
            [\| \|] :or})
 
 (def digits
-  "A szam literalok igy kezdodnek"
+  "Number literals start with these characters"
   (set "1234567890"))
 
 (def identifier
@@ -67,9 +67,10 @@
   (get operation-tokens token))
 
 (defn read-string-literal
-  "Beolvas egy string literalt.
-   Visszaad egy ketelemu vektort, ahol az elso elem a beolvasott string literal,
-   a masodik elem a maradek karakter szekvencia."
+  "Reads a string literal from a sequence.
+   Returns a tuple.
+   - First elem is read string literal.
+   - Second elem is seq of remaining characters."
   [characters]
   (letfn [(read-until [x]
             (loop [[c & cs] (next characters)
@@ -87,11 +88,9 @@
       \’ (read-until \’) ;; hungarian single quotes (felidezojel)
       \„ (read-until \”)))) ;; hungarian double quotes (macskakorom)
 
-
-(defn read-number "Beolvas egy szamot.
-   Visszad egy ketelemu vektort, ahol az elso elem a beolvasott szam,
-   a masodik elem a maradek karakter szekvencia.
-   A beolvasott szam vagy Double vagy Long."
+(defn read-number
+  "Reads a number literal from a sequence. Returns a tuple of read
+   number (Double or Long) and the sequence of remaining characters."
   [characters]
   (let [content (take-while (set "1234567890._") characters)
         content ^String (apply str content)
@@ -101,11 +100,8 @@
                   (Long/parseLong     content))]
     [number (drop (count content) characters)]))
 
-;; TODO: harapni kell, ha ket szam token vagy egymas utan `1 1`
-;; TODO harapni kell, ha ket operator token van egymas utan `op op`
-;; TODO harapni kell, ha `,)` `)(` `()`  `(,` `,,` `,op` `op,`  `op)`  `(op` `1(` `)2`  szerepel!
 (defn tokenize
-  "Az eredeti stringbol token listat csinal."
+  "Returns a sequence of tokens for an input string"
   [original-string]
   (loop [[first-char & next-chars :as characters] (str original-string)
          tokens []]
@@ -146,40 +142,47 @@
           (throw (ex-info (str "Unexpected character: " first-char)
                           {:character first-char})))))))
 
-;; TODO: harapni kell, ha a vegrehajtas utan az opstack-ban van zarojel!
-;; TODO: harapni kell ha illegalis allapot all elo!
 (defn tokens->rpn
   "Classic Shunting-Yard Algorithm extension to handle vararg fn calls."
   [tokens]
   (loop [[e0 & next-expr :as expr]      tokens ;; bemeneti token lista
-         opstack   ()     ;; shunting-yard algo verme
-         result    []     ;; a kimeno rpn tokenek listaja
+         opstack   ()     ;; stack of Shunting-Yard Algorithm
+         result    []     ;; Vector of output tokens
 
-         ;; ha fuggvenyhivas van, ide mentjuk a fuggveny nevet
+
+         parentheses 0 ;; count of open parentheses
+         ;; on a function call we save function name here
          functions ()]
     (cond
-      (empty? expr) (into result (remove #{:open} opstack))
+      (neg? parentheses)
+      (throw (ex-info "Parentheses are not balanced!" {}))
+
+      (empty? expr)
+      (if (zero? parentheses)
+        (into result (remove #{:open} opstack))
+        (throw (ex-info "Too many open parentheses!" {})))
 
       (number? e0)
-      (recur next-expr opstack (conj result e0) functions)
+      (recur next-expr opstack (conj result e0) parentheses functions)
 
       (symbol? e0)
-      (recur next-expr opstack (conj result e0) functions)
+      (recur next-expr opstack (conj result e0) parentheses functions)
 
       (string? e0)
-      (recur next-expr opstack (conj result e0) functions)
+      (recur next-expr opstack (conj result e0) parentheses functions)
 
       (= :open e0)
-      (recur next-expr (conj opstack :open) result (conj functions nil))
+      (recur next-expr (conj opstack :open) result (inc parentheses) (conj functions nil))
 
       (instance? FnCall e0)
       (recur next-expr (conj opstack :open) result
+             (inc parentheses) ;; TODO: maybe incr?
              (conj functions {:fn (:fn-name  e0)
                               :args (if (= :close (first next-expr)) 0 1)}))
       ;; (recur next-expr (conj opstack :fncall) result (conj functions {:fn e0}))
 
       (= :close e0)
-      (let [[popped-ops [x & keep-ops]]
+      (let [[popped-ops [_ & keep-ops]]
             (split-with #(and (not= :open %)) opstack)]
         (recur next-expr
                keep-ops
@@ -187,14 +190,19 @@
                      (concat
                       (remove #{:comma} popped-ops)
                       (some-> functions first vector)))
+               (dec parentheses)
                (next functions)))
 
-      :otherwise
+      (empty? next-expr) ;; current is operator but without an operand
+      (throw (ex-info "Missing operand!" {}))
+
+      :otherwise ;; operator
       (let [[popped-ops keep-ops]
             (split-with #(>= (precedence %) (precedence e0)) opstack)]
         (recur next-expr
                (conj keep-ops e0)
                (into result (remove #{:open :comma} popped-ops))
+               parentheses
                (if (= :comma e0)
                  (if (first functions)
                    (update-peek functions update :args inc)
