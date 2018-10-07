@@ -21,15 +21,27 @@
 
 (defn render!
   "Takes a prepared template instance and renders it.
-   By default it returns an InputStream of the rendered document."
+   By default it returns an InputStream of the rendered document.
+
+  Options map keys:
+  - {:output FNAME} renders output to file FNAME (string or File object). Throws exception
+    if file already exists and :overwrite? option is not set.
+  - {:output :input-stream} returns an input stream of the result document.
+  - {:output :reader} returns the input stream reader of the result document."
   [template template-data & {:as opts}]
   (let [template      (prepare template)
         template-data (make-template-data template-data)
         result (API/render template ^TemplateData template-data)]
     (cond
+      (#{:stream :input-stream} (:output opts))
+      (.getInputStream result)
+
+      (#{:reader} (:output opts))
+      (new java.io.InputStreamReader (.getInputStream result))
+
       (:output opts)
       (let [f (clojure.java.io/file (:output opts))]
-        (if (.exists f)
+        (if (and (.exists f) (not (:overwrite? opts)))
           (throw (ex-info "File already exists! " {:file f}))
           (do (.writeToFile result f)
               (str "Written to " f))))
