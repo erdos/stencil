@@ -1,8 +1,7 @@
 # Dockerized service for Stencil templates
 
 This is a Dockerized example application running the Stencil template engine.
-You can use
-
+You can use this service to render template documents from programs written in any programming language using only a HTTP API. You can also use this container to horizontally scale the rendering capacity of your application.
 
 ## Usage
 
@@ -20,16 +19,16 @@ Rendering a template:
 time curl -XPOST localhost:8080/test-control-loop.docx --header "Content-Type: application/json" --data '{"elems":[{"value": "first"}]}' > rendered.docx
 ```
 
-Opening the output file shows that the file contents are rendered all right.
-
-```
-oowriter rendered.docx
-```
+Opening the output file shows that the file contents are rendered all right: `oowriter rendered.docx`
 
 
 ## API
 
-You can send requests over a HTTP api.
+You can send requests over a HTTP API. At the moment only one request is supported: preparing and rendering a template file.
+
+Preparing the template file takes place at the first request for each template file. The prepared template is cached. Therefore, the first request may take a little longer than the rest. 
+
+Changing the template files on the file system will force preparing the template files again.
 
 **request:**
 
