@@ -1,9 +1,12 @@
 (ns stencil.service.core
   (:gen-class)
+  (:import [java.io File])
   (:require [org.httpkit.server :refer [run-server]]
             [stencil.api :as api]
             [clojure.java.io :refer [file]]
             [ring.middleware.json :refer [wrap-json-body]]))
+
+(set! *warn-on-reflection* true)
 
 (defn get-http-port []
   (Integer/parseInt (System/getenv "STENCIL_HTTP_PORT")))
@@ -55,6 +58,11 @@
 
 (defn -main [& args]
   (let [http-port    (get-http-port)
-        template-dir (get-template-dir)
+        template-dir ^File (get-template-dir)
         server (run-server app {:port http-port})]
+    (println "Started listening on" http-port "serving" (str template-dir))
+    (println "Available template files: ")
+    (doseq [^File line (tree-seq #(.isDirectory ^File %) (comp next file-seq) template-dir)
+            :when (.isFile line)]
+      (println (str (.relativize (.toPath template-dir) (.toPath line)))))
     (while true (read-line))))

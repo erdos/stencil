@@ -1,15 +1,35 @@
 # Dockerized service for Stencil templates
 
-This is a dockerized application running the stencil template engine.
+This is a Dockerized example application running the Stencil template engine.
+You can use
+
 
 ## Usage
 
-- You have to set up a volume pointing to `/templates` where the template files can be found. Then you can render the templates
-- Set `STENCIL_HTTP_PORT` to set the http port this container is listening on. Defaults to `8080`
+Building and running the container:
+
+1. Build the container with the `build.sh` command.
+2. Run the container locally with the `run.sh` command. First parameter: directory of template files to mount as a volume. Second parameter: http port to listen on (defaults to `8080`).
+
+After you start the container, it will enumerate and print the names of
+the template files it found in the volume.
+
+Rendering a template:
+
+```
+time curl -XPOST localhost:8080/test-control-loop.docx --header "Content-Type: application/json" --data '{"elems":[{"value": "first"}]}' > rendered.docx
+```
+
+Opening the output file shows that the file contents are rendered all right.
+
+```
+oowriter rendered.docx
+```
+
 
 ## API
 
-Make a HTTP request to render a template.
+You can send requests over a HTTP api.
 
 **request:**
 
@@ -28,15 +48,22 @@ The different responses have different HTTP staus codes.
 
 **response (template not found)**
 
+This happens then the given file name was not found in the template directory.
+
 - status: `404`
 - content: plain text
 
 **response (template error)**
 
+This happens when the template file could not be prepared. For example: syntax
+errors in template file, unexpected file format, etc.
+
 - status: `500`
 - content: plain text describing error
 
 **response (eval error)**
+
+This happens when the template could not be evaluated.
 
 - status: `400`
 - content: plain text describing error

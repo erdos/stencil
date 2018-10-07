@@ -1,3 +1,3 @@
 #!/usr/bin/env sh
 
-# TODO: build command here
+docker build . --tag stencil-service:latest
