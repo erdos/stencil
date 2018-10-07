@@ -1,4 +1,4 @@
-(defproject service "0.2.3"
+(defproject io.github.erdos/stencil-service "0.2.3"
   :description "Web service for the Stencil templating engine"
   :url "https://github.com/erdos/stencil"
   :license {:name "Eclipse Public License - v 2.0"
