@@ -1,6 +1,6 @@
 version: 2
 jobs:
-  build:
+  leintest:
     docker:
       - image: circleci/clojure:lein-2.7.1
 
@@ -30,3 +30,4 @@ jobs:
 
       # run tests!
       - run: lein test
+      - run: mvn test
