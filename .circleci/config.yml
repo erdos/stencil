@@ -1,6 +1,6 @@
 version: 2
 jobs:
-  leintest:
+  build:
     docker:
       - image: circleci/clojure:lein-2.7.1
 
