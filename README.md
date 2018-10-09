@@ -11,6 +11,7 @@ You can use either Microsoft Word or LibreOffice to edit the document templates.
 The template expressions are just simple texts, and you can event colour-code
 them to make the template more readable.
 
+[![Clojars Project](https://img.shields.io/clojars/v/io.github.erdos/stencil-core.svg)](https://clojars.org/io.github.erdos/stencil-core)
 
 ## Getting Started
 
@@ -20,7 +21,9 @@ them to make the template more readable.
 
 ## Version
 
-**Latest stable** version is `0.2.4-SNAPSHOT`.
+**Latest stable** version is `0.2.3`
+
+**Latest snapshot** version is `0.2.4-SNAPSHOT`
 
 If you are using Maven, add the followings to your `pom.xml`:
 
@@ -30,7 +33,7 @@ The dependency:
 <dependency>
   <groupId>io.github.erdos</groupId>
   <artifactId>stencil-core</artifactId>
-  <version>0.2.4-SNAPSHOT</version>
+  <version>0.2.3</version>
 </dependency>
 ```
 
@@ -45,7 +48,7 @@ And the [Clojars](https://clojars.org) repository:
 
 Alternatively, if you are using Leiningen, add the following to
 the `:dependencies` section of your `project.clj`
-file: `[io.github.erdos/stencil-core "0.2.4-SNAPSHOT"]`
+file: `[io.github.erdos/stencil-core "0.2.3"]`
 
 Previous versions are available on the [Stencil Clojars](https://clojars.org/io.github.erdos/stencil-core) page.
 
