@@ -15,6 +15,7 @@ jobs:
       - checkout
 
       - run: lein deps
+      - run: lein compile
       - run: lein javac
       - run: lein pom
 
