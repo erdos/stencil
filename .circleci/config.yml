@@ -24,7 +24,7 @@ jobs:
             - ~/.m2
             - target
             - pom.xml
-          key: latest
+          key: latest-{{ .BuildNum }}
 
       - run: lein test
   test:
@@ -37,7 +37,7 @@ jobs:
 
       - restore_cache:
           keys:
-          - latest
+          - latest-{{ .BuildNum }}
 
       - run: mvn test
 
