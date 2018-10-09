@@ -13,6 +13,8 @@ them to make the template more readable.
 
 [![Clojars Project](https://img.shields.io/clojars/v/io.github.erdos/stencil-core.svg)](https://clojars.org/io.github.erdos/stencil-core)
 
+[![CircleCI](https://circleci.com/gh/erdos/stencil/tree/master.svg?style=svg)](https://circleci.com/gh/erdos/stencil/tree/master)
+
 ## Getting Started
 
 - Read the [Documentation](docs/index.md)
