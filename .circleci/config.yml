@@ -15,6 +15,7 @@ jobs:
       - checkout
 
       - run: lein deps
+      - run: lein javac
       - run: lein pom
 
       - save_cache:
