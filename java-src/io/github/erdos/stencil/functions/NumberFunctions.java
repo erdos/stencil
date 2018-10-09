@@ -35,7 +35,7 @@ public enum NumberFunctions implements Function {
             if (n == null) {
                 return null;
             } else {
-                return Math.ceil(n.doubleValue());
+                return (long) Math.ceil(n.doubleValue());
             }
         }
     },
@@ -52,7 +52,7 @@ public enum NumberFunctions implements Function {
             if (n == null) {
                 return null;
             } else {
-                return Math.floor(n.doubleValue());
+                return (long) Math.floor(n.doubleValue());
             }
         }
     };
