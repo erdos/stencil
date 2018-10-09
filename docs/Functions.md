@@ -65,3 +65,18 @@ Also, try these formats strings:
 - `"EEEE, dd-MMM-yy HH:mm:ss zzz"` (a.k.a. RFC1036)
 - `"EEE MMM d HH:mm:ss yyyy"` (ASCTIME)
 - `"yyyy-MM-dd'T'HH:mm:ss.SSSXXX"` (ISO8601)
+
+## Numeric functions
+
+### Round
+
+Expects one number argument. Rounds the argument to the closest integer. Usage: `round(x)`. For example `round(1.1)` returns `1`.
+
+### Floor
+
+Expects one number argument. Rounds the argument to the closest integer that is not greater than than the argument. Usage: `floor(x)`
+
+### Ceil
+
+Expects one number argument. Rounds its argument to the closest integer that is not smaller than the argument. Usage: `ceil(x)`
+
