@@ -15,16 +15,20 @@ jobs:
       - checkout
 
       - run: lein deps
+      - save_cache:
+          paths:
+            - ~/.m2
+          key: m2-{{ checksum "project.clj" }}
+
       - run: lein javac
       - run: lein compile
       - run: lein pom
 
       - save_cache:
           paths:
-            - ~/.m2
             - target
             - pom.xml
-          key: latest-{{ .Revision }}
+          key: built-{{ .Revision }}
 
       - run: lein test
   test:
@@ -37,7 +41,8 @@ jobs:
 
       - restore_cache:
           keys:
-          - latest-{{ .Revision }}
+            - build-{{ .Revision }}
+            - m2-{{ checksum "project.clj" }}
 
       - run: mvn test
 
