@@ -21,7 +21,7 @@ jobs:
       - save_cache:
           paths:
             - ~/.m2
-            - .
+            - target
           key: latest
 
       - run: lein test
