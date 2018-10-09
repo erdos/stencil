@@ -15,14 +15,15 @@ jobs:
       - checkout
 
       - run: lein deps
-      - run: lein compile
       - run: lein javac
+      - run: lein compile
       - run: lein pom
 
       - save_cache:
           paths:
             - ~/.m2
             - target
+            - pom.xml
           key: latest
 
       - run: lein test
