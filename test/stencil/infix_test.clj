@@ -146,7 +146,7 @@
 (deftest tokenize-wrong-tokens
   (testing "Misplaced operators and operands"
     (are [x] (thrown? ExceptionInfo (infix/parse x))
-      "1++2" "1 2 3" "++" "1+" "+ 1" "+-2" "2 3 *" "+*" "/*" "*1*"))
+      "1++2" "1 2" "1 2 3" "--" "1+" "+ 1" "+-2" "2 3 *" "+*" "/*" "*1*"))
   (testing "Misplaced parentheses"
     (are [x] (thrown? ExceptionInfo (infix/parse x))
       "2)(3" "(23)3" "1(2)" "(2)(3)" ")2" ")" "(" ")(" ")()" "(())" "()" "()()" "1+(1" "(2"))
@@ -156,10 +156,8 @@
   (testing "syntax errors should be thrown"
     (are [x] (thrown? ExceptionInfo (infix/parse x))
       "* 1 + 2 4"))
-
-  #_
   (testing "syntax errors should be thrown"
     (are [x] (thrown? ExceptionInfo (infix/parse x))
-      "* 3 4" "- 1 2")))
+      "* 3 4" "- 1 a" "+ x 2" "/ x y")))
 
 :ok

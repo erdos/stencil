@@ -142,6 +142,17 @@
           (throw (ex-info (str "Unexpected character: " first-char)
                           {:character first-char})))))))
 
+;; throws ExceptionInfo when token sequence has invalid elems
+(defn- validate-tokens [tokens]
+  (cond
+    (some true? (map #(and (or (symbol? %1) (number? %1) (#{:close} %1))
+                         (or (symbol? %2) (number? %2) (#{:open} %2)))
+                     tokens (next tokens)))
+    (throw (ex-info "Could not parse!" {}))
+
+    :default
+    tokens))
+
 (defn tokens->rpn
   "Classic Shunting-Yard Algorithm extension to handle vararg fn calls."
   [tokens]
@@ -209,7 +220,7 @@
                    (throw (ex-info "Unexpected ',' character!" {})))
                  functions))))))
 
-(defn reduce-step-dispatch [_ cmd]
+(defn- reduce-step-dispatch [_ cmd]
   (cond (string? cmd)  :string
         (number? cmd)  :number
         (symbol? cmd)  :symbol
@@ -283,6 +294,6 @@
        (assert (= 1 (count result)))
        (first result)))))
 
-(def parse (comp validate-rpn tokens->rpn tokenize))
+(def parse (comp validate-rpn tokens->rpn validate-tokens tokenize))
 
 :OK
