@@ -41,7 +41,7 @@ jobs:
 
       - restore_cache:
           keys:
-            - build-{{ .Revision }}
+            - built-{{ .Revision }}
             - m2-{{ checksum "project.clj" }}
 
       - run: mvn test
