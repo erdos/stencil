@@ -1,6 +1,8 @@
 (ns stencil.api
   "A simple public API for document generation from templates."
-  (:import [io.github.erdos.stencil API PreparedTemplate TemplateData]))
+  (:import [io.github.erdos.stencil API PreparedTemplate TemplateData]
+           [java.io InputStreamReader]
+           [java.util Map]))
 
 (set! *warn-on-reflection* true)
 (set! *unchecked-math* :warn-on-boxed)
@@ -15,7 +17,7 @@
 
 (defn- make-template-data [x]
   (if (map? x)
-    (TemplateData/fromMap ^java.util.Map x)
+    (TemplateData/fromMap ^Map x)
     (throw (ex-info (str "Unsupported template data type " (type x) "!")
                     {:template-data x}))))
 
@@ -37,7 +39,7 @@
       (.getInputStream result)
 
       (#{:reader} (:output opts))
-      (new java.io.InputStreamReader (.getInputStream result))
+      (new InputStreamReader (.getInputStream result))
 
       (:output opts)
       (let [f (clojure.java.io/file (:output opts))]

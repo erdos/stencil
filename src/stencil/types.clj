@@ -1,4 +1,5 @@
 (ns stencil.types
+  (:import [clojure.lang IDeref])
   (:require [clojure.pprint])
   (:gen-class))
 
@@ -40,7 +41,7 @@
 
 ;; ez a marker valamilyen kesleltetett erteket jelol.
 (defrecord DelayedValueMarker [delay-object]
-  clojure.lang.IDeref
+  IDeref
   (deref [_] @delay-object))
 
 (defmulti control? type)

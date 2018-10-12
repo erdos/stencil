@@ -141,11 +141,6 @@
             (recur (find-closest-cell-right (zip/right current-loc))
                    (int (+ current-idx column-width)))))))))
 
-(defn- map-children [f loc]
-  (assert (fn? f))
-  (assert (zipper? loc))
-  (zip/edit loc update :content (partial map f)))
-
 (defn map-each-rows [f table & colls]
   (assert (fn? f))
   (assert (loc-table? table))
@@ -179,16 +174,6 @@
     :resize-last
     (concat (butlast original-widths)
             [(reduce - expected-total (butlast original-widths))])))
-
-(defn map-children-filtered [filter-fn map-fn loc & args]
-  (zip/edit loc update :content
-            (fn [content]
-              (loop [out [], content content, args args]
-                (if-let [[head tail] (seq content)]
-                  (if (filter-fn head)
-                    (recur (conj out (apply map-fn head (map first args))) (next content) (map next args))
-                    (recur (conj out head) (next content) args))
-                  out)))))
 
 (defn table-resize-widths
   "Elavolitja a table grid-bol anem haznalatos oszlopokat."
