@@ -9,7 +9,7 @@ import io.github.erdos.stencil.standalone.StandaloneApplication;
  * Parameters:
  *
  *
- * Usage: java io.github.erdos.stencil.Main [options ...] SOURCEFILE.docx -- DATA1.json DATA2.json ... DATAn.json
+ * Usage: java io.github.erdos.stencil.Main [options ...] [--] SOURCEFILE.docx DATA1.json DATA2.json ... DATAn.json
  *
  * option keys:
  * -i inputfile, --input=inputfile - read input file names from a file (line-by-line)
@@ -19,9 +19,15 @@ public class Main {
 
     public static void main(String... args) {
 
-        ArgsParser parser = new ArgsParser(args);
+        final ArgsParser parser = new ArgsParser(args);
 
-        StandaloneApplication application = new StandaloneApplication();
+        parser.addParam("i", "input"); // input file to read template file names from
+
+        ArgsParser.ParseResult result = parser.parse(args);
+
+
+
+        final StandaloneApplication application = new StandaloneApplication();
 
 
 
