@@ -25,3 +25,17 @@
 
 (deftest simple-substitution
   (test-equals "<a>3</a>" "<a>{%=x%}</a>" {"x" 3}))
+
+(deftest test-whitespaces
+  (testing "xml space preserve is inserted"
+    (test-equals
+     "<a>Sum:<b> 1</b> pieces</a>"
+     "<a>Sum:<b> {%=x </b>%} pieces</a>"
+     {"x" 1})
+
+    (test-equals
+     "<a>Sum: 1<b xml:space=\"preserve\"> pieces</b></a>"
+     "<a>Sum: {%=x <b>%} pieces</b></a>"
+     {"x" 1})))
+
+;; (test-eval "<a>Sum:<b> {%=x </b>%} pieces</a>" {"x" 1})
