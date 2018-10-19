@@ -80,13 +80,13 @@
   (let [sts (text-split-tokens (:text (first token-list)))]
     (if (:action-part sts)
       ;; Ha van olyan akcio resz, amit elkezdtunk de nem irtunk vegig...
-      (let [next-token-list (cons {:text (:action-part sts)}
-                                  (next token-list))
-
+      (let [next-token-list (cons {:text (:action-part sts)} (next token-list))
             [this that] (split-with #(not= (seq close-tag)
                                            (take (count close-tag) (map :char %)))
                                     (suffixes (peek-next-text next-token-list)))
-            that           (first (nth that (dec (count close-tag))))
+            that        (if (empty? that)
+                          (throw (ex-info "Tag is not closed? " {:read (first this)}))
+                          (first (nth that (dec (count close-tag)))))
             action-content (apply str (map (comp :char first) this))]
         (assert (map? that)) ;; TODO: mi van ha nem lezarhato az elem?
         (concat
