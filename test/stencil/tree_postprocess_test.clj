@@ -27,23 +27,23 @@
   (testing "Second row is being hidden here."
     (is (=  (table (row (cell "first"))
                    (row (cell "third")))
-            (postprocess (table (row (cell "first"))
-                                (row (cell "second" (->HideTableRowMarker)))
-                                (row (cell "third"))))))))
+            (fix-tables (table (row (cell "first"))
+                               (row (cell "second" (->HideTableRowMarker)))
+                               (row (cell "third"))))))))
 
 (deftest test-column-merging-simple
   (testing "Second column is being hidden here."
     (is (=  (table (row (cell "x1"))
                    (row (cell "d1")))
-            (postprocess (table (row (cell "x1") (cell (->HideTableColumnMarker)))
-                                (row (cell "d1") (cell "d2"))))))))
+            (fix-tables (table (row (cell "x1") (cell (->HideTableColumnMarker)))
+                               (row (cell "d1") (cell "d2"))))))))
 
 (deftest test-column-merging-joined
   (testing "Second column is being hidden here."
     (is (=  (table (row (cell "x1") (cell "x3"))
                    (row (cell "d1") (cell-of-width 1 "d2")))
-            (postprocess (table (row (cell "x1") (cell (->HideTableColumnMarker) "x2") (cell "x3"))
-                                (row (cell "d1") (cell-of-width 2 "d2"))))))))
+            (fix-tables (table (row (cell "x1") (cell (->HideTableColumnMarker) "x2") (cell "x3"))
+                               (row (cell "d1") (cell-of-width 2 "d2"))))))))
 
 (deftest test-column-merging-super-complex
   (testing "Second column is being hidden here."
@@ -54,7 +54,7 @@
           (row (cell "H") (cell-of-width 1 "I3 + J3"))
           (row (cell "H") (cell "J"))
           (row (cell-of-width 2 "F + G + H + I + J")))
-         (postprocess
+         (fix-tables
           (table
            (row (cell-of-width 2 "F1+G1" (->HideTableColumnMarker)) (cell "H1") (cell "I1" (->HideTableColumnMarker)) (cell "J1"))
            (row (cell "F2") (cell "G2") (cell-of-width 2 "H2 + I2") (cell "J2"))
@@ -71,7 +71,7 @@
           (row (cell "H") (cell-of-width 2 "I3 + J3"))
           (row (cell "H") (cell-of-width 2 "J"))
           (row (cell-of-width 3 "F + G + H + I + J")))
-         (postprocess
+         (fix-tables
           (table
            (row (cell-of-width 2 "F1+G1" (->HideTableColumnMarker)) (cell "H1") (cell-of-width 2 "I1" (->HideTableColumnMarker)) (cell-of-width 2 "J1"))
            (row (cell "F2") (cell "G2") (cell-of-width 3 "H2 + I2") (cell-of-width 2 "J2"))
@@ -83,7 +83,7 @@
   (testing "Second column is being hidden here."
     (is (=
          (table (row (cell "X1") (cell "X3")) (row (cell "Y1") (cell "Y3")))
-         (postprocess (table (row (cell "X1") (cell-of-width 2 "X2" (->HideTableColumnMarker)) (cell "X3"))
+         (fix-tables (table (row (cell "X1") (cell-of-width 2 "X2" (->HideTableColumnMarker)) (cell "X3"))
                              (row (cell "Y1") (cell-of-width 2 "Y2") (cell "Y3"))))))))
 
 (deftest test-preprocess-remove-thin-cols
@@ -95,7 +95,7 @@
                      {:tag :gridCol :attrs {:xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/w "3000"}}]}
           (row (cell "X1") (cell "X3"))
           (row (cell "Y1") (cell "Y3")))
-         (postprocess
+         (fix-tables
           (table
            {:tag :tblGrid
             :content [{:tag :gridCol :attrs {:xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/w "2000"}}
@@ -109,7 +109,7 @@
   (testing "We hide second column and expect cells to KEEP size"
     (is (= (table (row (cell-of-width 1 "X1") (cell-of-width 2 "X3"))
                   (row (cell-of-width 1 "Y1") (cell-of-width 2 "Y3")))
-           (postprocess
+           (fix-tables
             (table (row (cell-of-width 1 "X1") (cell-of-width 3 "X2" (->HideTableColumnMarker :cut)) (cell-of-width 2 "X3"))
                    (row (cell-of-width 1 "Y1") (cell-of-width 3 "Y2") (cell-of-width 2 "Y3"))))))))
 
@@ -163,7 +163,7 @@
     (testing "Second column is being hidden here."
       (is (=  (into-hiccup (table (row (cell border-1 "ALMA"))
                                   (row (cell border-2 "NARANCS"))))
-              (into-hiccup (postprocess (table (row (cell "ALMA") (cell border-1 (->HideTableColumnMarker) "KORTE"))
+              (into-hiccup (fix-tables (table (row (cell "ALMA") (cell border-1 (->HideTableColumnMarker) "KORTE"))
                                                (row (cell "NARANCS") (cell border-2 "BARACK"))))))))))
 
 (deftest resize-rational-2
