@@ -4,7 +4,6 @@
             [stencil.types :refer :all]
             [stencil.util :refer :all]))
 
-
 (defn- dfs-walk-xml [xml-tree predicate edit-fn]
   (assert (map? xml-tree))
   (assert (fn? predicate))

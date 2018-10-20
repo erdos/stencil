@@ -5,10 +5,10 @@
 
 (defn- test-prepare [xml-str data-map]
   (->> xml-str
-     str
-     .getBytes
-     (new java.io.ByteArrayInputStream)
-     (prepare-template :xml)))
+       str
+       .getBytes
+       (new java.io.ByteArrayInputStream)
+       (prepare-template :xml)))
 
 (defmacro throw-ex-info? [expr]
   `(is (~'thrown? clojure.lang.ExceptionInfo (test-prepare ~expr {}))))

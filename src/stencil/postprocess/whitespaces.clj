@@ -25,10 +25,10 @@
   [element]
   (boolean
    (when (and (map? element)
-            (= ooxml-t (:tag element))
-            (seq (:content element)))
+              (= ooxml-t (:tag element))
+              (seq (:content element)))
      (or (.startsWith (str (first (:content element))) " ")
-        (.startsWith (str (last (:content element))) " ")))))
+         (.startsWith (str (last (:content element))) " ")))))
 
 (defn- fix-elem [element]
   (assoc-in element [:attrs ooxml-attr-space] "preserve"))

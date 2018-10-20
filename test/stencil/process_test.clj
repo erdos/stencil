@@ -6,14 +6,14 @@
 
 (defn- test-eval [xml-str data-map]
   (let [prepared (->> xml-str
-                    str
-                    .getBytes
-                    (new java.io.ByteArrayInputStream)
-                    (prepare-template :xml))]
+                      str
+                      .getBytes
+                      (new java.io.ByteArrayInputStream)
+                      (prepare-template :xml))]
     (-> {:template prepared
-        :data data-map
-        :function (fn [& _] (assert false "ERROR"))}
-       do-eval-stream :stream slurp str)))
+         :data data-map
+         :function (fn [& _] (assert false "ERROR"))}
+        do-eval-stream :stream slurp str)))
 
 (defmacro ^:private test-equals [expected input data]
   `(is (= (str "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" ~expected)

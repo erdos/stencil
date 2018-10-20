@@ -84,7 +84,7 @@
     (is (=
          (table (row (cell "X1") (cell "X3")) (row (cell "Y1") (cell "Y3")))
          (fix-tables (table (row (cell "X1") (cell-of-width 2 "X2" (->HideTableColumnMarker)) (cell "X3"))
-                             (row (cell "Y1") (cell-of-width 2 "Y2") (cell "Y3"))))))))
+                            (row (cell "Y1") (cell-of-width 2 "Y2") (cell "Y3"))))))))
 
 (deftest test-preprocess-remove-thin-cols
   (testing "There are infinitely thin columns that are being removed."
@@ -164,7 +164,7 @@
       (is (=  (into-hiccup (table (row (cell border-1 "ALMA"))
                                   (row (cell border-2 "NARANCS"))))
               (into-hiccup (fix-tables (table (row (cell "ALMA") (cell border-1 (->HideTableColumnMarker) "KORTE"))
-                                               (row (cell "NARANCS") (cell border-2 "BARACK"))))))))))
+                                              (row (cell "NARANCS") (cell border-2 "BARACK"))))))))))
 
 (deftest resize-rational-2
   (is (= '(nil {:attrs {:x 1}, :tag :right})
