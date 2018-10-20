@@ -4,6 +4,9 @@
             [stencil.util :refer :all]))
 
 (defn- dfs-walk-xml [xml-tree predicate edit-fn]
+  (assert (map? xml-tree))
+  (assert (fn? predicate))
+  (assert (fn? edit-fn))
   (loop [loc (xml-zip xml-tree)]
     (if (zip/end? loc)
       (zip/root loc)
