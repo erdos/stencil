@@ -9,9 +9,12 @@
 ;; http://officeopenxml.com/WPtext.php
 
 ;; like clojure.walk/postwalk but keeps metadata and calls fn only on nodes
+;; also: explicitly keeps meta data
 (defn- postwalk-xml [f xml-tree]
   (if (map? xml-tree)
-    (f (update xml-tree :content (partial mapv (partial postwalk-xml f))))
+    (with-meta
+      (f (update xml-tree :content (partial mapv (partial postwalk-xml f))))
+      (meta xml-tree))
     xml-tree))
 
 
