@@ -4,5 +4,5 @@
             [stencil.postprocess.table :refer :all]
             [stencil.postprocess.whitespaces :refer :all]))
 
-;; calls postprocess steps
+;; calls postprocess
 (def postprocess (comp deref-delayed-values fix-tables fix-whitespaces))
