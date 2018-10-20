@@ -38,7 +38,8 @@
 (defn hide-table-column-marker? [x] (instance? HideTableColumnMarker x))
 (defn hide-table-row-marker? [x] (instance? HideTableRowMarker x))
 
-;; ez a marker valamilyen kesleltetett erteket jelol.
+;; Function calls might return delayed values that are dereferenced
+;; only in the postprocess stage.
 (defrecord DelayedValueMarker [delay-object]
   clojure.lang.IDeref
   (deref [_] @delay-object))

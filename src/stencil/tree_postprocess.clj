@@ -1,22 +1,8 @@
 (ns stencil.tree-postprocess
-  "XML fa utofeldolgozasat vegzo kod."
-  (:require [clojure.zip :as zip]
+  "Postprocessing an xml tree"
+  (:require [stencil.postprocess.delayed :refer :all]
             [stencil.postprocess.table :refer :all]
-            [stencil.types :refer :all]
-            [stencil.util :refer :all]))
+            [stencil.postprocess.whitespaces :refer :all]))
 
-(set! *warn-on-reflection* true)
-
-(defn deref-delayed-values
-  "Walks the tree (Depth First) and evaluates DelayedValueMarker objects."
-  [xml-tree]
-  (loop [loc (xml-zip xml-tree)]
-    (if (zip/end? loc)
-      (zip/root loc)
-      (if (instance? clojure.lang.IDeref (zip/node loc))
-        (recur (zip/next (zip/edit loc deref)))
-        (recur (zip/next loc))))))
-
-(def postprocess (comp deref-delayed-values fix-tables))
-
-:ok
+;; calls postprocess
+(def postprocess (comp deref-delayed-values fix-tables fix-whitespaces))

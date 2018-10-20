@@ -54,7 +54,6 @@
                                   :when (:dynamic? v)]
                               [k (:executable v)]))})))
 
-
 (defn- run-executable-and-return-writer
   "Returns a function that writes output to its output-stream parameter"
   [executable function data]

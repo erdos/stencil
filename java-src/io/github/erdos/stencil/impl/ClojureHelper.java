@@ -24,9 +24,7 @@ public class ClojureHelper {
     /**
      * Clojure :template keyword
      */
-    public static final Keyword
-            KV_TEMPLATE = Keyword.intern("template");
-
+    public static final Keyword KV_TEMPLATE = Keyword.intern("template");
 
     /**
      * Clojure :data keyword
@@ -58,7 +56,6 @@ public class ClojureHelper {
     public static IFn findFunction(String functionName) {
         return RT.var("stencil.process", functionName);
     }
-
 
     /**
      * Shuts down clojure agents. Needed to speed up quitting from Clojure programs.

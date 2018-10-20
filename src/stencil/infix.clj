@@ -146,7 +146,7 @@
 (defn- validate-tokens [tokens]
   (cond
     (some true? (map #(and (or (symbol? %1) (number? %1) (#{:close} %1))
-                         (or (symbol? %2) (number? %2) (#{:open} %2)))
+                           (or (symbol? %2) (number? %2) (#{:open} %2)))
                      tokens (next tokens)))
     (throw (ex-info "Could not parse!" {}))
 
