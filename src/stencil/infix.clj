@@ -66,6 +66,9 @@
 (defn- precedence [token]
   (get operation-tokens token))
 
+;; operator is left or right associative? returns :left or :right keyword.
+(defn associativity [token] (if (#{:neg :power :not} token) :right :left))
+
 (defn read-string-literal
   "Reads a string literal from a sequence.
    Returns a tuple.
@@ -209,7 +212,9 @@
 
       :otherwise ;; operator
       (let [[popped-ops keep-ops]
-            (split-with #(>= (precedence %) (precedence e0)) opstack)]
+            (split-with #(if (= :left (precedence e0))
+                           (<= (precedence e0) (precedence %))
+                           (< (precedence e0) (precedence %))) opstack)]
         (recur next-expr
                (conj keep-ops e0)
                (into result (remove #{:open :comma} popped-ops))

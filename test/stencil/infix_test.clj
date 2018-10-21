@@ -100,8 +100,9 @@
     (is (false? (run "!a" {"a" 1})))
     (is (true? (run "!a" {"a" false})))
     (is (true? (run "!a" {})))
-    (is (true? (run "!!a" {"a" nil})))
-    (is (false? (run "!!a" {"a" true}))))
+    (testing "Double negation"
+      (is (false? (run "!!a" {"a" nil})))
+      (is (true? (run "!!a" {"a" true})))))
 
   (testing "Logical AND"
     (testing "Short form"
