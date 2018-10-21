@@ -1,5 +1,6 @@
 (ns stencil.api
   "A simple public API for document generation from templates."
+  (:require [clojure.walk :refer [stringify-keys]])
   (:import [io.github.erdos.stencil API PreparedTemplate TemplateData]))
 
 (set! *warn-on-reflection* true)
@@ -15,7 +16,7 @@
 
 (defn- make-template-data [x]
   (if (map? x)
-    (TemplateData/fromMap ^java.util.Map x)
+    (TemplateData/fromMap ^java.util.Map (stringify-keys x))
     (throw (ex-info (str "Unsupported template data type " (type x) "!")
                     {:template-data x}))))
 
