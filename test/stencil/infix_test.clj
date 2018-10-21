@@ -4,7 +4,9 @@
             [stencil.types :refer [hide-table-column-marker?]]
             [clojure.test :refer [deftest testing is are]]))
 
-(defn- run [xs] (infix/eval-rpn {} (infix/parse xs)))
+(defn- run
+  ([xs] (run xs {}))
+  ([xs args] (infix/eval-rpn args (infix/parse xs))))
 
 (deftest tokenize-test
   (testing "simple fn call"
@@ -88,11 +90,31 @@
       (is (false? (run "4 < 2")))
       (is (true? (run "3 <= 3")))
       (is (true? (run "34 >= 2"))))
-
-    (testing "Logikai muveletek"
-      (is (true? (run "3 = 3 && 4 == 4"))))
-
     :ok))
+
+(deftest logical-operators
+  (testing "Mixed"
+    (is (true? (run "3 = 3 && 4 == 4"))))
+
+  (testing "Negation"
+    (is (false? (run "!a" {"a" 1})))
+    (is (true? (run "!a" {"a" false})))
+    (is (true? (run "!a" {})))
+    (is (true? (run "!!a" {"a" nil})))
+    (is (false? (run "!!a" {"a" true}))))
+
+  (testing "Logical AND"
+    (testing "Short form"
+      (is (= 1 (run "a & b" {"a" 1 "b" 1})))
+      (is (nil? (run "a & b" {"a" 1 "b" nil})))
+      (is (nil? (run "a & b" {"b" 2})))
+      (is (nil? (run "a & b" {"a" false}))))
+    (testing "Long form"
+      (is (= 1 (run "a && b" {"a" 1 "b" 1})))
+      (is (nil? (run "a && b" {"a" 1 "b" nil})))
+      (is (nil? (run "a && b" {"b" 2})))
+      (is (nil? (run "a && b" {"a" false})))))
+  :ok)
 
 (deftest operator-precedeces
   (testing "Operator precedencia"
