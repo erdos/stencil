@@ -106,15 +106,28 @@
 
   (testing "Logical AND"
     (testing "Short form"
-      (is (= 1 (run "a & b" {"a" 1 "b" 1})))
+      (is (= 2 (run "a & b" {"a" 1 "b" 2})))
       (is (nil? (run "a & b" {"a" 1 "b" nil})))
       (is (nil? (run "a & b" {"b" 2})))
-      (is (nil? (run "a & b" {"a" false}))))
+      (is (false? (run "a & b" {"a" false}))))
     (testing "Long form"
-      (is (= 1 (run "a && b" {"a" 1 "b" 1})))
+      (is (= 2 (run "a && b" {"a" 1 "b" 2})))
       (is (nil? (run "a && b" {"a" 1 "b" nil})))
       (is (nil? (run "a && b" {"b" 2})))
-      (is (nil? (run "a && b" {"a" false})))))
+      (is (false? (run "a && b" {"a" false})))))
+
+  (testing "Logical OR"
+    (testing "Short form"
+      (is (= 1 (run "a | b" {"a" 1 "b" 2})))
+      (is (= 1 (run "a | b" {"a" 1 "b" nil})))
+      (is (= 2 (run "a | b" {"b" 2})))
+      (is (nil? (run "a | b" {"a" false}))))
+    (testing "Long form"
+      (is (= 1 (run "a || b" {"a" 1 "b" 2})))
+      (is (= 1 (run "a || b" {"a" 1 "b" nil})))
+      (is (= 2 (run "a || b" {"b" 2})))
+      (is (nil? (run "a || b" {"a" false}))))
+    )
   :ok)
 
 (deftest operator-precedeces
