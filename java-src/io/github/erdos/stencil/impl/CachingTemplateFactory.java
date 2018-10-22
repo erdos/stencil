@@ -35,6 +35,8 @@ public final class CachingTemplateFactory implements TemplateFactory {
         if (cache.containsKey(templateFile)) {
             PreparedTemplate stored = cache.get(templateFile);
             if (stored.creationDateTime().toEpochSecond(ZoneOffset.UTC) <= templateFile.lastModified()) {
+                // TODO: this is so not thread safe.
+                stored.cleanup();
                 stored = templateFactory.prepareTemplateFile(templateFile);
                 cache.put(templateFile, stored);
             }

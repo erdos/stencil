@@ -12,21 +12,6 @@ import clojure.lang.Symbol;
 public class ClojureHelper {
 
     /**
-     * Clojure :stream keyword
-     */
-    public static final Keyword KV_STREAM = Keyword.intern("stream");
-
-    /**
-     * Clojure :variables keyword
-     */
-    public static final Keyword KV_VARIABLES = Keyword.intern("variables");
-
-    /**
-     * Clojure :template keyword
-     */
-    public static final Keyword KV_TEMPLATE = Keyword.intern("template");
-
-    /**
      * Clojure :data keyword
      */
     public static final Keyword KV_DATA = Keyword.intern("data");
@@ -40,6 +25,27 @@ public class ClojureHelper {
      * Clojure :function keyword
      */
     public static final Keyword KV_FUNCTION = Keyword.intern("function");
+
+    /**
+     * Clojure :stream keyword
+     */
+    public static final Keyword KV_STREAM = Keyword.intern("stream");
+
+    /**
+     * Clojure :template keyword
+     */
+    public static final Keyword KV_TEMPLATE = Keyword.intern("template");
+
+    /**
+     * Clojure :variables keyword
+     */
+    public static final Keyword KV_VARIABLES = Keyword.intern("variables");
+
+    /**
+     * Clojure :zip-dir keyword
+     */
+
+    public static final Keyword KV_ZIP_DIR = Keyword.intern("zip-dir");
 
     // requires stencil.process namespace so stencil is loaded.
     static {
