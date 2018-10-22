@@ -14,8 +14,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static io.github.erdos.stencil.TemplateDocumentFormats.ofExtension;
+import static io.github.erdos.stencil.impl.ClojureHelper.KV_ZIP_DIR;
+import static io.github.erdos.stencil.impl.FileHelper.forceDeleteOnExit;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.unmodifiableSet;
 
@@ -31,7 +34,7 @@ public final class NativeTemplateFactory implements TemplateFactory {
         }
 
         try (InputStream input = new FileInputStream(inputTemplateFile)) {
-            return prepareTemplateImpl(templateDocFormat.get(), input);
+            return prepareTemplateImpl(templateDocFormat.get(), input, inputTemplateFile);
         }
     }
 
@@ -46,7 +49,7 @@ public final class NativeTemplateFactory implements TemplateFactory {
     }
 
     @SuppressWarnings("unchecked")
-    private PreparedTemplate prepareTemplateImpl(TemplateDocumentFormats templateDocFormat, InputStream input) {
+    private PreparedTemplate prepareTemplateImpl(TemplateDocumentFormats templateDocFormat, InputStream input, File originalFile) {
         final IFn prepareFunction = ClojureHelper.findFunction("prepare-template");
 
         final String format = templateDocFormat.name();
@@ -60,20 +63,20 @@ public final class NativeTemplateFactory implements TemplateFactory {
             throw ParsingException.wrapping("Could not parse template file!", e);
         }
 
-        final String templateName = (String) prepared.get(Keyword.intern("template-name"));
-        final File templateFile = (File) prepared.get(Keyword.intern("template-file"));
-        final LocalDateTime now = LocalDateTime.now();
         final TemplateVariables vars = TemplateVariables.fromPaths(variableNames(prepared));
 
+        final File zipDirResource = (File) prepared.get(KV_ZIP_DIR);
+        if (zipDirResource != null) {
+            forceDeleteOnExit(zipDirResource);
+        }
+
         return new PreparedTemplate() {
-            @Override
-            public String getName() {
-                return templateName;
-            }
+            final LocalDateTime now = LocalDateTime.now();
+            final AtomicBoolean valid = new AtomicBoolean(true);
 
             @Override
             public File getTemplateFile() {
-                return templateFile;
+                return originalFile;
             }
 
             @Override
@@ -88,12 +91,32 @@ public final class NativeTemplateFactory implements TemplateFactory {
 
             @Override
             public Object getSecretObject() {
-                return prepared;
+                if (!valid.get()) {
+                    throw new IllegalStateException("Can not render destroyed template!");
+                } else {
+                    return prepared;
+                }
             }
 
             @Override
             public TemplateVariables getVariables() {
                 return vars;
+            }
+
+            @Override
+            public void cleanup() {
+                if (valid.compareAndSet(false, true)) {
+                    // deletes unused temporary zip directory
+                    if (zipDirResource != null) {
+                        FileHelper.forceDelete(zipDirResource);
+                    }
+                }
+            }
+
+            // in case we forgot to call it by hand.
+            @Override
+            public void finalize() {
+                cleanup();
             }
         };
     }

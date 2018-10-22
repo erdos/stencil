@@ -48,7 +48,7 @@ public final class NativeEvaluator {
         }
 
         final Consumer<Supplier<String>> stopwatch = debugStopWatch(LOGGER);
-        stopwatch.accept(() -> "Starting document rendering for template " + template.getName());
+        stopwatch.accept(() -> "Starting document rendering for template " + template.getTemplateFile());
 
         final IFn fn = ClojureHelper.findFunction("do-eval-stream");
 

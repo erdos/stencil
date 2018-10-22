@@ -73,4 +73,36 @@ public final class FileHelper {
             }
         }
     }
+
+    /**
+     * Recursively deletes a directory or a file.
+     *
+     * @param file to delete, not null
+     * @throws NullPointerException on null or invalid file
+     */
+    @SuppressWarnings({"ResultOfMethodCallIgnored", "ConstantConditions"})
+    public static void forceDelete(final File file) {
+        if (file.isDirectory()) {
+            for (File child : file.listFiles()) {
+                forceDelete(child);
+            }
+        }
+        file.delete();
+    }
+
+    /**
+     * Recursively marks a directory or a file for deletion on exit.
+     *
+     * @param file to delete, not null
+     * @throws NullPointerException on null or invalid file
+     */
+    @SuppressWarnings({"ResultOfMethodCallIgnored", "ConstantConditions"})
+    public static void forceDeleteOnExit(final File file) {
+        file.deleteOnExit();
+        if (file.isDirectory()) {
+            for (File child : file.listFiles()) {
+                forceDeleteOnExit(child);
+            }
+        }
+    }
 }

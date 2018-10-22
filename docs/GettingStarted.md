@@ -12,6 +12,7 @@ The public Java API is accessible in the `io.github.erdos.stencil.API` class.
 
 1. First, we have to prepare a template file. Call `API.prepare()` funtion with the template file.
 2. Second, we can render the prepared template using the `API.render()` function.
+3. When you do not use a prepared template instance any more, call its `cleanup()` method to free allocated resources.
 
 The following example takes a template from the file system, fills it with data
 from the arguments and writes the rendered document back to the file system.
