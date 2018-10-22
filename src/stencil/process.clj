@@ -8,7 +8,6 @@
             [clojure.data.xml.pu-map :as pu-map]
             [clojure.java.io :as io]
             [clojure.string :as s]
-            [stencil.postprocess.ignored-tag :as ignored-tag]
             [stencil
              [tokenizer :as tokenizer]
              [cleanup :as cleanup]
@@ -58,13 +57,16 @@
 (defmethod  prepare-template :docx [suffix stream] (prepare-zipped-xml-files suffix stream))
 (defmethod  prepare-template :pptx [suffix stream] (prepare-zipped-xml-files suffix stream))
 
+(def default-meta {:parts []})
+
+
+
 (defn- run-executable-and-return-writer
   "Returns a function that writes output to its output-stream parameter"
   [executable function data]
   (let [result (-> (eval/normal-control-ast->evaled-seq data function executable)
                    (tokenizer/tokens-seq->document)
-                   (tree-postprocess/postprocess)
-                   (ignored-tag/unmap-ignored-attr))]
+                   (tree-postprocess/postprocess))]
     (fn [output-stream]
       (let [writer (io/writer output-stream)]
         (xml/emit result writer)
