@@ -121,6 +121,7 @@
         (with-open [out-stream out-stream]
           (writer out-stream))
         (catch Throwable e
+          ;; TODO: proper logging here!
           (println "Evaling exception: " e))))
     {:stream input-stream
      :format :xml}))
