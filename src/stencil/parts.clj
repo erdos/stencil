@@ -1,6 +1,7 @@
 (ns stencil.parts
   "This ns is used to addeg generated content as parts of DOCX files."
-  )
+  (:require [clojure.data.xml :as xml]
+            [stencil.util :refer :all]))
 
 (defn parse-data-uri [^String data-uri-str]
   (assert (string? data-uri-str))
@@ -21,19 +22,42 @@
 (defmacro with-parts-data [body]
   `(binding [*parts-data* (atom [])] [~body @*parts-data*]))
 
-(defn add-part!
-  "
-  Returns identifier"
-  [data-uri-str]
-  (let [m  (parse-data-uri data-uri-str)
-        id (str (java.util.UUID/randomUUID))]
+(defn register-external! [& {:as opts}]
+  (assert (:id opts))
+  (assert (:file-name opts))
+  (swap! *parts-data* conj opts))
 
-    id))
+;; returns an input stream
+;; adds ids as relations
+(defn render-stencil-relations [rels-file]
+  (assert (instance? java.io.File rels-file))
+  (->
+   (with-open [reader (clojure.java.io/reader rels-file)]
+     (xml/parse reader))
+   (update
+    :content into
+    (for [data @*parts-data*]
+      {:tag :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fpackage%2F2006%2Frelationships/Relationship
+       :attrs {:Id     (str (:id data))
+               :Target (:file-name data)
+               :Type   (:rel-type data)
+               :TargetMode (:rel-target-mode data)}}))
+   (xml/emit-str)
+   (str)
+   (.getBytes)
+   (java.io.ByteArrayInputStream.)))
 
-(defn render-relations [old-relations-xml]
-
-  )
-
-(defn render-content-types [old-content-types-xml]
-
-  )
+(defn render-content-types [content-types-file]
+  (assert (instance? java.io.File content-types-file))
+  (->
+   (with-open [reader (clojure.java.io/reader content-types-file)]
+     (xml/parse reader))
+   (update
+    :content into
+    (for [data @*parts-data*]
+      {:tag :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fpackage%2F2006%2Fcontent-types/Override
+       :attrs {:PartName (:file-name data), :ContentType (:mime-type data)}}))
+   (xml/emit-str)
+   (str)
+   (.getBytes)
+   (java.io.ByteArrayInputStream.)))
