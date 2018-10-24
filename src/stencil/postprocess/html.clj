@@ -8,13 +8,13 @@
 
 (def ooxml-p :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/p)
 
-(deftype HtmlChunk [content])
+(defrecord HtmlChunk [content])
 (defmethod control? HtmlChunk [x] true)
 
 (defmethod call-fn "html" [_ content] (->HtmlChunk content))
 
 (defn ->html-chunk [id]
-  {:tag :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/val/altChunk
+  {:tag :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/altChunk
    :attrs {:xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fpackage%2F2006%2Frelationships/id id}
    :content []})
 
@@ -22,11 +22,14 @@
   (find-first (comp #{ooxml-p} :tag zip/node) (take-while some? (iterations zip/up loc))))
 
 (defn- register-html! [id content]
+  (assert id)
+  (assert (string? content))
   (register-external!
    :id id
    :file-name (str id ".html")
    :rel-type "http://schemas.openxmlformats.org/officeDocument/2006/relationships/aFChunk"
    :rel-target-mode "Internal"
+   :content content
    :content-type "text/html"))
 
 (defn- fix-html-chunk [chunk-loc]

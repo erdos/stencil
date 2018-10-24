@@ -9,9 +9,10 @@
             [clojure.java.io :as io]
             [clojure.string :as s]
             [stencil
-             [tokenizer :as tokenizer]
              [cleanup :as cleanup]
              [eval :as eval]
+             [parts :as parts]
+             [tokenizer :as tokenizer]
              [tree-postprocess :as tree-postprocess]]))
 
 (set! *warn-on-reflection* true)
@@ -83,9 +84,19 @@
         pp           (.toPath source-dir)
         outstream    (new PipedOutputStream)
         input-stream (new PipedInputStream outstream)
-        executed-files (into {}
-                             (for [[rel-path executable] exec-files]
-                               [rel-path (run-executable-and-return-writer executable function data)]))]
+        executed-files
+        (->
+         (for [[rel-path executable] exec-files]
+           [rel-path (run-executable-and-return-writer executable function data)])
+         (->> (into {}))
+         (assoc
+          "[Content_Types].xml"
+          (parts/render-content-types (File. source-dir "[Content_Types].xml"))
+          "_rels/.rels"
+          (parts/render-relations (File. source-dir "_rels/.rels")))
+         (parts/assoc-extra-files)
+         (parts/with-parts-data))]
+    (println :executed-files executed-files)
     (future
       (try
         (with-open [zipstream (new ZipOutputStream outstream)]
@@ -101,8 +112,7 @@
             (.closeEntry zipstream)))
         (catch Throwable e
           (println "Zipping exception: " e))))
-    {:stream input-stream
-     :format :docx}))
+    {:stream input-stream, :format :docx}))
 
 (defmethod do-eval-stream :docx [template] (handle-zipped-xml-files template))
 

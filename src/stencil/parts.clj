@@ -1,6 +1,7 @@
 (ns stencil.parts
   "This ns is used to addeg generated content as parts of DOCX files."
   (:require [clojure.data.xml :as xml]
+            [clojure.java.io :as io]
             [stencil.util :refer :all]))
 
 (defn parse-data-uri [^String data-uri-str]
@@ -20,16 +21,15 @@
 (def ^:dynamic *parts-data* nil)
 
 (defmacro with-parts-data [body]
-  `(binding [*parts-data* (atom [])] [~body @*parts-data*]))
+  `(binding [*parts-data* (atom [])] ~body))
 
 (defn register-external! [& {:as opts}]
   (assert (:id opts))
   (assert (:file-name opts))
   (swap! *parts-data* conj opts))
 
-;; returns an input stream
-;; adds ids as relations
-(defn render-stencil-relations [rels-file]
+;; returns a function that writes its content given an output-stream
+(defn render-relations [rels-file]
   (assert (instance? java.io.File rels-file))
   (->
    (with-open [reader (clojure.java.io/reader rels-file)]
@@ -39,14 +39,15 @@
     (for [data @*parts-data*]
       {:tag :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fpackage%2F2006%2Frelationships/Relationship
        :attrs {:Id     (str (:id data))
-               :Target (:file-name data)
+               :Target (str "/" (:file-name data))
                :Type   (:rel-type data)
                :TargetMode (:rel-target-mode data)}}))
-   (xml/emit-str)
-   (str)
-   (.getBytes)
-   (java.io.ByteArrayInputStream.)))
+   (as-> data (fn [output-stream]
+                (let [writer (io/writer output-stream)]
+                  (xml/emit data writer)
+                  (.flush writer))))))
 
+;; returns a function that writes its content given an output-stream
 (defn render-content-types [content-types-file]
   (assert (instance? java.io.File content-types-file))
   (->
@@ -56,8 +57,19 @@
     :content into
     (for [data @*parts-data*]
       {:tag :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fpackage%2F2006%2Fcontent-types/Override
-       :attrs {:PartName (:file-name data), :ContentType (:mime-type data)}}))
-   (xml/emit-str)
-   (str)
-   (.getBytes)
-   (java.io.ByteArrayInputStream.)))
+       ;; TODO: az nem annyira jo, hogy a PartName, ContentType, stb. csak ugy nyersen allnak itt.
+       :attrs {:PartName (str "/" (:file-name data))
+               :ContentType (:mime-type data)}}))
+   (as-> data (fn [output-stream]
+                (let [writer (io/writer output-stream)]
+                  (xml/emit data writer)
+                  (.flush writer))))))
+
+(defn assoc-extra-files [m]
+  (reduce (fn [m [x]]
+            (assoc m (:file-name x)
+                   (fn [output-stream]
+                     (let [writer (io/writer output-stream)]
+                       (.write writer (str (:content x)))
+                       (.flush writer)))))
+          m @*parts-data*))
