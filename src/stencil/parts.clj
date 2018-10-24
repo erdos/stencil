@@ -38,10 +38,10 @@
     :content into
     (for [data @*parts-data*]
       {:tag :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fpackage%2F2006%2Frelationships/Relationship
-       :attrs {:Id     (str (:id data))
-               :Target (str "/" (:file-name data))
-               :Type   (:rel-type data)
-               :TargetMode (:rel-target-mode data)}}))
+       :attrs {:xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fpackage%2F2006%2Frelationships/Id     (str (:id data))
+               :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fpackage%2F2006%2Frelationships/Target (str "/" (:file-name data))
+               :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fpackage%2F2006%2Frelationships/Type   (:rel-type data)
+               :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fpackage%2F2006%2Frelationships/TargetMode (:rel-target-mode data)}}))
    (as-> data (fn [output-stream]
                 (let [writer (io/writer output-stream)]
                   (xml/emit data writer)
@@ -58,8 +58,8 @@
     (for [data @*parts-data*]
       {:tag :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fpackage%2F2006%2Fcontent-types/Override
        ;; TODO: az nem annyira jo, hogy a PartName, ContentType, stb. csak ugy nyersen allnak itt.
-       :attrs {:PartName (str "/" (:file-name data))
-               :ContentType (:mime-type data)}}))
+       :attrs {:xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fpackage%2F2006%2Fcontent-types/PartName (str "/" (:file-name data))
+               :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fpackage%2F2006%2Fcontent-types/ContentType (:mime-type data)}}))
    (as-> data (fn [output-stream]
                 (let [writer (io/writer output-stream)]
                   (xml/emit data writer)
