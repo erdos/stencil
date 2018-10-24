@@ -15,7 +15,7 @@
 
 (defn ->html-chunk [id]
   {:tag :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/altChunk
-   :attrs {:xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fpackage%2F2006%2Frelationships/id id}
+   :attrs {:xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fpackage%2F2006%2Frelationships/id (str id)}
    :content []})
 
 (defn- find-enclosing-p [loc]
@@ -29,8 +29,8 @@
    :file-name (str id ".html")
    :rel-type "http://schemas.openxmlformats.org/officeDocument/2006/relationships/aFChunk"
    :rel-target-mode "Internal"
-   :content content
-   :content-type "text/html"))
+   :content (str "<html><body>" content "</body></html>")
+   :mime-type "text/html"))
 
 (defn- fix-html-chunk [chunk-loc]
   (let [id (str (java.util.UUID/randomUUID))]

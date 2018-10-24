@@ -84,22 +84,25 @@
         pp           (.toPath source-dir)
         outstream    (new PipedOutputStream)
         input-stream (new PipedInputStream outstream)
-        executed-files
-        (->
-         (for [[rel-path executable] exec-files]
-           [rel-path (run-executable-and-return-writer executable function data)])
-         (->> (into {}))
-         (assoc
-          "[Content_Types].xml"
-          (parts/render-content-types (File. source-dir "[Content_Types].xml"))
-          "_rels/.rels"
-          (parts/render-relations (File. source-dir "_rels/.rels")))
-         (parts/assoc-extra-files)
-         (parts/with-parts-data))]
+        [executed-files extra-files]
+        (parts/with-parts-data
+          [(->
+            (for [[rel-path executable] exec-files]
+              [rel-path (run-executable-and-return-writer executable function data)])
+            (->> (into {}))
+            (assoc
+             "[Content_Types].xml"
+             (parts/render-content-types (File. source-dir "[Content_Types].xml"))
+             "_rels/.rels"
+             (parts/render-relations (File. source-dir "_rels/.rels"))))
+           (parts/assoc-extra-files {})])]
     (println :executed-files executed-files)
     (future
       (try
         (with-open [zipstream (new ZipOutputStream outstream)]
+          (doseq [[fname writer] extra-files]
+            (.putNextEntry zipstream (new ZipEntry (str fname)))
+            (writer zipstream))
           (doseq [file  (file-seq source-dir)
                   :when (not      (.isDirectory ^File file))
                   :let  [path     (.toPath ^File file)

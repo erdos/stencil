@@ -38,10 +38,10 @@
     :content into
     (for [data @*parts-data*]
       {:tag :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fpackage%2F2006%2Frelationships/Relationship
-       :attrs {:xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fpackage%2F2006%2Frelationships/Id     (str (:id data))
-               :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fpackage%2F2006%2Frelationships/Target (str "/" (:file-name data))
-               :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fpackage%2F2006%2Frelationships/Type   (:rel-type data)
-               :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fpackage%2F2006%2Frelationships/TargetMode (:rel-target-mode data)}}))
+       :attrs {:Id     (str (:id data))
+               :Target (str (:file-name data)) ;; nincs per
+               :Type   (:rel-type data)
+               :TargetMode (:rel-target-mode data)}}))
    (as-> data (fn [output-stream]
                 (let [writer (io/writer output-stream)]
                   (xml/emit data writer)
@@ -58,15 +58,31 @@
     (for [data @*parts-data*]
       {:tag :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fpackage%2F2006%2Fcontent-types/Override
        ;; TODO: az nem annyira jo, hogy a PartName, ContentType, stb. csak ugy nyersen allnak itt.
-       :attrs {:xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fpackage%2F2006%2Fcontent-types/PartName (str "/" (:file-name data))
-               :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fpackage%2F2006%2Fcontent-types/ContentType (:mime-type data)}}))
-   (as-> data (fn [output-stream]
-                (let [writer (io/writer output-stream)]
-                  (xml/emit data writer)
-                  (.flush writer))))))
+       :attrs {:PartName (str "/" (:file-name data)) ;; VAN slash!
+               :ContentType (str (:mime-type data))}}))
+   (as-> data
+       (fn [output-stream]
+         (println "---------")
+         (clojure.pprint/pprint data)
+         (println "--------")
+         (let [writer (io/writer output-stream)]
+           (xml/emit data writer)
+           (.flush writer))))))
+
+(comment
+
+
+  (with-parts-data
+    (do
+      (@#'stencil.postprocess.html/register-html! (java.util.UUID/randomUUID) "LALALA")
+      ((render-content-types (clojure.java.io/file "/tmp/out5/[Content_Types].xml")) *out*)))
+
+
+  )
 
 (defn assoc-extra-files [m]
-  (reduce (fn [m [x]]
+  (reduce (fn [m x]
+
             (assoc m (:file-name x)
                    (fn [output-stream]
                      (let [writer (io/writer output-stream)]
