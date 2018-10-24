@@ -19,7 +19,7 @@
    :content []})
 
 (defn- find-enclosing-p [loc]
-  (find-first (comp #{ooxml-p} :tag) (take-while some? (iterations zip/up loc))))
+  (find-first (comp #{ooxml-p} :tag zip/node) (take-while some? (iterations zip/up loc))))
 
 (defn- register-html! [id content]
   (register-external!
@@ -35,7 +35,9 @@
       ;; then finds its <p> parent and replace it with a ->html-chunk call
       (do (register-html! id (:content (zip/node chunk-loc)))
           (zip/replace chunk-p-parent (->html-chunk id)))
-      chunk-loc)))
+      (do chunk-loc))))
 
 (defn fix-html-chunks [xml-tree]
   (dfs-walk-xml-node xml-tree #(instance? HtmlChunk %) fix-html-chunk))
+
+;; (stencil.parts/with-parts-data (fix-html-chunks {:tag ooxml-p :content [(->HtmlChunk "asd")] :attrs {}}))
