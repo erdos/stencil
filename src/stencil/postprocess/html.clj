@@ -29,7 +29,7 @@
    :file-name (str id ".html")
    :rel-type "http://schemas.openxmlformats.org/officeDocument/2006/relationships/aFChunk"
    :rel-target-mode "Internal"
-   :content (str "<html><body>" content "</body></html>")
+   :content (str "<!DOCTYPE html><html><body>" content "</body></html>")
    :mime-type "text/html"))
 
 (defn- fix-html-chunk [chunk-loc]
