@@ -1,6 +1,8 @@
 (ns stencil.postprocess.html
   "Replaces results of html() calls with external part relationships."
-  (:require [stencil.parts :refer [register-external!]]
+  (:require [clojure.zip :as zip]
+            [stencil.functions :refer [call-fn]]
+            [stencil.parts :refer [register-external!]]
             [stencil.util :refer :all]))
 
 (def ooxml-p :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/p)
@@ -25,13 +27,13 @@
    :rel-target-mode "Internal"
    :content-type "text/html"))
 
-(defn- fix-html-chunk [chunk]
-  (let [id (str (java.util.UUID/randomUuid))]
-    (if-let [chunk-p-parent (find-enclosing-p)]
+(defn- fix-html-chunk [chunk-loc]
+  (let [id (str (java.util.UUID/randomUUID))]
+    (if-let [chunk-p-parent (find-enclosing-p chunk-loc)]
       ;; then finds its <p> parent and replace it with a ->html-chunk call
-      (do (register-html! id (:content chunk))
+      (do (register-html! id (:content (zip/node chunk-loc)))
           (zip/replace chunk-p-parent (->html-chunk id)))
-      tree)))
+      chunk-loc)))
 
 (defn fix-html-chunks [xml-tree]
-  (dfs-fix-xml-node xml-tree #(instance? HtmlChunk %) fix-html-chunk))
+  (dfs-walk-xml-node xml-tree #(instance? HtmlChunk %) fix-html-chunk))
