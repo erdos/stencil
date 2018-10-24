@@ -10,6 +10,17 @@
 
   (render-template-1 "/tmp/output-3.docx" {"customerName" "John Doe"}))
 
+(comment ;; try to prepare then render a DOCX file
+
+  (def template-1 (prepare "/home/erdos/Joy/stencil/test-resources/test-embedded-html.docx"))
+
+  (defn render-template-1 [output-file data]
+    (render! template-1 data :output output-file :overwrite? true))
+
+  (render-template-1 "/tmp/output-3.docx" {"customerName" "John Doe"})
+
+  )
+
 (comment ;; try to prepare then render a PPTX presentation file
 
   (def template-2 (prepare "/home/erdos/example-presentation.pptx"))

@@ -2,12 +2,14 @@
   "Replaces results of html() calls with external part relationships."
   (:require [clojure.zip :as zip]
             [stencil.functions :refer [call-fn]]
+            [stencil.types :refer [control?]]
             [stencil.parts :refer [register-external!]]
             [stencil.util :refer :all]))
 
 (def ooxml-p :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/p)
 
 (deftype HtmlChunk [content])
+(defmethod control? HtmlChunk [x] true)
 
 (defmethod call-fn "html" [_ content] (->HtmlChunk content))
 
