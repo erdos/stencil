@@ -1,7 +1,0 @@
-<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"  xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
-   <w:body>
-       <w:altChunk r:id="altChunk1" />
-       <w:altChunk r:id="altChunk2" />
-       <w:p><w:r><w:t>Test document one</w:t></w:r></w:p>
-   </w:body>
-  </w:document>
