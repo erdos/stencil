@@ -1,0 +1,4 @@
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+    <Relationship Id="altChunk1" TargetMode="Internal" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/aFChunk" Target="import.html" />
+    <Relationship Id="altChunk2" TargetMode="Internal" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/aFChunk" Target="import.txt" />
+</Relationships>

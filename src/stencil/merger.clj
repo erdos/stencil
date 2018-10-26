@@ -112,11 +112,30 @@
           (concat (:tokens sts) (cleanup-runs (next token-list))))
         (concat (:tokens sts) (cleanup-runs (next token-list)))))))
 
+
+;; set of [tag attr] pairs that can be evaled.
+(def evaluable-attributes
+  #{[:xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fdrawingml%2F2006%2Fpicture/cNvPr :name]})
+
+(defn- map-kv [m f]
+  (reduce-kv (fn [m k v] (let [x (f k v)] (if (= x v) m (assoc m k x)))) m m))
+
+(declare parse-attr)
+
+(defn cleanup-open
+  "Tries to parse attributes that are in the evaluable-attributes set."
+  [token]
+  (let [tag    (or (:open token) (:open+close token))
+        map-fn (fn [k v] (if (contains? evaluable-attributes [tag k]) (parse-attr v) v))]
+    (update token :attrs map-kv map-fn)))
+
 (defn cleanup-runs [token-list]
   (when-let [[t & ts] (seq token-list)]
-    (if (:text t)
-      (cleanup-runs-1 token-list)
-      (cons t (lazy-seq (cleanup-runs ts))))))
+    (cond
+      (:open t) (cons (cleanup-open t) (lazy-seq (cleanup-runs ts)))
+      (:open+close t) (cons (cleanup-open t) (lazy-seq (cleanup-runs ts)))
+      (:text t) (cleanup-runs-1 token-list)
+      :otherwie (cons t (lazy-seq (cleanup-runs ts))))))
 
 (def map-actions-in-token-list cleanup-runs)
 

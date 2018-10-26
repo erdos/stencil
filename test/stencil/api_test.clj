@@ -18,6 +18,9 @@
                        :output output-file :overwrite? true))]
       (render-template-1 "/tmp/output-3.docx" {"customerName" "John Doe"})))
 
+
+
+
   )
 
 (comment ;; try to prepare then render a PPTX presentation file
@@ -29,3 +32,5 @@
 
   (render-template-2 "/tmp/output-7.pptx"
                      {"customerName" "John Doe" "x" "XXX" "y" "yyyy"}))
+
+; (.replace "asdasd-asdad-asd" "-" "")
