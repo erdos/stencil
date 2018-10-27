@@ -4,11 +4,11 @@
             [stencil.ooxml :as ooxml]
             [stencil.postprocess.html :refer :all]))
 
-(defn <p> [& contents] {:tag ooxml/p :content (vec contents)})
-(defn <r> [& contents] {:tag ooxml/r :content (vec contents)})
-(defn <rPr> [& contents] {:tag ooxml/rPr :content (vec contents)})
-(defn <t> [& contents] {:tag ooxml/t :content (vec contents)})
-(defn <br> [] {:tag ooxml/br :content []})
+(defn- <p> [& contents] {:tag ooxml/p :content (vec contents)})
+(defn- <r> [& contents] {:tag ooxml/r :content (vec contents)})
+(defn- <rPr> [& contents] {:tag ooxml/rPr :content (vec contents)})
+(defn- <t> [& contents] {:tag ooxml/t :content (vec contents)})
+(defn- <br> [] {:tag ooxml/br :content []})
 
 (deftest test-ooxml-runs
   (testing "Empty input"

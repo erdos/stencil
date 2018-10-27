@@ -66,7 +66,7 @@
                             {:tag ooxml/br :content []}
                             {:tag ooxml/t :content [(str text)]})))}))))
 
-(defn fix-html-chunk [chunk-loc]
+(defn- fix-html-chunk [chunk-loc]
   (assert (instance? HtmlChunk (zip/node chunk-loc)))
   (let [lefts (zip/lefts chunk-loc)
         rights (zip/rights chunk-loc)
