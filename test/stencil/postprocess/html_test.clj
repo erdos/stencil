@@ -8,6 +8,7 @@
 (defn <r> [& contents] {:tag ooxml/r :content (vec contents)})
 (defn <rPr> [& contents] {:tag ooxml/rPr :content (vec contents)})
 (defn <t> [& contents] {:tag ooxml/t :content (vec contents)})
+(defn <br> [] {:tag ooxml/br :content []})
 
 (deftest test-ooxml-runs
   (testing "Empty input"
@@ -42,6 +43,9 @@
 (deftest test-fix-html-chunks
   (testing "Unchanged"
     (= (<p> "Hajdiho") (fix-html-chunks (<p> "Hajdiho"))))
+  (testing "Br tags"
+    (is (= (<p> (<r> (<rPr>) (<t> "One") (<br>) (<t> "Two")))
+           (fix-html-chunks (<p> (<r> (<rPr>) (<t> (->HtmlChunk "One<br>Two"))))))))
   (testing "Complicated case"
     (is (=
          (<p>
