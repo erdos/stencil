@@ -1,4 +1,5 @@
 (ns stencil.postprocess.html-test
+  (:import [clojure.lang ExceptionInfo])
   (:require [clojure.test :refer [deftest testing is are]]
             [stencil.ooxml :as ooxml]
             [stencil.postprocess.html :refer :all]))
@@ -19,6 +20,24 @@
            (html->ooxml-runs "Hello Vilag!" []))))
   (testing "One big formatter")
   (testing "Multiple formatters"))
+
+(deftest test-fix-html-chunks-errors
+  (testing "Invalid HTML content"
+    (is (thrown?
+         ExceptionInfo
+         (fix-html-chunks
+          (<p>
+           (<r>
+            (<rPr>)
+            (<t> (->HtmlChunk "<u>Content is not closed."))))))))
+  (testing "Unsupported HTML tag"
+    (is (thrown?
+         ExceptionInfo
+         (fix-html-chunks
+          (<p>
+           (<r>
+            (<rPr>)
+            (<t> (->HtmlChunk "<illegal>rd</illegal>")))))))))
 
 (deftest test-fix-html-chunks
   (testing "Unchanged"

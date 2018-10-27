@@ -26,8 +26,10 @@
    (dfs-walk-xml xml-tree map?)))
 
 (defn- parse-html [xml]
-  (doto (xml/parse-str (.replaceAll (str xml) "<br>" "<br/>"))
-    (validate-tags)))
+  (-> (xml/parse-str (.replaceAll (str xml) "<br>" "<br/>"))
+     (doto (validate-tags))
+     (try (catch javax.xml.stream.XMLStreamException e
+            (throw (ex-info "Invalid HTML content!" {:xml xml} e))))))
 
 (defn- walk-children [xml]
   (if (map? xml)
