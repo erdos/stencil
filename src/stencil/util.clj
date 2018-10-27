@@ -74,4 +74,19 @@
 (defn eval-exception-missing [expression]
   (EvalException/fromMissingValue (str expression)))
 
+(defn dfs-walk-xml-node [xml-tree predicate edit-fn]
+  (assert (map? xml-tree))
+  (assert (fn? predicate))
+  (assert (fn? edit-fn))
+  (loop [loc (xml-zip xml-tree)]
+    (if (clojure.zip/end? loc)
+      (clojure.zip/root loc)
+      (if (predicate (clojure.zip/node loc))
+        (recur (clojure.zip/next (edit-fn loc)))
+        (recur (clojure.zip/next loc))))))
+
+(defn dfs-walk-xml [xml-tree predicate edit-fn]
+  (assert (fn? edit-fn))
+  (dfs-walk-xml-node xml-tree predicate #(clojure.zip/edit % edit-fn)))
+
 :OK

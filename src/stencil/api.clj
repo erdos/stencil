@@ -42,10 +42,12 @@
 
       (:output opts)
       (let [f (clojure.java.io/file (:output opts))]
-        (if (and (.exists f) (not (:overwrite? opts)))
-          (throw (ex-info "File already exists! " {:file f}))
-          (do (.writeToFile result f)
-              (str "Written to " f))))
+        (when (.exists f)
+          (if (:overwrite? opts)
+            (.delete f)
+            (throw (ex-info "File already exists! " {:file f}))))
+        (do (.writeToFile result f)
+            (str "Written to " f)))
 
       :otherwise
       result)))

@@ -126,8 +126,7 @@
       (is (= 1 (run "a || b" {"a" 1 "b" 2})))
       (is (= 1 (run "a || b" {"a" 1 "b" nil})))
       (is (= 2 (run "a || b" {"b" 2})))
-      (is (nil? (run "a || b" {"a" false}))))
-    )
+      (is (nil? (run "a || b" {"a" false})))))
   :ok)
 
 (deftest operator-precedeces
