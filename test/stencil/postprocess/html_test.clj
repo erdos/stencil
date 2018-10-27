@@ -20,7 +20,7 @@
   (testing "One big formatter")
   (testing "Multiple formatters"))
 
-(deftest asd
+(deftest test-fix-html-chunks
   (testing "Unchanged"
     (= (<p> "Hajdiho") (fix-html-chunks (<p> "Hajdiho"))))
   (testing "Complicated case"

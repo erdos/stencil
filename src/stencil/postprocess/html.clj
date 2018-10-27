@@ -11,16 +11,23 @@
 (defmethod control? HtmlChunk [x] true)
 (defmethod call-fn "html" [_ content] (->HtmlChunk content))
 
-;; (def legal-tags #{"b" "i" "u" "s" "sup" "sub"})
+(def legal-tags
+  "Set of supported HTML tags"
+  #{:b :em :i :u :s :sup :sub :span})
 
-;; throws an exception on invalid xml tags.
-;; (defn- validate-tags [xml-tree])
+(defn- validate-tags
+  "Throws ExceptionInfo on invalid HTML tag in tree"
+  [xml-tree]
+  (->>
+   (fn [node]
+     (if (legal-tags (:tag node))
+       node
+       (throw (ex-info (str "Unexpected HTML tag: " (:tag node)) {:tag (:tag node)}))))
+   (dfs-walk-xml xml-tree map?)))
 
 (defn- parse-html [xml]
   (doto (xml/parse-str (.replaceAll (str xml) "<br>" "<br/>"))
-    #_(validate-tags)))
-
-;; (defn- color [c] {:tag :w/color :attrs {ooxml/val (str c)}})
+    (validate-tags)))
 
 (defn- walk-children [xml]
   (if (map? xml)
@@ -78,7 +85,11 @@
         (cond-> (seq lefts) (zip/insert-left (->run [(->t lefts)])))
 
         (cond-> (seq rights1) (zip/insert-right (->run rights1)))
-        (cond-> (seq rights) (zip/insert-right (->run [(->t rights)]))) (as-> * (reduce zip/insert-right * (reverse ooxml-runs)))
+        (cond-> (seq rights) (zip/insert-right (->run [(->t rights)])))
+
+        (as-> * (reduce zip/insert-right * (reverse ooxml-runs)))
+
         (zip/remove))))
 
-(defn fix-html-chunks [xml-tree] (dfs-walk-xml-node xml-tree #(instance? HtmlChunk %) fix-html-chunk))
+(defn fix-html-chunks [xml-tree]
+  (dfs-walk-xml-node xml-tree #(instance? HtmlChunk %) fix-html-chunk))
