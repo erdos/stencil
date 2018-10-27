@@ -8,11 +8,11 @@
             [clojure.data.xml.pu-map :as pu-map]
             [clojure.java.io :as io]
             [clojure.string :as s]
+            [stencil.postprocess.ignored-tag :as ignored-tag]
             [stencil
+             [tokenizer :as tokenizer]
              [cleanup :as cleanup]
              [eval :as eval]
-             [parts :as parts]
-             [tokenizer :as tokenizer]
              [tree-postprocess :as tree-postprocess]]))
 
 (set! *warn-on-reflection* true)
@@ -58,18 +58,14 @@
 (defmethod  prepare-template :docx [suffix stream] (prepare-zipped-xml-files suffix stream))
 (defmethod  prepare-template :pptx [suffix stream] (prepare-zipped-xml-files suffix stream))
 
-(def default-meta {:parts []})
-
-
-
 (defn- run-executable-and-return-writer
   "Returns a function that writes output to its output-stream parameter"
   [executable function data]
   (let [result (-> (eval/normal-control-ast->evaled-seq data function executable)
                    (tokenizer/tokens-seq->document)
-                   (tree-postprocess/postprocess))]
+                   (tree-postprocess/postprocess)
+                   (ignored-tag/unmap-ignored-attr))]
     (fn [output-stream]
-      (clojure.pprint/pprint result)
       (let [writer (io/writer output-stream)]
         (xml/emit result writer)
         (.flush writer)))))
@@ -85,25 +81,12 @@
         pp           (.toPath source-dir)
         outstream    (new PipedOutputStream)
         input-stream (new PipedInputStream outstream)
-        [executed-files extra-files]
-        (parts/with-parts-data
-          [(->
-            (for [[rel-path executable] exec-files]
-              [rel-path (run-executable-and-return-writer executable function data)])
-            (->> (into {}))
-            (assoc
-             "[Content_Types].xml"
-             (parts/render-content-types (File. source-dir "[Content_Types].xml"))
-             "_rels/.rels"
-             (parts/render-relations (File. source-dir "_rels/.rels"))))
-           (parts/assoc-extra-files {})])]
-    (println :executed-files executed-files)
+        executed-files (into {}
+                             (for [[rel-path executable] exec-files]
+                               [rel-path (run-executable-and-return-writer executable function data)]))]
     (future
       (try
         (with-open [zipstream (new ZipOutputStream outstream)]
-          (doseq [[fname writer] extra-files]
-            (.putNextEntry zipstream (new ZipEntry (str fname)))
-            (writer zipstream))
           (doseq [file  (file-seq source-dir)
                   :when (not      (.isDirectory ^File file))
                   :let  [path     (.toPath ^File file)
@@ -116,7 +99,8 @@
             (.closeEntry zipstream)))
         (catch Throwable e
           (println "Zipping exception: " e))))
-    {:stream input-stream, :format :docx}))
+    {:stream input-stream
+     :format :docx}))
 
 (defmethod do-eval-stream :docx [template] (handle-zipped-xml-files template))
 
@@ -135,7 +119,6 @@
         (with-open [out-stream out-stream]
           (writer out-stream))
         (catch Throwable e
-          ;; TODO: proper logging here!
           (println "Evaling exception: " e))))
     {:stream input-stream
      :format :xml}))
