@@ -125,6 +125,8 @@
 (defn cleanup-open
   "Tries to parse attributes that are in the evaluable-attributes set."
   [token]
+  token
+  #_
   (let [tag    (or (:open token) (:open+close token))
         map-fn (fn [k v] (if (contains? evaluable-attributes [tag k]) (parse-attr v) v))]
     (update token :attrs map-kv map-fn)))

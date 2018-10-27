@@ -69,6 +69,7 @@
                    (tokenizer/tokens-seq->document)
                    (tree-postprocess/postprocess))]
     (fn [output-stream]
+      (clojure.pprint/pprint result)
       (let [writer (io/writer output-stream)]
         (xml/emit result writer)
         (.flush writer)))))

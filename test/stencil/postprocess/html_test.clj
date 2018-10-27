@@ -3,10 +3,10 @@
             [stencil.ooxml :as ooxml]
             [stencil.postprocess.html :refer :all]))
 
-(defn <p> [& contents] {:tag ooxml/p :content contents})
-(defn <r> [& contents] {:tag ooxml/r :content contents})
-(defn <rPr> [& contents] {:tag ooxml/rPr :content contents})
-(defn <t> [& contents] {:tag ooxml/t :content contents})
+(defn <p> [& contents] {:tag ooxml/p :content (vec contents)})
+(defn <r> [& contents] {:tag ooxml/r :content (vec contents)})
+(defn <rPr> [& contents] {:tag ooxml/rPr :content (vec contents)})
+(defn <t> [& contents] {:tag ooxml/t :content (vec contents)})
 
 (deftest test-ooxml-runs
   (testing "Empty input"
@@ -24,9 +24,22 @@
   (testing "Unchanged"
     (= (<p> "Hajdiho") (fix-html-chunks (<p> "Hajdiho"))))
   (testing "Complicated case"
-    (fix-html-chunks
-     (<p> (<r>
-           (<rPr>)
-           (<t> "Elotte1")
-           (<t> "Mr " (->HtmlChunk "E<u>rd</u>os") "E2")
-           (<t> "Utana"))))))
+    (is (=
+         (<p>
+          (<r> (<rPr>) (<t> "Elotte"))
+          (<r> (<rPr>) (<t> "Mr "))
+          (<r> (<rPr>) (<t> "E"))
+          (<r> (<rPr>
+                {:attrs {:xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/val "single"}
+                 :tag :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/u})
+               (<t> "rd"))
+          (<r> (<rPr>) (<t> "os"))
+          (<r> (<rPr>) (<t> "E2"))
+          (<r> (<rPr>) (<t> "Utana")))
+         (fix-html-chunks
+          (<p>
+           (<r>
+            (<rPr>)
+            (<t> "Elotte")
+            (<t> "Mr " (->HtmlChunk "E<u>rd</u>os") "E2")
+            (<t> "Utana"))))))))
