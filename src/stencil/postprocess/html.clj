@@ -27,11 +27,11 @@
 
 (defn- parse-html [xml]
   (-> (str xml)
-     (.replaceAll "<br>" "<br/>")
-     (xml/parse-str)
-     (doto (validate-tags))
-     (try (catch javax.xml.stream.XMLStreamException e
-            (throw (ex-info "Invalid HTML content!" {:raw-xml xml} e))))))
+      (.replaceAll "<br>" "<br/>")
+      (xml/parse-str)
+      (doto (validate-tags))
+      (try (catch javax.xml.stream.XMLStreamException e
+             (throw (ex-info "Invalid HTML content!" {:raw-xml xml} e))))))
 
 (defn- walk-children [xml]
   (if (map? xml)
