@@ -30,6 +30,15 @@
       (update x :path conj (:tag xml)))
     [{:text xml}]))
 
+(defn- path->styles [path]
+  (cond-> []
+    (some #{:b :em} path) (conj {:tag ooxml/b :attrs {ooxml/val "true"}})
+    (some #{:i} path) (conj {:tag ooxml/i :attrs {ooxml/val "true"}})
+    (some #{:s} path) (conj {:tag ooxml/strike :attrs {ooxml/val "true"}})
+    (some #{:u} path) (conj {:tag ooxml/u :attrs {ooxml/val "single"}})
+    (some #{:sup} path) (conj {:tag ooxml/vertAlign :attrs {ooxml/val "superscript"}})
+    (some #{:sub} path) (conj {:tag ooxml/vertAlign :attrs {ooxml/val "subscript"}})))
+
 (defn html->ooxml-runs
   "Parses html string and returns a seq of ooxml run elements.
    Parameter base-style is the default styling for each run."
@@ -37,24 +46,7 @@
   (when (seq html)
     (let [ch (walk-children (parse-html (str "<span>" html "</span>")))]
       (for [{:keys [text path]} ch]
-        (let [prs (cond-> (set base-style)
-                    (some #{:b :em} path)
-                    (conj {:tag ooxml/b :attrs {ooxml/val "true"}})
-
-                    (some #{:i} path)
-                    (conj {:tag ooxml/i :attrs {ooxml/val "true"}})
-
-                    (some #{:s} path)
-                    (conj {:tag ooxml/strike :attrs {ooxml/val "true"}})
-
-                    (some #{:u} path)
-                    (conj {:tag ooxml/u :attrs {ooxml/val "single"}})
-
-                    (some #{:sup} path)
-                    (conj {:tag ooxml/vertAlign :attrs {ooxml/val "superscript"}})
-
-                    (some #{:sub} path)
-                    (conj {:tag ooxml/vertAlign :attrs {ooxml/val "subscript"}}))]
+        (let [prs (into (set base-style) (path->styles path))]
           {:tag ooxml/r
            :content [{:tag ooxml/rPr :content (vec prs)}
                      {:tag ooxml/t :content [(str text)]}]})))))
@@ -74,31 +66,19 @@
         style (some #(when (= ooxml/rPr (:tag %)) %) (:content r))
         ooxml-runs (html->ooxml-runs (:content (zip/node chunk-loc)) (:content style))
 
-        ->t (fn [xs]
-              ;; TODO: kikapcsolni majd!
-              (assert (every? string? xs))
-              {:tag ooxml/t :content (vec xs)})
-        ->run (fn [cts]
-                ;; TODO: kikapcsolni majd
-                (assert (every? map? cts) (str "Not maps" (mapv type cts)))
-                (assoc r :content (vec (cons style cts))))]
+        ->t (fn [xs] {:tag ooxml/t :content (vec xs)})
+        ->run (fn [cts] (assoc r :content (vec (cons style cts))))]
     (assert (= ooxml/t (:tag t)))
     (assert (= ooxml/r (:tag r)))
-    (assert (every? string? lefts) )
-    (assert (every? string? rights))
     (-> chunk-loc
-       (zip/up) ;; t
-       (zip/up) ;; r
+        (zip/up) ;; t
+        (zip/up) ;; r
 
-       (cond-> (seq lefts1) (zip/insert-left (->run lefts1)))
-       (cond-> (seq lefts) (zip/insert-left (->run [(->t lefts)])))
+        (cond-> (seq lefts1) (zip/insert-left (->run lefts1)))
+        (cond-> (seq lefts) (zip/insert-left (->run [(->t lefts)])))
 
-       (cond-> (seq rights1) (zip/insert-right (->run rights1)))
-       (cond-> (seq rights) (zip/insert-right (->run [(->t rights)])))
-
-
-       (as-> * (reduce zip/insert-right * (reverse ooxml-runs)))
-       (zip/remove)
-       )))
+        (cond-> (seq rights1) (zip/insert-right (->run rights1)))
+        (cond-> (seq rights) (zip/insert-right (->run [(->t rights)]))) (as-> * (reduce zip/insert-right * (reverse ooxml-runs)))
+        (zip/remove))))
 
 (defn fix-html-chunks [xml-tree] (dfs-walk-xml-node xml-tree #(instance? HtmlChunk %) fix-html-chunk))
