@@ -3,7 +3,6 @@
 
   https://en.wikipedia.org/wiki/Shunting-yard_algorithm"
   (:require [stencil.util :refer :all]
-            [stencil.types :refer [open-tag close-tag]]
             [stencil.functions :refer [call-fn]]))
 
 (set! *warn-on-reflection* true)
@@ -301,11 +300,5 @@
        (first result)))))
 
 (def parse (comp validate-rpn tokens->rpn validate-tokens tokenize))
-
-(defn parse-attr [s]
-  (let [s (.trim (str s))]
-    (when (and (.startsWith s open-tag) (.endsWith s close-tag))
-      (let [s (.substring s (count open-tag) (- (count s) (count close-tag)))]
-        (parse s)))))
 
 :OK
