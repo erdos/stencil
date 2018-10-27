@@ -49,7 +49,7 @@
   (testing "Complicated case"
     (is (=
          (<p>
-          (<r> (<rPr>) (<t> "Elotte"))
+          (<r> (<rPr>) (<t> "Elotte1") (<t> "Elotte2"))
           (<r> (<rPr>) (<t> "Mr "))
           (<r> (<rPr>) (<t> "E"))
           (<r> (<rPr>
@@ -58,11 +58,13 @@
                (<t> "rd"))
           (<r> (<rPr>) (<t> "os"))
           (<r> (<rPr>) (<t> "E2"))
-          (<r> (<rPr>) (<t> "Utana")))
+          (<r> (<rPr>) (<t> "Utana1") (<t> "Utana2")))
          (fix-html-chunks
           (<p>
            (<r>
             (<rPr>)
-            (<t> "Elotte")
+            (<t> "Elotte1")
+            (<t> "Elotte2")
             (<t> "Mr " (->HtmlChunk "E<u>rd</u>os") "E2")
-            (<t> "Utana"))))))))
+            (<t> "Utana1")
+            (<t> "Utana2"))))))))
