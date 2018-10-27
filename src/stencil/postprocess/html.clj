@@ -13,7 +13,7 @@
 
 (def legal-tags
   "Set of supported HTML tags"
-  #{:b :em :i :u :s :sup :sub :span})
+  #{:b :em :i :u :s :sup :sub :span :br})
 
 (defn- validate-tags
   "Throws ExceptionInfo on invalid HTML tag in tree"
@@ -35,10 +35,11 @@
 
 (defn- walk-children [xml]
   (if (map? xml)
-    ;; TODO: imepl
-    (for [c (:content xml)
-          x (walk-children c)]
-      (update x :path conj (:tag xml)))
+    (if (= :br (:tag xml))
+      [{:text ::br}]
+      (for [c (:content xml)
+            x (walk-children c)]
+        (update x :path conj (:tag xml))))
     [{:text xml}]))
 
 (defn- path->styles [path]
@@ -56,11 +57,14 @@
   [html base-style]
   (when (seq html)
     (let [ch (walk-children (parse-html (str "<span>" html "</span>")))]
-      (for [{:keys [text path]} ch]
-        (let [prs (into (set base-style) (path->styles path))]
-          {:tag ooxml/r
-           :content [{:tag ooxml/rPr :content (vec prs)}
-                     {:tag ooxml/t :content [(str text)]}]})))))
+      (for [parts (partition-by :path ch)
+            :let [prs (into (set base-style) (path->styles (:path (first parts))))]]
+        {:tag ooxml/r
+         :content (cons {:tag ooxml/rPr :content (vec prs)}
+                        (for [{:keys [text]} parts]
+                          (if (= ::br text)
+                            {:tag ooxml/br :content []}
+                            {:tag ooxml/t :content [(str text)]})))}))))
 
 (defn fix-html-chunk [chunk-loc]
   (assert (instance? HtmlChunk (zip/node chunk-loc)))
