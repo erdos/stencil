@@ -35,15 +35,16 @@
      :type       :xml
      :executable (:executable m)}))
 
-(defmethod  prepare-template :docx [suffix ^InputStream stream]
+(defn- prepare-zipped-xml-files [suffix ^InputStream stream]
   (assert (some? suffix))
   (assert (instance? InputStream stream))
   (let [zip-dir   (FileHelper/createNonexistentTempFile "stencil-" (str suffix ".zip.contents"))]
     (with-open [zip-stream stream] ;; FIXME: maybe not deleted immediately
       (ZipHelper/unzipStreamIntoDirectory zip-stream zip-dir))
-    (let [xml-files (for [w (.list (File. zip-dir "word"))
-                          :when (.endsWith (str w) ".xml")]
-                      (str "word/" w))
+    (let [files (fn [dir] (for [w (concat (.list (File. zip-dir (str dir))))
+                                :when (.endsWith (str w) ".xml")]
+                            (str dir "/" w)))
+          xml-files (concat (files "word") (files "ppt/slides"))
           execs     (zipmap xml-files (map #(->executable (File. zip-dir (str %))) xml-files))]
       ;; TODO: maybe make it smarter by loading only important xml files
       ;; such as document.xml and footers/headers
@@ -53,6 +54,9 @@
        :exec-files (into {} (for [[k v] execs
                                   :when (:dynamic? v)]
                               [k (:executable v)]))})))
+
+(defmethod  prepare-template :docx [suffix stream] (prepare-zipped-xml-files suffix stream))
+(defmethod  prepare-template :pptx [suffix stream] (prepare-zipped-xml-files suffix stream))
 
 (defn- run-executable-and-return-writer
   "Returns a function that writes output to its output-stream parameter"
@@ -68,7 +72,7 @@
 
 (defmulti do-eval-stream (comp :type :template))
 
-(defmethod do-eval-stream :docx [{:keys [template data function]}]
+(defn- handle-zipped-xml-files [{:keys [template data function]}]
   (assert (:zip-dir template))
   (assert (:exec-files template))
   (let [data   (into {} data)
@@ -97,6 +101,10 @@
           (println "Zipping exception: " e))))
     {:stream input-stream
      :format :docx}))
+
+(defmethod do-eval-stream :docx [template] (handle-zipped-xml-files template))
+
+(defmethod do-eval-stream :pptx [template] (handle-zipped-xml-files template))
 
 (defmethod do-eval-stream :xml [{:keys [template data function] :as input}]
   (assert (:executable template))

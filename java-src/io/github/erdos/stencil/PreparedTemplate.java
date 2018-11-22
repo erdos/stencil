@@ -13,13 +13,6 @@ public interface
 PreparedTemplate {
 
     /**
-     * Name of the original file.
-     *
-     * @return original template name
-     */
-    String getName();
-
-    /**
      * Original template file that was preprocessed.
      *
      * @return original template file
@@ -56,4 +49,10 @@ PreparedTemplate {
      * Set of template variables found in file.
      */
     TemplateVariables getVariables();
+
+    /**
+     * Makes the templace clean up any resources allocated for it. Subsequential invocations of this method have no
+     * effects. Rendering the template after this method call will throw an IllegalStateException.
+     */
+    void cleanup();
 }

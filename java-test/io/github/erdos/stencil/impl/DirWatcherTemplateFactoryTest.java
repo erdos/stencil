@@ -87,11 +87,6 @@ public class DirWatcherTemplateFactoryTest implements TemplateFactory {
         return new PreparedTemplate() {
 
             @Override
-            public String getName() {
-                return templateFile.getName();
-            }
-
-            @Override
             public File getTemplateFile() {
                 return templateFile;
             }
@@ -109,6 +104,12 @@ public class DirWatcherTemplateFactoryTest implements TemplateFactory {
             @Override
             public TemplateVariables getVariables() {
                 return null;
+            }
+
+            @Override
+            public void cleanup() {
+                // NOP
+
             }
         };
     }

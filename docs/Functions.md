@@ -66,6 +66,28 @@ Also, try these formats strings:
 - `"EEE MMM d HH:mm:ss yyyy"` (ASCTIME)
 - `"yyyy-MM-dd'T'HH:mm:ss.SSSXXX"` (ISO8601)
 
+## HTML
+
+It is possible to embed text with basic dynamic formatting using HTML notation. The HTML code will be converted to OOXML and inserted in the document.
+
+Stencil uses a simple parsing algorithm to convert between the formats. At the moment only a limited set of basic formatting is implemented. You can use the following HTML tags:
+
+- `b`, `em` for bold text.
+- `i` for italics.
+- `u` for underlined text.
+- `s` for strikethrough text.
+- `sup` for superscript and `sub` for subscript.
+- `span` elements have no effects.
+- `br` tags can be used to insert line breaks.
+
+The rendering throws an exception on invalid HTML input or unexpected HTML tags.
+
+**Example:**
+
+Write the following to embed the content of `x` as HTML in the document:
+- <code>{<i>%=html(x) %</i>}</code>.
+
+
 ## Numeric functions
 
 ### Round
@@ -79,4 +101,3 @@ Expects one number argument. Rounds the argument to the closest integer that is 
 ### Ceil
 
 Expects one number argument. Rounds its argument to the closest integer that is not smaller than the argument. Usage: `ceil(x)`
-

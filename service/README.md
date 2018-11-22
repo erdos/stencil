@@ -10,8 +10,9 @@ Building and running the container:
 1. Build the container with the `build.sh` command.
 2. Run the container locally with the `run.sh` command. First parameter: directory of template files to mount as a volume. Second parameter: http port to listen on (defaults to `8080`).
 
-After you start the container, it will enumerate and print the names of
-the template files it found in the volume.
+You can use the `STENCIL_JAVA_OPTIONS` environment variable to specify custom options for the JVM running inside the container.
+
+After you start the container, it will enumerate and print the names of the template files it found in the volume.
 
 Rendering a template:
 
