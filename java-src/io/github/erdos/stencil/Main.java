@@ -19,7 +19,7 @@ public class Main {
 
     public static void main(String... args) {
 
-        final ArgsParser parser = new ArgsParser(args);
+        final ArgsParser parser = ArgsParser.parse(args);
 
         parser.addParam("i", "input"); // input file to read template file names from
 
