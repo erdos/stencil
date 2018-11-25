@@ -102,7 +102,7 @@
         current-cell-width (cell-width cell)
         cells-before (filter loc-cell? (next (iterations zip/left cell)))
         before-sum   (reduce + (map cell-width cells-before))]
-    (set (for [i (range current-cell-width)] (+ before-sum i)))))
+    (set (range before-sum (+ before-sum current-cell-width)))))
 
 (defn remove-columns
   "Egy adott row alatt az adott sorszamu oszlopokat eltavolitja.
