@@ -175,6 +175,10 @@
     (let [original-total (reduce + original-widths)]
       (for [w original-widths] (* expected-total (/ w original-total))))
 
+    :resize-first
+    (cons (reduce - expected-total (next original-widths))
+          (next original-widths))
+
     :resize-last
     (concat (butlast original-widths)
             [(reduce - expected-total (butlast original-widths))])))

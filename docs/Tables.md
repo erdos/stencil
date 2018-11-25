@@ -60,8 +60,10 @@ specify strategies to control how the columns will be sized after the column is 
 
 - *Cutting out the column:* <code>{<i>%=hideColumn('cut')%</i>}</code> will
 remove a column and decrease the size of the table by the width of the removed column.
+- *Resizing the first column* <code>{<i>%=hideColumn('resize-first')%</i>}</code>
+will resize the first column in each row so that the total width of the table is unchanged.
 - *Resizing the last column* <code>{<i>%=hideColumn('resize-last')%</i>}</code>
-will resize the last column in each rows so that the total width of the table is unchanged.
+will resize the last column in each row so that the total width of the table is unchanged.
 - *Keeping proportions* <code>{<i>%=hideColumn('rational')%</i>}</code> will
 resize every column in a way that the ratios of their widths and the total width
 of the table is unchanged.
