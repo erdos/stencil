@@ -166,6 +166,7 @@
 (defn calc-column-widths [original-widths expected-total strategy]
   (assert (every? number? original-widths))
   (assert (number? expected-total))
+  (assert (>= expected-total (reduce + original-widths)))
   (case strategy
     :cut
     (do ; (assert (= expected-total (reduce + original-widths)))
