@@ -19,3 +19,17 @@
 
   (render-template-2 "/tmp/output-7.pptx"
                      {"customerName" "John Doe" "x" "XXX" "y" "yyyy"}))
+
+(comment
+  (->
+   "/home/erdos/Work/moby-aegon/templates/stencil/AJANLATI_NYOMTATVANY.docx"
+   (prepare)
+   (time)
+   (render! {:packageCoverSumStructure [{:pns {:pn1 "a" :pn2 "b" :pn3 "c"}}
+                                        {:pns {:pn1 "x" :pn2 "y"}}
+                                        {:pns {:pn1 "p"}}]}
+            :output "/tmp/out1.docx"
+            :overwrite? true)
+   (time))
+
+  comment)

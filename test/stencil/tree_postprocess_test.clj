@@ -120,7 +120,7 @@
                          {:tag :gridCol, :attrs {ooxml-w "2000"}}]}
               (row) (row) (row))
        (zip/node
-        (table-resize-widths
+        (table-resize-grid-widths
          (xml-zip (table (tbl-grid 1000 2000 2600 500) (row) (row) (row)))
          :cut
          #{2 3})))))
@@ -133,7 +133,7 @@
                    {:tag :gridCol, :attrs {ooxml-w "5000"}}]}
         (row) (row) (row))
        (zip/node
-        (table-resize-widths
+        (table-resize-grid-widths
          (xml-zip (table (tbl-grid 1000 2000 2500 500) (row) (row) (row)))
          :resize-last
          #{2 3})))))
@@ -147,7 +147,7 @@
                            (row (cell (cell-width 2 6000) "ab"))))
 
        (into-hiccup (zip/node
-                     (table-resize-widths
+                     (table-resize-grid-widths
                       (xml-zip (table {:tag :tblPr
                                        :content [{:tag :tblW :attrs {ooxml-w "?"}}]}
                                       (tbl-grid "1000" "2000" "2500" "500")
