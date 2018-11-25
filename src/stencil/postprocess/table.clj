@@ -118,7 +118,6 @@
   (let [row-loc           (find-enclosing-row row-loc)
         removable-columns (set removable-columns)]
     (assert (some? row-loc)         "Nem cell-ben vagyunk!")
-    (assert (seq removable-columns) "Melyik oszlopokat tavolitsuk el?")
 
     (loop [current-loc (goto-nth-sibling-cell 0 (zip/down row-loc))
            current-idx (int 0)]
@@ -314,10 +313,11 @@
 
 ;; visszaadja soronkent a jobboldali margo objektumot
 (defn get-right-borders [original-start-loc]
-  (for [row   (zip/children (find-enclosing-table original-start-loc))
-        :when (and (map? row) (#{"tr"} (name (:tag row))))
-        :let  [last-of-tag (fn [tag xs] (last (filter  #(and (map? %) (some-> % :tag name #{tag})) (:content xs))))]]
-    (some->> row (last-of-tag "tc") (last-of-tag "tcPr") (last-of-tag "tcBorders") (last-of-tag "right"))))
+  (letfn [(last-of-tag [tag xs]
+            (last (filter #(and (map? %) (some-> % :tag name #{tag})) (:content xs))))]
+    (for [row   (zip/children (find-enclosing-table original-start-loc))
+          :when (and (map? row) (#{"tr"} (name (:tag row))))]
+      (some->> row (last-of-tag "tc") (last-of-tag "tcPr") (last-of-tag "tcBorders") (last-of-tag "right")))))
 
 (defn- table-set-right-borders
   "Ha egy tablazat utolso oszlopat tavolitottuk el, akkor az utolso elotti oszlop cellaibol a border-right ertekeket
