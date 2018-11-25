@@ -257,7 +257,7 @@
 
 
 (defn table-resize-grid-widths
-  "Elavolitja a table grid-bol a nem hasznalatos oszlopokat es frissiti a tabla teljes szelesseget a grid elemek osszegere."
+  "Elavolitja a table grid-bol a nem hasznalatos oszlopokat."
   [table-loc column-resize-strategy removed-column-indices]
   (assert (loc-table? table-loc))
   (assert (keyword? column-resize-strategy))
@@ -356,7 +356,6 @@
           table          (find-enclosing-table start-loc)
           right-borders  (get-right-borders table)]
       (-> (map-each-rows #(remove-columns % column-indices column-resize-strategy) table)
-          (find-enclosing-table)
           (table-resize-grid-widths column-resize-strategy column-indices)
           (table-set-width-to-grid-total)
           (cond-> column-last? (table-set-right-borders right-borders))
