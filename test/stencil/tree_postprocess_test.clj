@@ -2,6 +2,7 @@
   (:require [clojure.zip :as zip]
             [stencil.types :refer :all]
             [clojure.test :refer [deftest is are testing]]
+            [stencil.ooxml :as ooxml]
             [stencil.util :refer [xml-zip]]
             [stencil.tree-postprocess :refer :all]
             [stencil.postprocess.table :refer :all]))
@@ -14,12 +15,12 @@
   {:tag "tc" :content (vec (list* {:tag "tcPr" :content [{:tag "gridSpan" :attrs {:xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/val (str width)}}]} contents))})
 
 (defn tbl-grid [& vals]
-  {:tag :tblGrid, :content (for [v vals] {:tag :gridCol :attrs {ooxml-w (str v)}})})
+  {:tag :tblGrid, :content (for [v vals] {:tag :gridCol :attrs {ooxml/w (str v)}})})
 
 (defn cell-width
-  ([w] {:tag :tcPr, :content [{:tag :tcW :attrs {ooxml-val (str w)}}]})
-  ([span w] {:tag :tcPr, :content [{:tag :tcW :attrs {ooxml-w (str w)}}
-                                   {:tag :gridSpan :attrs {ooxml-val (str span)}}]}))
+  ([w] {:tag :tcPr, :content [{:tag :tcW :attrs {ooxml/val (str w)}}]})
+  ([span w] {:tag :tcPr, :content [{:tag :tcW :attrs {ooxml/w (str w)}}
+                                   {:tag :gridSpan :attrs {ooxml/val (str span)}}]}))
 
 (defn into-hiccup [c] (if (map? c) (vec (list* (keyword (name (:tag c))) (into {} (:attrs c)) (map into-hiccup (:content c)))) c))
 
@@ -116,8 +117,8 @@
 (deftest resize-cut
   (is (=
        (table {:tag :tblGrid,
-               :content [{:tag :gridCol, :attrs {ooxml-w "1000"}}
-                         {:tag :gridCol, :attrs {ooxml-w "2000"}}]}
+               :content [{:tag :gridCol, :attrs {ooxml/w "1000"}}
+                         {:tag :gridCol, :attrs {ooxml/w "2000"}}]}
               (row) (row) (row))
        (zip/node
         (table-resize-grid-widths
@@ -129,8 +130,8 @@
   (is (=
        (table
         {:tag :tblGrid,
-         :content [{:tag :gridCol, :attrs {ooxml-w "1000"}}
-                   {:tag :gridCol, :attrs {ooxml-w "5000"}}]}
+         :content [{:tag :gridCol, :attrs {ooxml/w "1000"}}
+                   {:tag :gridCol, :attrs {ooxml/w "5000"}}]}
         (row) (row) (row))
        (zip/node
         (table-resize-grid-widths
@@ -140,7 +141,7 @@
 
 (deftest resize-rational
   (is (=
-       (into-hiccup (table {:tag :tblPr :content [{:tag :tblW, :attrs {ooxml-w "?"}}]} ;; nem irja felul a total szelesseget.
+       (into-hiccup (table {:tag :tblPr :content [{:tag :tblW, :attrs {ooxml/w "?"}}]} ;; nem irja felul a total szelesseget.
                            (tbl-grid 2000 4000)
                            (row (cell (cell-width 1 2000) "a")
                                 (cell (cell-width 1 4000) "b"))
@@ -149,7 +150,7 @@
        (into-hiccup (zip/node
                      (table-resize-grid-widths
                       (xml-zip (table {:tag :tblPr
-                                       :content [{:tag :tblW :attrs {ooxml-w "?"}}]}
+                                       :content [{:tag :tblW :attrs {ooxml/w "?"}}]}
                                       (tbl-grid "1000" "2000" "2500" "500")
                                       (row (cell-of-width 1 "a") (cell-of-width 1 "b"))
                                       (row (cell-of-width 2 "ab"))))

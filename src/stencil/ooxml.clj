@@ -20,3 +20,6 @@
 
 ;; Content Break: http://officeopenxml.com/WPtextSpecialContent-break.php
 (def br :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/br)
+
+;; width
+(def w :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/w)
