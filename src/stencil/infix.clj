@@ -197,7 +197,7 @@
 
       (= :close e0)
       (let [[popped-ops [_ & keep-ops]]
-            (split-with #(and (not= :open %)) opstack)]
+            (split-with (partial not= :open) opstack)]
         (recur next-expr
                keep-ops
                (into result

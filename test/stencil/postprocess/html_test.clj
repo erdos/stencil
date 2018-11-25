@@ -42,7 +42,7 @@
 
 (deftest test-fix-html-chunks
   (testing "Unchanged"
-    (= (<p> "Hajdiho") (fix-html-chunks (<p> "Hajdiho"))))
+    (is (= (<p> "Hajdiho") (fix-html-chunks (<p> "Hajdiho")))))
   (testing "Br tags"
     (is (= (<p> (<r> (<rPr>) (<t> "One") (<br>) (<t> "Two")))
            (fix-html-chunks (<p> (<r> (<rPr>) (<t> (->HtmlChunk "One<br>Two"))))))))
