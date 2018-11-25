@@ -22,6 +22,9 @@
   ([span w] {:tag :tcPr, :content [{:tag :tcW :attrs {ooxml/w (str w)}}
                                    {:tag :gridSpan :attrs {ooxml/val (str span)}}]}))
 
+(defn- cell-span
+  ([span] {:tag :tcPr, :content [{:tag :gridSpan :attrs {ooxml/val (str span)}}]}))
+
 (defn into-hiccup [c] (if (map? c) (vec (list* (keyword (name (:tag c))) (into {} (:attrs c)) (map into-hiccup (:content c)))) c))
 
 (deftest test-row-hiding-simple
@@ -143,9 +146,9 @@
   (is (=
        (into-hiccup (table {:tag :tblPr :content [{:tag :tblW, :attrs {ooxml/w "?"}}]} ;; nem irja felul a total szelesseget.
                            (tbl-grid 2000 4000)
-                           (row (cell (cell-width 1 2000) "a")
-                                (cell (cell-width 1 4000) "b"))
-                           (row (cell (cell-width 2 6000) "ab"))))
+                           (row (cell (cell-span 1 ) "a")
+                                (cell (cell-span 1 ) "b"))
+                           (row (cell (cell-span 2 ) "ab"))))
 
        (into-hiccup (zip/node
                      (table-resize-grid-widths

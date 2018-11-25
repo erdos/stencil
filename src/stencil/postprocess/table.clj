@@ -255,9 +255,10 @@
 (defn- table-resize-cells-widths [table-loc expected-total-width resize-strategy]
   (map-each-rows #(table-resize-cell-widths % expected-total-width resize-strategy) table-loc))
 
-
+;; elatvolitja a nem hasznalt grid oszlopokat es atmeretezi a maradekot.
 (defn table-resize-grid-widths
-  "Elavolitja a table grid-bol a nem hasznalatos oszlopokat."
+  "Elavolitja a table grid-bol a nem hasznalatos oszlopokat es atmeretezi a maradek
+   grid elemeket a szabalynak megfeleloen."
   [table-loc column-resize-strategy removed-column-indices]
   (assert (loc-table? table-loc))
   (assert (keyword? column-resize-strategy))
@@ -271,7 +272,23 @@
                      find-grid-loc
                      (zip/children)
                      (keep (comp ->int ooxml/w :attrs))
-                     (reduce +)))
+                     (reduce +)))]
+    (if-let [grid-loc (find-grid-loc table-loc)]
+      (let [result-table (find-enclosing-table (remove-children-at-indices grid-loc removed-column-indices))]
+        (if-let [widths (->> result-table find-grid-loc zip/children (keep (comp ->int ooxml/w :attrs)) seq)]
+          (let [new-widths (calc-column-widths widths (total-width grid-loc) column-resize-strategy)]
+            (-> (find-grid-loc result-table)
+                (zip/edit update :content (partial map (fn [w cell] (assoc-in cell [:attrs ooxml/w] (str (int w)))) new-widths))
+                (find-enclosing-table)))
+          result-table))
+      table-loc)))
+
+;; beallitja a cellak szelessegeit a grid alapjan.
+(defn- table-set-cell-widths-to-grid [table-loc]
+  (assert (loc-table? table-loc))
+  (letfn [(find-grid-loc [loc]
+            (assert (zipper? loc))
+            (find-first-in-tree (every-pred map? #(some-> % :tag name (#{"tblGrid"}))) loc))
 
           ;; egy sor cellainak az egyedi szelesseget is beleirja magatol
           (fix-row-widths [grid-widths row]
@@ -286,24 +303,10 @@
                     (zip/edit assoc-in [:attrs ooxml/w] (str (reduce + (take (cell-width cell) grid-widths))))
                     (zip/up) (zip/up)
                     (as-> * (recur (some-> * zip/right find-closest-cell-right)
-                                   (zip/up *) (drop (cell-width cell) grid-widths)))))))
-
-          ;; beallitja a cellak szelessegeit (a grid alapjan)
-          (fix-table-cells-widths [table-loc grid-widths]
-            (assert (sequential? grid-widths))
-            (assert (loc-table? table-loc))
-            (map-each-rows (partial fix-row-widths grid-widths) table-loc))
-          ]
+                                   (zip/up *) (drop (cell-width cell) grid-widths)))))))]
     (if-let [grid-loc (find-grid-loc table-loc)]
-      ;; itt a grid megfelelo oszlophoz tartozo elemeit eltavolitja
-      (let [result-table (find-enclosing-table (remove-children-at-indices grid-loc removed-column-indices))]
-        (if-let [widths (->> result-table find-grid-loc zip/children (keep (comp ->int ooxml/w :attrs)) seq)]
-          (let [new-widths (calc-column-widths widths (total-width grid-loc) column-resize-strategy)]
-            (-> (find-grid-loc result-table)
-                (zip/edit update :content (partial map (fn [w cell] (assoc-in cell [:attrs ooxml/w] (str (int w)))) new-widths))
-                (find-enclosing-table)
-                (fix-table-cells-widths new-widths)))
-          result-table))
+      (let [grid-widths (->> grid-loc zip/children (keep (comp ->int ooxml/w :attrs)) seq)]
+        (map-each-rows (partial fix-row-widths grid-widths) table-loc))
       table-loc)))
 
 ;; Ha van grid, beallitja a tabla total szelesseget a grid elemek osszegere
@@ -358,6 +361,7 @@
       (-> (map-each-rows #(remove-columns % column-indices column-resize-strategy) table)
           (table-resize-grid-widths column-resize-strategy column-indices)
           (table-set-width-to-grid-total)
+          (table-set-cell-widths-to-grid)
           (cond-> column-last? (table-set-right-borders right-borders))
           (zip/root)))
     (throw (ex-info "A removeColumn() marker is not in a table cell!" {}))))
