@@ -332,22 +332,27 @@
           :when (and (map? row) (#{"tr"} (name (:tag row))))]
       (some->> row (last-of-tag "tc") (last-of-tag "tcPr") (last-of-tag "tcBorders") (last-of-tag "right")))))
 
-(defn- table-set-right-borders
-  "Ha egy tablazat utolso oszlopat tavolitottuk el, akkor az utolso elotti oszlop cellaibol a border-right ertekeket
-   at kell masolni az utolso oszlop cellaiba"
-  [table-loc right-borders]
-  (assert (sequential? right-borders))
+(defn- get-left-borders [table-loc] table-loc)
+
+(defn- table-set-borders
+  "Sets the left/right borders for each row in the table"
+  [table-loc direction borders]
+  (assert (#{:left :right} direction))
+  (assert (sequential? borders))
   (map-each-rows
    (fn [row border]
      (if border
        (if-let [last-col (find-last-child #(and (map? %) (some-> % :tag name #{"tc"})) row)]
          (-> last-col
-             (->> (ensure-child "tcPr") (ensure-child "tcBorders") (ensure-child "right"))
+             (->> (ensure-child "tcPr") (ensure-child "tcBorders") (ensure-child (name direction)))
              (zip/replace border)
              (find-enclosing-row))
          row)
        row))
-   (find-enclosing-table table-loc) right-borders))
+   (find-enclosing-table table-loc) borders))
+
+;; TODO: impl this!
+(defn- table-set-left-borders [table-loc] table-loc)
 
 (defn- remove-current-column
   "A jelenlegi csomoponthoz tartozo oszlopot eltavolitja a tablazatbol.
@@ -355,14 +360,17 @@
   [start-loc column-resize-strategy]
   (if-let [start-loc (find-enclosing-cell start-loc)]
     (let [column-last?   (nil? (find-closest-cell-right (zip/right start-loc)))
+          column-first?  false ;; TODO: implement
           column-indices (current-column-indices start-loc)
           table          (find-enclosing-table start-loc)
-          right-borders  (get-right-borders table)]
+          right-borders  (get-right-borders table)
+          left-borders   (get-left-borders table)]
       (-> (map-each-rows #(remove-columns % column-indices column-resize-strategy) table)
           (table-resize-grid-widths column-resize-strategy column-indices)
           (table-set-width-to-grid-total)
           (table-set-cell-widths-to-grid)
-          (cond-> column-last? (table-set-right-borders right-borders))
+          (cond-> column-last?  (table-set-borders :right right-borders)
+                  column-first? (table-set-borders :left left-borders))
           (zip/root)))
     (throw (ex-info "A removeColumn() marker is not in a table cell!" {}))))
 
