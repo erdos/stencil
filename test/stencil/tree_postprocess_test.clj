@@ -140,7 +140,7 @@
 
 (deftest resize-rational
   (is (=
-       (into-hiccup (table {:tag :tblPr :content [{:tag :tblW, :attrs {ooxml-w "6000"}}]}
+       (into-hiccup (table {:tag :tblPr :content [{:tag :tblW, :attrs {ooxml-w "?"}}]} ;; nem irja felul a total szelesseget.
                            (tbl-grid 2000 4000)
                            (row (cell (cell-width 1 2000) "a")
                                 (cell (cell-width 1 4000) "b"))

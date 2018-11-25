@@ -290,31 +290,38 @@
                     (as-> * (recur (some-> * zip/right find-closest-cell-right)
                                    (zip/up *) (drop (cell-width cell) grid-widths)))))))
 
+          ;; beallitja a cellak szelessegeit (a grid alapjan)
           (fix-table-cells-widths [table-loc grid-widths]
             (assert (sequential? grid-widths))
             (assert (loc-table? table-loc))
             (map-each-rows (partial fix-row-widths grid-widths) table-loc))
-
-          ;; a tablazat teljes szelesseget beleirja a grid szelessegek szummajakent
-          (fix-table-width [table-loc]
-            (assert (zipper? table-loc))
-            (-> (some->> table-loc (child-of-tag "tblPr") (child-of-tag "tblW"))
-                (some-> (zip/edit assoc-in [:attrs ooxml-w] (str (total-width table-loc)))
-                        (find-enclosing-table))
-                (or table-loc)))
-
           ]
     (if-let [grid-loc (find-grid-loc table-loc)]
+      ;; itt a grid megfelelo oszlophoz tartozo elemeit eltavolitja
       (let [result-table (find-enclosing-table (remove-children-at-indices grid-loc removed-column-indices))]
         (if-let [widths (->> result-table find-grid-loc zip/children (keep (comp ->int ooxml-w :attrs)) seq)]
           (let [new-widths (calc-column-widths widths (total-width grid-loc) column-resize-strategy)]
             (-> (find-grid-loc result-table)
                 (zip/edit update :content (partial map (fn [w cell] (assoc-in cell [:attrs ooxml-w] (str (int w)))) new-widths))
                 (find-enclosing-table)
-                (fix-table-width)
                 (fix-table-cells-widths new-widths)))
           result-table))
       table-loc)))
+
+;; Ha van grid, beallitja a tabla total szelesseget a grid elemek osszegere
+(defn- table-set-width-to-grid-total [table-loc]
+  (assert (loc-table? table-loc))
+  (letfn [(find-grid-loc [loc]
+            (assert (zipper? loc))
+            (find-first-in-tree (every-pred map? #(some-> % :tag name (#{"tblGrid"}))) loc))]
+    (if-let [grid-loc (find-grid-loc table-loc)]
+      (-> (some->> table-loc (child-of-tag "tblPr") (child-of-tag "tblW"))
+          (some-> (zip/edit assoc-in [:attrs ooxml-w]
+                            (str reduce + (keep (comp ->int ooxml-w :attrs) (zip/children grid-loc))))
+                  (find-enclosing-table))
+          (or table-loc))
+      table-loc)))
+
 
 ;; visszaadja soronkent a jobboldali margo objektumot
 (defn get-right-borders [original-start-loc]
@@ -352,6 +359,7 @@
     (-> (map-each-rows #(remove-columns % column-indices column-resize-strategy) table)
         (find-enclosing-table)
         (table-resize-grid-widths column-resize-strategy column-indices)
+        (table-set-width-to-grid-total)
         (cond-> column-last? (table-set-right-borders right-borders))
         (zip/root))))
 
