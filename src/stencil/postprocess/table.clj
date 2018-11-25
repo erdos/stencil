@@ -97,7 +97,7 @@
 (defn- current-column-indices
   "Visszaadja egy halmazban, hogy hanyadik oszlop(ok)ban vagyunk benne eppen."
   [loc]
-  (assert (zipper? loc))
+  (assert (loc-cell? loc))
   (let [cell         (find-enclosing-cell loc)
         current-cell-width (cell-width cell)
         cells-before (filter loc-cell? (next (iterations zip/left cell)))
@@ -352,16 +352,18 @@
   "A jelenlegi csomoponthoz tartozo oszlopot eltavolitja a tablazatbol.
    Visszater a gyoker elemmel."
   [start-loc column-resize-strategy]
-  (let [column-indices (current-column-indices start-loc)
-        table          (find-enclosing-table start-loc)
-        right-borders  (get-right-borders table)
-        column-last?   (nil? (find-closest-cell-right (zip/right (find-enclosing-cell start-loc))))]
-    (-> (map-each-rows #(remove-columns % column-indices column-resize-strategy) table)
-        (find-enclosing-table)
-        (table-resize-grid-widths column-resize-strategy column-indices)
-        (table-set-width-to-grid-total)
-        (cond-> column-last? (table-set-right-borders right-borders))
-        (zip/root))))
+  (if-let [start-loc (find-enclosing-cell start-loc)]
+    (let [column-last?   (nil? (find-closest-cell-right (zip/right start-loc)))
+          column-indices (current-column-indices start-loc)
+          table          (find-enclosing-table start-loc)
+          right-borders  (get-right-borders table)]
+      (-> (map-each-rows #(remove-columns % column-indices column-resize-strategy) table)
+          (find-enclosing-table)
+          (table-resize-grid-widths column-resize-strategy column-indices)
+          (table-set-width-to-grid-total)
+          (cond-> column-last? (table-set-right-borders right-borders))
+          (zip/root)))
+    (throw (ex-info "A removeColumn() marker is not in a table cell!" {}))))
 
 ;; TODO: handle rowspan property!
 (defn- remove-current-row [start]
