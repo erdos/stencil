@@ -11,7 +11,7 @@
                  [org.clojure/data.xml "0.2.0-alpha5"]
                  [org.slf4j/slf4j-api "1.8.0-beta2"]]
   :pom-addition ([:properties ["maven.compiler.source" "8"] ["maven.compiler.target" "8"]])
-  :pom-plugins [[org.apache.maven.plugins/maven-surefire-plugin "2.22.1"]]
+  :pom-plugins [[org.apache.maven.plugins/maven-surefire-plugin "2.20"]]
 
   :plugins [[lein-javadoc "0.3.0"]
             [lein-test-out "0.3.1"]]
