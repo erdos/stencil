@@ -18,6 +18,7 @@ them to make the template more readable.
 ## Getting Started
 
 - Read the [Documentation](docs/index.md)
+- Read the [Technical Documentation](https://cljdoc.org/d/io.github.erdos/stencil-core/)
 - See the [Example templates](examples)
 
 
