@@ -3,6 +3,7 @@
   (:import [java.io File])
   (:require [org.httpkit.server :refer [run-server]]
             [stencil.api :as api]
+            [clojure.data :refer [diff]]
             [clojure.java.io :refer [file]]
             [ring.middleware.json :refer [wrap-json-body]]))
 
@@ -17,7 +18,13 @@
       (throw (ex-info "Template directory does not exist!" {:status 500}))
       dir)))
 
-(def -prepared (atom {}))
+(def -prepared
+  "Map of {file-name {timestamp prepared}}."
+  (doto (atom {})
+    (add-watch :cleanup
+               (fn [_ _ before after]
+                 (let [[old-templates _ _] (diff before after)]
+                   (run! api/cleanup! (mapcat vals (vals old-templates))))))))
 
 (defn prepared [template-name]
   (let [template-file (file template-name)

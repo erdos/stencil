@@ -1,6 +1,7 @@
 (ns stencil.postprocess.table
   "XML fa utofeldolgozasat vegzo kod."
   (:require [clojure.zip :as zip]
+            [stencil.ooxml :as ooxml]
             [stencil.types :refer :all]
             [stencil.util :refer :all]))
 
@@ -8,9 +9,6 @@
 
 ;; az ennel keskenyebb oszlopokat kidobjuk!
 (def min-col-width 20)
-
-(def ooxml-val :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/val)
-(def ooxml-w :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/w)
 
 (defn- loc-cell?  [loc] (some-> loc zip/node :tag name #{"tc" "td" "th"}))
 (defn- loc-row?   [loc] (some-> loc zip/node :tag name #{"tr"}))
@@ -45,7 +43,7 @@
 (defn- find-closest-cell-right [loc] (first-right-sibling loc-cell? loc))
 
 (defn- goto-nth-sibling-cell [n loc]
-  (assert (int? n))
+  (assert (integer? n))
   (assert (zipper? loc))
   (nth (filter loc-cell? (iterations zip/right (zip/leftmost loc))) n))
 
@@ -78,7 +76,7 @@
       ("td" "th") (-> cell :attrs :colspan ->int (or 1))
 
       ;; ooxml
-      "tc"        (or (some->> loc (child-of-tag "tcPr") (child-of-tag "gridSpan") zip/node :attrs ooxml-val ->int) 1))))
+      "tc"        (or (some->> loc (child-of-tag "tcPr") (child-of-tag "gridSpan") zip/node :attrs ooxml/val ->int) 1))))
 
 (defn shrink-column
   "Decreases logical width of current TD cell."
@@ -92,7 +90,7 @@
     (case (name (:tag (zip/node col-loc)))
       "td"        (zip/edit col-loc update-in [:attrs :colspan] - shrink-amount)
       ("th" "tc") (-> (->> col-loc (child-of-tag "tcPr") (child-of-tag "gridSpan"))
-                      (zip/edit update-in [:attrs ooxml-val] #(str (- (->int %) shrink-amount))) (zip/up) (zip/up)))))
+                      (zip/edit update-in [:attrs ooxml/val] #(str (- (->int %) shrink-amount))) (zip/up) (zip/up)))))
 
 (defn- current-column-indices
   "Visszaadja egy halmazban, hogy hanyadik oszlop(ok)ban vagyunk benne eppen."
@@ -187,7 +185,7 @@
                       (some->> table-loc
                                find-grid-loc
                                (zip/children)
-                               (keep (comp ->int ooxml-w :attrs))
+                               (keep (comp ->int ooxml/w :attrs))
                                (reduce +)))
 
         ;; egy sor cellainak az egyedi szelesseget is beleirja magatol
@@ -200,7 +198,7 @@
                            (if-not cell
                              parent
                              (-> (->> cell (ensure-child "tcPr") (ensure-child "tcW"))
-                                 (zip/edit assoc-in [:attrs ooxml-w] (str (reduce + (take (cell-width cell) grid-widths))))
+                                 (zip/edit assoc-in [:attrs ooxml/w] (str (reduce + (take (cell-width cell) grid-widths))))
                                  (zip/up) (zip/up)
                                  (as-> * (recur (some-> * zip/right find-closest-cell-right)
                                                 (zip/up *) (drop (cell-width cell) grid-widths)))))))
@@ -214,15 +212,15 @@
         fix-table-width (fn [table-loc]
                           (assert (zipper? table-loc))
                           (-> (some->> table-loc (child-of-tag "tblPr") (child-of-tag "tblW"))
-                              (some-> (zip/edit assoc-in [:attrs ooxml-w] (str (total-width table-loc)))
+                              (some-> (zip/edit assoc-in [:attrs ooxml/w] (str (total-width table-loc)))
                                       (find-enclosing-table))
                               (or table-loc)))]
     (if-let [grid-loc (find-grid-loc table-loc)]
       (let [result-table (find-enclosing-table (remove-children-at-indices grid-loc removed-column-indices))]
-        (if-let [widths (->> result-table find-grid-loc zip/children (keep (comp ->int ooxml-w :attrs)) seq)]
+        (if-let [widths (->> result-table find-grid-loc zip/children (keep (comp ->int ooxml/w :attrs)) seq)]
           (let [new-widths (calc-column-widths widths (total-width grid-loc) column-resize-strategy)]
             (-> (find-grid-loc result-table)
-                (zip/edit update :content (partial map (fn [w cell] (assoc-in cell [:attrs ooxml-w] (str (int w)))) new-widths))
+                (zip/edit update :content (partial map (fn [w cell] (assoc-in cell [:attrs ooxml/w] (str (int w)))) new-widths))
                 (find-enclosing-table)
                 (fix-table-width)
                 (fix-table-cells-widths new-widths)))
@@ -294,7 +292,7 @@
   ;; Ha talalunk olyan gridCol oszlopot, ami nagyon kicsi
   (if-let [loc (find-first-in-tree #(and (map? %)
                                          (some-> % :tag name (#{"gridCol"}))
-                                         (some-> % :attrs ooxml-w ->int (< min-col-width))) (xml-zip xml-tree))]
+                                         (some-> % :attrs ooxml/w ->int (< min-col-width))) (xml-zip xml-tree))]
     (let [col-idx (count (filter #(some-> % zip/node :tag) (next (iterations zip/left loc))))
           table-loc (find-enclosing-table (zip/remove loc))]
       (zip/root (map-each-rows #(remove-columns % #{col-idx} :rational) table-loc)))

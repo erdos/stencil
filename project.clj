@@ -1,4 +1,4 @@
-(defproject io.github.erdos/stencil-core "0.2.5-SNAPSHOT"
+(defproject io.github.erdos/stencil-core "0.2.6-SNAPSHOT"
   :url "https://github.com/erdos/stencil"
   :description       "Templating engine for office documents."
   :license {:name "Eclipse Public License - v 2.0"
@@ -7,11 +7,11 @@
   :java-source-paths ["java-src"]
   :javac-options     ["-target" "8" "-source" "8"]
   :aot               :all
-  :dependencies [[org.clojure/clojure "1.9.0"]
+  :dependencies [[org.clojure/clojure "1.8.0"]
                  [org.clojure/data.xml "0.2.0-alpha5"]
                  [org.slf4j/slf4j-api "1.8.0-beta2"]]
   :pom-addition ([:properties ["maven.compiler.source" "8"] ["maven.compiler.target" "8"]])
-  :pom-plugins [[org.apache.maven.plugins/maven-surefire-plugin "2.22.0"]]
+  :pom-plugins [[org.apache.maven.plugins/maven-surefire-plugin "2.20"]]
 
   :plugins [[lein-javadoc "0.3.0"]
             [lein-test-out "0.3.1"]]
