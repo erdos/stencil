@@ -7,7 +7,7 @@
   :java-source-paths ["java-src"]
   :javac-options     ["-target" "8" "-source" "8"]
   :aot               :all
-  :dependencies [[org.clojure/clojure "1.9.0"]
+  :dependencies [[org.clojure/clojure "1.8.0"]
                  [org.clojure/data.xml "0.2.0-alpha5"]
                  [org.slf4j/slf4j-api "1.8.0-beta2"]]
   :pom-addition ([:properties ["maven.compiler.source" "8"] ["maven.compiler.target" "8"]])

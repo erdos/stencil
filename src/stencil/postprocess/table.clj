@@ -45,7 +45,7 @@
 (defn- find-closest-cell-right [loc] (first-right-sibling loc-cell? loc))
 
 (defn- goto-nth-sibling-cell [n loc]
-  (assert (int? n))
+  (assert (integer? n))
   (assert (zipper? loc))
   (nth (filter loc-cell? (iterations zip/right (zip/leftmost loc))) n))
 
