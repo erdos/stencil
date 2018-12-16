@@ -9,8 +9,7 @@ import java.time.LocalDateTime;
  * These files may be serialized or cached for later use.
  */
 @SuppressWarnings("unused")
-public interface
-PreparedTemplate {
+public interface PreparedTemplate {
 
     /**
      * Original template file that was preprocessed.
