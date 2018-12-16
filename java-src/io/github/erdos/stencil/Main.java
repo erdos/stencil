@@ -2,6 +2,7 @@ package io.github.erdos.stencil;
 
 import io.github.erdos.stencil.standalone.ArgsParser;
 import io.github.erdos.stencil.standalone.StandaloneApplication;
+import io.github.erdos.stencil.standalone.StencilArgsParser;
 
 /**
  * Use this class for running Stencil in standalone mode.
@@ -19,17 +20,10 @@ public class Main {
 
     public static void main(String... args) {
 
-        final ArgsParser parser = ArgsParser.parse(args);
-
-        parser.addParam("i", "input"); // input file to read template file names from
-
-        ArgsParser.ParseResult result = parser.parse(args);
-
+        ArgsParser.ParseResult parsed = StencilArgsParser.parse(args);
 
 
         final StandaloneApplication application = new StandaloneApplication();
-
-
 
     }
 }
