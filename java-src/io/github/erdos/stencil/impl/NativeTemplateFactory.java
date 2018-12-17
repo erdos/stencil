@@ -105,7 +105,7 @@ public final class NativeTemplateFactory implements TemplateFactory {
 
             @Override
             public void cleanup() {
-                if (valid.compareAndSet(false, true)) {
+                if (valid.compareAndSet(true, false)) {
                     // deletes unused temporary zip directory
                     if (zipDirResource != null) {
                         FileHelper.forceDelete(zipDirResource);
