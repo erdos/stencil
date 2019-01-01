@@ -9,15 +9,18 @@ import static java.util.Collections.unmodifiableMap;
 
 public class ArgsParser {
 
+    private final Set<ParamMarker> markers = new HashSet<>();
 
     public <T> ParamMarker<T> addParam(char shortForm, String longForm, String description, Function<String, T> parser) {
-
+        final ParamMarker<T> added = new ParamMarker<>(parser, shortForm, longForm, description);
+        markers.add(added);
+        return added;
     }
 
     public ParseResult parse(String... args) {
 
 
-        final Map<String, String> result = new HashMap<>();
+        final Map<Character, String> result = new HashMap<>();
         final List<String> restArgs = new ArrayList<>(args.length);
 
         for (int i = 0; i < args.length; i++) {
@@ -34,6 +37,12 @@ public class ArgsParser {
                     final String[] parts = item.split("=", 2);
                     final String argName = parts[0];
                     final String argValue = parts[1];
+
+                    if (item.startsWith("--")) {
+                        // long form
+                    } else {
+                        // short form
+                    }
                     // TODO: do parsing here!
 
                 } else {
@@ -75,11 +84,11 @@ public class ArgsParser {
         });
     }
 
-    public final class ParseResult {
-        private final Map<String, String> args;
+    public static final class ParseResult {
+        private final Map<Character, String> args;
         private final List<String> varargs;
 
-        private ParseResult(Map<String, String> args, List<String> varargs) {
+        private ParseResult(Map<Character, String> args, List<String> varargs) {
             this.args = unmodifiableMap(args);
             this.varargs = unmodifiableList(varargs);
         }
@@ -91,7 +100,7 @@ public class ArgsParser {
 
 
         public <T> Optional<T> getParamValue(ParamMarker<T> marker) {
-            final String shortName = marker.getShortName();
+            final char shortName = marker.getShortForm();
             if (args.containsKey(shortName)) {
                 final String argValue = args.get(shortName);
                 return Optional.of(marker.parse(argValue));
@@ -101,9 +110,33 @@ public class ArgsParser {
         }
     }
 
-    public interface ParamMarker<T> {
-        String getShortName();
+    private static final class ParamMarker<T> {
+        private final Function<String, T> parse;
+        private final char shortForm;
+        private final String longName;
+        private final String description;
 
-        T parse(String input);
+        private ParamMarker(Function<String, T> parse, char shortForm, String longName, String description) {
+            this.parse = parse;
+            this.shortForm = shortForm;
+            this.longName = longName;
+            this.description = description;
+        }
+
+        char getShortForm() {
+            return shortForm;
+        }
+
+        T parse(String input) {
+            return parse.apply(input);
+        }
+
+        public String getLongName() {
+            return longName;
+        }
+
+        public String getDescription() {
+            return description;
+        }
     }
 }
