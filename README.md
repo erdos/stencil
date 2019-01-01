@@ -12,8 +12,9 @@ The template expressions are just simple texts, and you can event colour-code
 them to make the template more readable.
 
 [![Clojars Project](https://img.shields.io/clojars/v/io.github.erdos/stencil-core.svg)](https://clojars.org/io.github.erdos/stencil-core)
-
 [![CircleCI](https://circleci.com/gh/erdos/stencil/tree/master.svg?style=svg)](https://circleci.com/gh/erdos/stencil/tree/master)
+[![EPL 2.0](https://img.shields.io/badge/License-EPL%202.0-red.svg)](https://www.eclipse.org/legal/epl-2.0/)
+
 
 ## Getting Started
 
