@@ -35,6 +35,14 @@ of an array or hide the whole paragraph when the array is empty.
 
 These functions deal with textual data.
 
+## Join
+
+Joins a list of items with an optional separator.
+
+**Example:** call join(xs, ",") to join them with a comma.
+
+**Example:** call join(xs) to just concatenate the items.
+
 ## Format
 
 Calls [String.format](https://docs.oracle.com/javase/7/docs/api/java/util/Formatter.html) function.
