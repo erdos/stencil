@@ -10,13 +10,16 @@
 (set! *warn-on-reflection* true)
 
 (defn get-http-port []
-  (Integer/parseInt (System/getenv "STENCIL_HTTP_PORT")))
+  (try (Integer/parseInt (System/getenv "STENCIL_HTTP_PORT"))
+       (catch NumberFormatException e
+         (throw (ex-info "Missing STENCIL_HTTP_PORT property!" {})))))
 
 (defn get-template-dir []
-  (let [dir (file (System/getenv "STENCIL_TEMPLATE_DIR"))]
+  (if-let [dir (some-> (System/getenv "STENCIL_TEMPLATE_DIR") (file))]
     (if-not (.exists dir)
       (throw (ex-info "Template directory does not exist!" {:status 500}))
-      dir)))
+      dir)
+    (throw (ex-info "Missing STENCIL_TEMPLATE_DIR property!" {}))))
 
 (def -prepared
   "Map of {file-name {timestamp prepared}}."
