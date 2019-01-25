@@ -25,9 +25,9 @@ them to make the template more readable.
 
 ## Version
 
-**Latest stable** version is `0.2.6`
+**Latest stable** version is `0.2.7`
 
-**Latest snapshot** version is `0.2.7-SNAPSHOT`
+**Latest snapshot** version is `0.2.8-SNAPSHOT`
 
 If you are using Maven, add the followings to your `pom.xml`:
 
@@ -37,7 +37,7 @@ The dependency:
 <dependency>
   <groupId>io.github.erdos</groupId>
   <artifactId>stencil-core</artifactId>
-  <version>0.2.6</version>
+  <version>0.2.7</version>
 </dependency>
 ```
 
@@ -52,7 +52,7 @@ And the [Clojars](https://clojars.org) repository:
 
 Alternatively, if you are using Leiningen, add the following to
 the `:dependencies` section of your `project.clj`
-file: `[io.github.erdos/stencil-core "0.2.6"]`
+file: `[io.github.erdos/stencil-core "0.2.7"]`
 
 Previous versions are available on the [Stencil Clojars](https://clojars.org/io.github.erdos/stencil-core) page.
 
