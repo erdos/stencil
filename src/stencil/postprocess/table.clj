@@ -100,7 +100,7 @@
         current-cell-width (cell-width cell)
         cells-before (filter loc-cell? (next (iterations zip/left cell)))
         before-sum   (reduce + (map cell-width cells-before))]
-    (set (for [i (range current-cell-width)] (+ before-sum i)))))
+    (set (range before-sum (+ before-sum current-cell-width)))))
 
 (defn remove-columns
   "Egy adott row alatt az adott sorszamu oszlopokat eltavolitja.
@@ -163,7 +163,7 @@
             (partial keep-indexed (fn [idx child] (when-not (contains? indices idx) child)))))
 
 (defn calc-column-widths [original-widths expected-total strategy]
-  (assert (seq original-widths))
+  (assert (every? number? original-widths))
   (assert (number? expected-total))
   (case strategy
     :cut

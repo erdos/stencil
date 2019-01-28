@@ -8,8 +8,9 @@
 
 (set! *warn-on-reflection* true)
 
-(defn peek-next-text [tokens]
+(defn peek-next-text
   "Returns a lazy seq of text content characters from the token list."
+  [tokens]
   ((fn f [stack tokens]
      (when-let [[t & ts] (seq tokens)]
        (if-let [text (:text t)]
