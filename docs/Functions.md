@@ -3,7 +3,21 @@
 You can call functions from within the template files and embed the call result easily by writing
 <code>{<i>%=functionName(arg1, arg2, arg3, ...)%</i>}</code> expression in the document template.
 
-This is a short description of the functions implemented in Stencil.
+This is a short description of the functions implemented in Stencil:
+
+- [ceil](#ceil)
+- [coalesce](#coalesce)
+- [date](#date)
+- [empty](#empty)
+- [floor](#floor)
+- [format](#format)
+- [html](#html)
+- [join](#join)
+- [length](#length)
+- [round](#round)
+- `hideColumn`
+- `hideRow`
+- `range`
 
 ## Basic Functions
 
@@ -35,7 +49,16 @@ of an array or hide the whole paragraph when the array is empty.
 
 These functions deal with textual data.
 
-## Format
+### Join
+
+Joins a list of items with an optional separator.
+
+**Example:** call join(xs, ",") to join them with a comma.
+
+**Example:** call join(xs) to just concatenate the items.
+
+### Format
+
 
 Calls [String.format](https://docs.oracle.com/javase/7/docs/api/java/util/Formatter.html) function.
 
@@ -45,7 +68,7 @@ This example formats the value of `price` as a price string:
 <code>{<i>%=format("$ %(,.2f"", price) %</i>}</code>. It may output `$ (6,217.58)`.
 
 
-## Date
+### Date
 
 Formats a date value according to a given [format string](https://docs.oracle.com/javase/6/docs/api/java/text/SimpleDateFormat.html).
 
@@ -66,7 +89,7 @@ Also, try these formats strings:
 - `"EEE MMM d HH:mm:ss yyyy"` (ASCTIME)
 - `"yyyy-MM-dd'T'HH:mm:ss.SSSXXX"` (ISO8601)
 
-## HTML
+### HTML
 
 It is possible to embed text with basic dynamic formatting using HTML notation. The HTML code will be converted to OOXML and inserted in the document.
 
@@ -87,6 +110,15 @@ The rendering throws an exception on invalid HTML input or unexpected HTML tags.
 Write the following to embed the content of `x` as HTML in the document:
 - <code>{<i>%=html(x) %</i>}</code>.
 
+### Length
+
+The `length(x)` function returns the length of the value in `x`:
+
+- Returns the number of characters when `x` is a string.
+- Returns the number of elements the `x` is a list/array.
+- Returns the number of key/value pairs when `x` is an object/map.
+
+Returns zero when `x` is `null`.
 
 ## Numeric functions
 

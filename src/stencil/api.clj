@@ -52,3 +52,9 @@
 
       :otherwise
       result)))
+
+
+(defn cleanup! [template]
+  (assert (instance? PreparedTemplate template))
+  (doto template
+    (.cleanup)))

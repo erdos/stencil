@@ -4,6 +4,7 @@
             [clojure.test :refer [deftest is are testing]]
             [stencil.ooxml :as ooxml]
             [stencil.util :refer [xml-zip]]
+            [stencil.ooxml :as ooxml]
             [stencil.tree-postprocess :refer :all]
             [stencil.postprocess.table :refer :all]))
 
@@ -144,7 +145,7 @@
 
 (deftest resize-rational
   (is (=
-       (into-hiccup (table {:tag :tblPr :content [{:tag :tblW, :attrs {ooxml/w "?"}}]} ;; nem irja felul a total szelesseget.
+       (into-hiccup (table {:tag :tblPr :content [{:tag :tblW, :attrs {ooxml/w "6000"}}]}
                            (tbl-grid 2000 4000)
                            (row (cell (cell-span 1 ) "a")
                                 (cell (cell-span 1 ) "b"))

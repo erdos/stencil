@@ -3,21 +3,31 @@
   (:import [java.io File])
   (:require [org.httpkit.server :refer [run-server]]
             [stencil.api :as api]
+            [clojure.data :refer [diff]]
             [clojure.java.io :refer [file]]
             [ring.middleware.json :refer [wrap-json-body]]))
 
 (set! *warn-on-reflection* true)
 
 (defn get-http-port []
-  (Integer/parseInt (System/getenv "STENCIL_HTTP_PORT")))
+  (try (Integer/parseInt (System/getenv "STENCIL_HTTP_PORT"))
+       (catch NumberFormatException e
+         (throw (ex-info "Missing STENCIL_HTTP_PORT property!" {})))))
 
 (defn get-template-dir []
-  (let [dir (file (System/getenv "STENCIL_TEMPLATE_DIR"))]
+  (if-let [dir (some-> (System/getenv "STENCIL_TEMPLATE_DIR") (file))]
     (if-not (.exists dir)
       (throw (ex-info "Template directory does not exist!" {:status 500}))
-      dir)))
+      dir)
+    (throw (ex-info "Missing STENCIL_TEMPLATE_DIR property!" {}))))
 
-(def -prepared (atom {}))
+(def -prepared
+  "Map of {file-name {timestamp prepared}}."
+  (doto (atom {})
+    (add-watch :cleanup
+               (fn [_ _ before after]
+                 (let [[old-templates _ _] (diff before after)]
+                   (run! api/cleanup! (mapcat vals (vals old-templates))))))))
 
 (defn prepared [template-name]
   (let [template-file (file template-name)

@@ -3,6 +3,10 @@
 This is a Dockerized example application running the Stencil template engine.
 You can use this service to render template documents from programs written in any programming language using only a HTTP API. You can also use this container to horizontally scale the rendering capacity of your application.
 
+## Requirements
+
+Requires Docker 17.05 or higher (for multi-stage builds).
+
 ## Usage
 
 Building and running the container:

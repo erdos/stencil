@@ -21,5 +21,9 @@
 ;; Content Break: http://officeopenxml.com/WPtextSpecialContent-break.php
 (def br :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/br)
 
-;; width
 (def w :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/w)
+
+(def t :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/t)
+
+;; XML space attribute (eg.: preserve)
+(def space :xmlns.http%3A%2F%2Fwww.w3.org%2FXML%2F1998%2Fnamespace/space)

@@ -57,7 +57,7 @@
 (declare cleanup-runs)
 
 (defn -find-end-tag [last-chars-count next-token-list]
-  (assert (int? last-chars-count))
+  (assert (integer? last-chars-count))
   (assert (pos? last-chars-count))
   (assert (sequential? next-token-list))
   (when (= (drop last-chars-count open-tag)
