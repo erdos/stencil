@@ -28,6 +28,8 @@
   "Finds first right sibling that matches the predicate."
   [pred loc] (find-first pred (iterations zip/right loc)))
 
+(defn- first-left-sibling [pred loc] (find-first pred (iterations zip/left loc)))
+
 (defn- first-parent
   "Finds closest parent element that matches the predicate."
   [pred loc]
@@ -41,6 +43,7 @@
 
 (defn- find-closest-row-right [loc] (first-right-sibling loc-row? loc))
 (defn- find-closest-cell-right [loc] (first-right-sibling loc-cell? loc))
+(defn- find-closest-cell-left [loc] (first-left-sibling loc-cell? loc))
 
 (defn- goto-nth-sibling-cell [n loc]
   (assert (integer? n))
@@ -138,11 +141,6 @@
                      (int (+ current-idx column-width))))
             (recur (find-closest-cell-right (zip/right current-loc))
                    (int (+ current-idx column-width)))))))))
-
-(defn- map-children [f loc]
-  (assert (fn? f))
-  (assert (zipper? loc))
-  (zip/edit loc update :content (partial map f)))
 
 (defn map-each-rows [f table & colls]
   (assert (fn? f))
@@ -247,23 +245,25 @@
       table-loc)))
 
 ;; visszaadja soronkent a jobboldali margo objektumot
-(defn get-right-borders [original-start-loc]
+(defn get-borders [direction original-start-loc]
+  (assert (#{"left" "right"} direction))
   (for [row   (zip/children (find-enclosing-table original-start-loc))
         :when (and (map? row) (#{"tr"} (name (:tag row))))
         :let  [last-of-tag (fn [tag xs] (last (filter  #(and (map? %) (some-> % :tag name #{tag})) (:content xs))))]]
-    (some->> row (last-of-tag "tc") (last-of-tag "tcPr") (last-of-tag "tcBorders") (last-of-tag "right"))))
+    (some->> row (last-of-tag "tc") (last-of-tag "tcPr") (last-of-tag "tcBorders") (last-of-tag direction))))
 
-(defn- table-set-right-borders
+(defn- table-set-borders
   "Ha egy tablazat utolso oszlopat tavolitottuk el, akkor az utolso elotti oszlop cellaibol a border-right ertekeket
    at kell masolni az utolso oszlop cellaiba"
-  [table-loc right-borders]
+  [table-loc direction right-borders]
+  (assert (#{"left" "right"} direction))
   (assert (sequential? right-borders))
   (map-each-rows
    (fn [row border]
      (if border
        (if-let [last-col (find-last-child #(and (map? %) (some-> % :tag name #{"tc"})) row)]
          (-> last-col
-             (->> (ensure-child "tcPr") (ensure-child "tcBorders") (ensure-child "right"))
+             (->> (ensure-child "tcPr") (ensure-child "tcBorders") (ensure-child direction))
              (zip/replace border)
              (find-enclosing-row))
          row)
@@ -276,12 +276,15 @@
   [start-loc column-resize-strategy]
   (let [column-indices (current-column-indices start-loc)
         table          (find-enclosing-table start-loc)
-        right-borders  (get-right-borders table)
+        right-borders  (get-borders "right" table)
+        left-borders   (get-borders "left" table)
+        column-first?  (nil? (find-closest-cell-left (zip/left (find-enclosing-cell start-loc))))
         column-last?   (nil? (find-closest-cell-right (zip/right (find-enclosing-cell start-loc))))]
     (-> (map-each-rows #(remove-columns % column-indices column-resize-strategy) table)
         (find-enclosing-table)
         (table-resize-widths column-resize-strategy column-indices)
-        (cond-> column-last? (table-set-right-borders right-borders))
+        (cond-> column-last? (table-set-borders "right" right-borders)
+                column-first? (table-set-borders "left" left-borders))
         (zip/root))))
 
 ;; TODO: handle rowspan property!

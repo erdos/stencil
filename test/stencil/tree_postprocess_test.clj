@@ -167,10 +167,10 @@
               (into-hiccup (fix-tables (table (row (cell "ALMA") (cell border-1 (->HideTableColumnMarker) "KORTE"))
                                               (row (cell "NARANCS") (cell border-2 "BARACK"))))))))))
 
-(deftest resize-rational-2
+(deftest test-get-borders
   (is (= '(nil {:attrs {:x 1}, :tag :right})
-         (get-right-borders (xml-zip (table (tbl-grid "1000" "2000" "2500" "500")
-                                            (row (cell "a") (cell-of-width 1 "b"))
-                                            (row (cell "v") (cell {:tag :tcPr :content [{:tag :tcBorders :content [{:tag :right :attrs {:x 1}}]}]} "dsf"))))))))
+         (get-borders "right" (xml-zip (table (tbl-grid "1000" "2000" "2500" "500")
+                                              (row (cell "a") (cell-of-width 1 "b"))
+                                              (row (cell "v") (cell {:tag :tcPr :content [{:tag :tcBorders :content [{:tag :right :attrs {:x 1}}]}]} "dsf"))))))))
 
 :OK
