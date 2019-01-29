@@ -7,17 +7,24 @@ This is a short description of the functions implemented in Stencil:
 
 - [ceil](#ceil)
 - [coalesce](#coalesce)
+- `currency`
 - [date](#date)
 - [empty](#empty)
 - [floor](#floor)
 - [format](#format)
+- `hideColumn`
+- `hideRow`
 - [html](#html)
 - [join](#join)
 - [length](#length)
-- [round](#round)
-- `hideColumn`
-- `hideRow`
+- [lowercase](#lowercase)
+- `percent`
 - `range`
+- [round](#round)
+- [str](#str)
+- `switch`
+- `titlecase`
+- `uppercase`
 
 ## Basic Functions
 
@@ -56,17 +63,6 @@ Joins a list of items with an optional separator.
 **Example:** call join(xs, ",") to join them with a comma.
 
 **Example:** call join(xs) to just concatenate the items.
-
-### Format
-
-
-Calls [String.format](https://docs.oracle.com/javase/7/docs/api/java/util/Formatter.html) function.
-
-**Example:**
-
-This example formats the value of `price` as a price string:
-<code>{<i>%=format("$ %(,.2f"", price) %</i>}</code>. It may output `$ (6,217.58)`.
-
 
 ### Date
 
@@ -110,6 +106,17 @@ The rendering throws an exception on invalid HTML input or unexpected HTML tags.
 Write the following to embed the content of `x` as HTML in the document:
 - <code>{<i>%=html(x) %</i>}</code>.
 
+### Format
+
+
+Calls [String.format](https://docs.oracle.com/javase/7/docs/api/java/util/Formatter.html) function.
+
+**Example:**
+
+This example formats the value of `price` as a price string:
+<code>{<i>%=format("$ %(,.2f"", price) %</i>}</code>. It may output `$ (6,217.58)`.
+
+
 ### Length
 
 The `length(x)` function returns the length of the value in `x`:
@@ -119,6 +126,14 @@ The `length(x)` function returns the length of the value in `x`:
 - Returns the number of key/value pairs when `x` is an object/map.
 
 Returns zero when `x` is `null`.
+
+### Lowercase
+
+The `lowercase(x)` function turns its string argument into a lowercase string. For example: `lowercase("HELLO")` returns `"hello"`.
+
+### Str
+
+The `str(x)` functions convers its non-null arguments into a string. Returns an empty string when all arguments are null. 
 
 ## Numeric functions
 
