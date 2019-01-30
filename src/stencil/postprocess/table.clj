@@ -50,7 +50,9 @@
   (assert (zipper? loc))
   (nth (filter loc-cell? (iterations zip/right (zip/leftmost loc))) n))
 
-(defn- find-first-child [pred loc]
+(defn- find-first-child
+  "Returns zipper of first child where predicate holds for the node or nil when not found."
+  [pred loc]
   (assert (ifn? pred))
   (assert (zipper? loc))
   (find-first (comp pred zip/node) (take-while some? (iterations zip/right (zip/down loc)))))
@@ -61,8 +63,9 @@
   (or (find-first-child #(and (map? %) (#{tag-name} (name (:tag %)))) loc)
       (zip/next (zip/insert-child loc {:tag (keyword tag-name) :content []}))))
 
-;; finds first child with given tag name
-(defn- child-of-tag [tag-name loc]
+(defn- child-of-tag
+  "Finds first child node with a given tag name. Returns zipper of the child or nil when not found."
+  [tag-name loc]
   (assert (zipper? loc))
   (assert (string? tag-name))
   (find-first-child #(some-> % :tag name (= tag-name)) loc))
@@ -244,13 +247,21 @@
           result-table))
       table-loc)))
 
-;; visszaadja soronkent a jobboldali margo objektumot
 (defn get-borders [direction original-start-loc]
-  (assert (#{"left" "right"} direction))
-  (for [row   (zip/children (find-enclosing-table original-start-loc))
-        :when (and (map? row) (#{"tr"} (name (:tag row))))
-        :let  [last-of-tag (fn [tag xs] (last (filter  #(and (map? %) (some-> % :tag name #{tag})) (:content xs))))]]
-    (some->> row (last-of-tag "tc") (last-of-tag "tcPr") (last-of-tag "tcBorders") (last-of-tag direction))))
+  (case direction
+    ("left" "right")
+    (for [row   (zip/children (find-enclosing-table original-start-loc))
+          :when (and (map? row) (#{"tr"} (name (:tag row))))
+          :let  [last-of-tag (fn [tag xs] (last (filter  #(and (map? %) (some-> % :tag name #{tag})) (:content xs))))]]
+      (some->> row (last-of-tag "tc") (last-of-tag "tcPr") (last-of-tag "tcBorders") (last-of-tag direction)))
+    ("top" "bottom")
+    ;; TODO: test this
+    (let [last-of-tag (fn [tag xs] (last (filter  #(and (map? %) (some-> % :tag name #{tag})) (:content xs))))
+          first-of-tag (fn [tag xs] (last (filter  #(and (map? %) (some-> % :tag name #{tag})) (:content xs))))
+          row (({"top" first-of-tag "bottom" last-of-tag} direction) "tr" (zip/node (find-enclosing-table original-start-loc)))]
+      (for [cell   (:content row)
+            :when (and (map? row) (#{"tc"} (name (:tag row))))]
+        (some->> cell (last-of-tag "tcPr") (last-of-tag "tcBorders") (last-of-tag direction))))))
 
 (defn- table-set-borders
   "Ha egy tablazat utolso oszlopat tavolitottuk el, akkor az utolso elotti oszlop cellaibol a border-right ertekeket
@@ -287,10 +298,6 @@
                 column-first? (table-set-borders "left" left-borders))
         (zip/root))))
 
-;; TODO: handle rowspan property!
-(defn- remove-current-row [start]
-  (-> start (find-enclosing-row) (zip/remove) (zip/root)))
-
 (defn remove-columns-by-markers-1
   "Megkeresi az elso HideTableColumnMarkert es a tablazatbol a hozza tartozo
    oszlopot kitorli. Visszaadja az XML fat."
@@ -305,7 +312,8 @@
    sort kitorli. Visszaadja az XML fat."
   [xml-tree]
   (if-let [marker (find-first-in-tree hide-table-row-marker? (xml-zip xml-tree))]
-    (remove-current-row marker)
+    ;; TODO: handle rowspan proerty!
+    (-> marker (find-enclosing-row) (zip/remove) (zip/root))
     xml-tree))
 
 (defn remove-table-thin-columns-1

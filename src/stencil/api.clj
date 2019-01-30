@@ -58,3 +58,27 @@
   (assert (instance? PreparedTemplate template))
   (doto template
     (.cleanup)))
+
+(comment
+
+  (def prepared (prepare "/home/erdos/EP_adatbekero-sablon.docx"))
+
+  (render! prepared
+           {:nev "DBX Kft."
+
+            :levirszam "1027"
+            :levhelyseg "Budapest"
+            :levutca "Bem rakpart 56"
+            :ugyintezo "Teszt Elek"
+            :iktatoszam "IKTATOSZAM001"
+            :datum "2018.01.30"
+            :adoszam "00010001001"
+            :email "info@dbx.hu"
+
+            :hibak [{:nev "Első Hiba" :teendo "Első Teendő"}
+                    {:nev "Második Hiba" :teendo "Második Teendő"}
+                    {:nev "Második Hiba" :teendo "Második Teendő"}]}
+           :overwrite? true
+           :output "/home/erdos/EP_adatbekero-kimenet.docx")
+
+  )
