@@ -56,5 +56,5 @@
 
 (defn cleanup! [template]
   (assert (instance? PreparedTemplate template))
-  (doto template
+  (doto ^PreparedTemplate template
     (.cleanup)))

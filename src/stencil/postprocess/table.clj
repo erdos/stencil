@@ -50,19 +50,24 @@
   (assert (zipper? loc))
   (nth (filter loc-cell? (iterations zip/right (zip/leftmost loc))) n))
 
-(defn- find-first-child [pred loc]
+(defn- find-first-child
+  "Returns zipper of first child where predicate holds for the node or nil when not found."
+  [pred loc]
   (assert (ifn? pred))
   (assert (zipper? loc))
   (find-first (comp pred zip/node) (take-while some? (iterations zip/right (zip/down loc)))))
 
-(defn- ensure-child [tag-name loc]
+(defn- ensure-child [loc tag-name]
   (assert string? tag-name)
   (assert (zipper? loc))
   (or (find-first-child #(and (map? %) (#{tag-name} (name (:tag %)))) loc)
       (zip/next (zip/insert-child loc {:tag (keyword tag-name) :content []}))))
 
-;; finds first child with given tag name
-(defn- child-of-tag [tag-name loc]
+(defn- ensure-child-path [loc & tag-names] (reduce ensure-child loc tag-names))
+
+(defn- child-of-tag
+  "Finds first child node with a given tag name. Returns zipper of the child or nil when not found."
+  [tag-name loc]
   (assert (zipper? loc))
   (assert (string? tag-name))
   (find-first-child #(some-> % :tag name (= tag-name)) loc))
@@ -154,6 +159,20 @@
           (find-enclosing-table fixed-row))))
     table))
 
+(defn map-each-cells
+  "Maps f over every cell in a row. Returns the zipper on the row."
+  [f row & colls]
+  (assert (fn? f))
+  (assert (loc-row? row))
+  (if-let [first-cell (find-closest-cell-right (zip/down row))]
+    (loop [current-cell first-cell
+           colls        colls]
+      (let [fixed-cell (apply f current-cell (map first colls))]
+        (if-let [next-cell (some-> fixed-cell zip/right find-closest-cell-right)]
+          (recur next-cell (map next colls))
+          (find-enclosing-row fixed-cell))))
+    row))
+
 (defn remove-children-at-indices [loc indices]
   (assert (zipper? loc))
   (assert (set? indices))
@@ -214,7 +233,7 @@
                                 grid-widths grid-widths]
                            (if-not cell
                              parent
-                             (-> (->> cell (ensure-child "tcPr") (ensure-child "tcW"))
+                             (-> (ensure-child-path cell "tcPr" "tcW")
                                  (zip/edit assoc-in [:attrs ooxml/w] (str (reduce + (take (cell-width cell) grid-widths))))
                                  (zip/up) (zip/up)
                                  (as-> * (recur (some-> * zip/right find-closest-cell-right)
@@ -244,31 +263,54 @@
           result-table))
       table-loc)))
 
-;; visszaadja soronkent a jobboldali margo objektumot
-(defn get-borders [direction original-start-loc]
-  (assert (#{"left" "right"} direction))
-  (for [row   (zip/children (find-enclosing-table original-start-loc))
-        :when (and (map? row) (#{"tr"} (name (:tag row))))
-        :let  [last-of-tag (fn [tag xs] (last (filter  #(and (map? %) (some-> % :tag name #{tag})) (:content xs))))]]
-    (some->> row (last-of-tag "tc") (last-of-tag "tcPr") (last-of-tag "tcBorders") (last-of-tag direction))))
+(defn get-borders
+  "Returns a lazy sequence of the border elements for a table."
+  [direction original-start-loc]
+  (letfn [(tag-matches? [tag elem]
+            (and (map? elem) (some-> elem :tag name #{tag})))
+          (first-of-tag [tag xs]
+            (find-first (partial tag-matches? tag) (:content xs)))
+          (last-of-tag [tag xs]
+            (find-last (partial tag-matches? tag) (:content xs)))]
+    (case direction
+      ("left" "right")
+      (for [row   (zip/children (find-enclosing-table original-start-loc))
+            :when (tag-matches? "tr" row)]
+        (some->> row (last-of-tag "tc") (last-of-tag "tcPr") (last-of-tag "tcBorders") (last-of-tag direction)))
+      ("top" "bottom")
+      (for [cell  (:content (({"top" first-of-tag "bottom" last-of-tag} direction)
+                             "tr" (zip/node (find-enclosing-table original-start-loc))))
+            :when (tag-matches? "tc" cell)]
+        (some->> cell (last-of-tag "tcPr") (last-of-tag "tcBorders") (last-of-tag direction))))))
 
+;; TODO: implement algo for top borders too
+;; TODO: handle case where grid withs should be handled too.
 (defn- table-set-borders
   "Ha egy tablazat utolso oszlopat tavolitottuk el, akkor az utolso elotti oszlop cellaibol a border-right ertekeket
    at kell masolni az utolso oszlop cellaiba"
-  [table-loc direction right-borders]
-  (assert (#{"left" "right"} direction))
-  (assert (sequential? right-borders))
-  (map-each-rows
-   (fn [row border]
-     (if border
-       (if-let [last-col (find-last-child #(and (map? %) (some-> % :tag name #{"tc"})) row)]
-         (-> last-col
-             (->> (ensure-child "tcPr") (ensure-child "tcBorders") (ensure-child direction))
+  [table-loc direction borders]
+  (assert (sequential? borders))
+  (case direction
+    ("left" "right")
+    (map-each-rows
+     (fn [row border]
+       (if border
+         (if-let [last-col (find-last-child #(and (map? %) (some-> % :tag name #{"tc"})) row)]
+           (-> (ensure-child-path last-col "tcPr" "tcBorders" direction)
+               (zip/replace border)
+               (find-enclosing-row))
+           row)
+         row))
+     (find-enclosing-table table-loc) borders)
+    ("bottom")
+    (let [row-loc (find-last-child (comp #{"tr"} name :tag) (find-enclosing-table table-loc))]
+      (map-each-cells
+       (fn [cell-loc border]
+         (-> (ensure-child-path cell-loc "tcPr" "tcBorders" "bottom")
              (zip/replace border)
-             (find-enclosing-row))
-         row)
-       row))
-   (find-enclosing-table table-loc) right-borders))
+             (find-enclosing-cell)))
+       row-loc
+       borders))))
 
 (defn- remove-current-column
   "A jelenlegi csomoponthoz tartozo oszlopot eltavolitja a tablazatbol.
@@ -289,7 +331,12 @@
 
 ;; TODO: handle rowspan property!
 (defn- remove-current-row [start]
-  (-> start (find-enclosing-row) (zip/remove) (zip/root)))
+  (assert (zipper? start))
+  (let [last-row? (nil? (find-closest-row-right (zip/right (find-enclosing-row start))))
+        bottom-borders (get-borders "bottom" (find-enclosing-table start))]
+    (-> start (find-enclosing-row) (zip/remove)
+        (cond-> last-row? (table-set-borders "bottom" bottom-borders))
+        (zip/root))))
 
 (defn remove-columns-by-markers-1
   "Megkeresi az elso HideTableColumnMarkert es a tablazatbol a hozza tartozo
