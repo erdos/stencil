@@ -331,7 +331,12 @@
 
 ;; TODO: handle rowspan property!
 (defn- remove-current-row [start]
-  (-> start (find-enclosing-row) (zip/remove) (zip/root)))
+  (assert (zipper? start))
+  (let [last-row? (nil? (find-closest-row-right (zip/right (find-enclosing-row start))))
+        bottom-borders (get-borders "bottom" (find-enclosing-table start))]
+    (-> start (find-enclosing-row) (zip/remove)
+        (cond-> last-row? (table-set-borders "bottom" bottom-borders))
+        (zip/root))))
 
 (defn remove-columns-by-markers-1
   "Megkeresi az elso HideTableColumnMarkert es a tablazatbol a hozza tartozo
