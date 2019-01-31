@@ -248,20 +248,19 @@
       table-loc)))
 
 (defn get-borders [direction original-start-loc]
-  (case direction
-    ("left" "right")
-    (for [row   (zip/children (find-enclosing-table original-start-loc))
-          :when (and (map? row) (#{"tr"} (name (:tag row))))
-          :let  [last-of-tag (fn [tag xs] (last (filter  #(and (map? %) (some-> % :tag name #{tag})) (:content xs))))]]
-      (some->> row (last-of-tag "tc") (last-of-tag "tcPr") (last-of-tag "tcBorders") (last-of-tag direction)))
-    ("top" "bottom")
-    ;; TODO: test this
-    (let [last-of-tag (fn [tag xs] (last (filter  #(and (map? %) (some-> % :tag name #{tag})) (:content xs))))
-          first-of-tag (fn [tag xs] (last (filter  #(and (map? %) (some-> % :tag name #{tag})) (:content xs))))
-          row (({"top" first-of-tag "bottom" last-of-tag} direction) "tr" (zip/node (find-enclosing-table original-start-loc)))]
-      (for [cell   (:content row)
-            :when (and (map? row) (#{"tc"} (name (:tag row))))]
-        (some->> cell (last-of-tag "tcPr") (last-of-tag "tcBorders") (last-of-tag direction))))))
+  (letfn [(first-of-tag [tag xs] (first (filter  #(and (map? %) (some-> % :tag name #{tag})) (:content xs))))
+          (last-of-tag [tag xs] (last (filter  #(and (map? %) (some-> % :tag name #{tag})) (:content xs))))]
+    (case direction
+      ("left" "right")
+      (for [row   (zip/children (find-enclosing-table original-start-loc))
+            :when (and (map? row) (#{"tr"} (name (:tag row))))]
+        (some->> row (last-of-tag "tc") (last-of-tag "tcPr") (last-of-tag "tcBorders") (last-of-tag direction)))
+      ("top" "bottom")
+      (let [row (({"top" first-of-tag "bottom" last-of-tag} direction)
+                 "tr" (zip/node (find-enclosing-table original-start-loc)))]
+        (for [cell   (:content row)
+              :when (and (map? row) (#{"tc"} (name (:tag cell))))]
+          (some->> cell (last-of-tag "tcPr") (last-of-tag "tcBorders") (last-of-tag direction)))))))
 
 (defn- table-set-borders
   "Ha egy tablazat utolso oszlopat tavolitottuk el, akkor az utolso elotti oszlop cellaibol a border-right ertekeket
