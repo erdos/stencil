@@ -56,12 +56,12 @@
 
 (defn cleanup! [template]
   (assert (instance? PreparedTemplate template))
-  (doto template
+  (doto ^PreparedTemplate template
     (.cleanup)))
 
 (comment
 
-  (def prepared (prepare "/home/erdos/EP_adatbekero-sablon.docx"))
+  (def prepared (prepare "/home/erdos/Downloads/ep-adatbekero/EP_adatbekero-sablon.docx"))
 
   (render! prepared
            {:nev "DBX Kft."

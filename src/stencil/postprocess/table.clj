@@ -57,11 +57,13 @@
   (assert (zipper? loc))
   (find-first (comp pred zip/node) (take-while some? (iterations zip/right (zip/down loc)))))
 
-(defn- ensure-child [tag-name loc]
+(defn- ensure-child [loc tag-name]
   (assert string? tag-name)
   (assert (zipper? loc))
   (or (find-first-child #(and (map? %) (#{tag-name} (name (:tag %)))) loc)
       (zip/next (zip/insert-child loc {:tag (keyword tag-name) :content []}))))
+
+(defn- ensure-child-path [loc & tag-names] (reduce ensure-child loc tag-names))
 
 (defn- child-of-tag
   "Finds first child node with a given tag name. Returns zipper of the child or nil when not found."
@@ -231,7 +233,7 @@
                                 grid-widths grid-widths]
                            (if-not cell
                              parent
-                             (-> (->> cell (ensure-child "tcPr") (ensure-child "tcW"))
+                             (-> (ensure-child-path cell "tcPr" "tcW")
                                  (zip/edit assoc-in [:attrs ooxml/w] (str (reduce + (take (cell-width cell) grid-widths))))
                                  (zip/up) (zip/up)
                                  (as-> * (recur (some-> * zip/right find-closest-cell-right)
@@ -292,25 +294,21 @@
      (fn [row border]
        (if border
          (if-let [last-col (find-last-child #(and (map? %) (some-> % :tag name #{"tc"})) row)]
-           (-> last-col
-               (->> (ensure-child "tcPr") (ensure-child "tcBorders") (ensure-child direction))
+           (-> (ensure-child-path last-col "tcPr" "tcBorders" direction)
                (zip/replace border)
                (find-enclosing-row))
            row)
          row))
      (find-enclosing-table table-loc) borders)
-    ("bottom"
-     (let [row-loc (find-last-child (comp #{"tr"} name :tag) (find-enclosing-table table-loc))]
-       (map-each-cells
-        (fn [cell-loc border]
-          (->> cell-loc
-               (ensure-child "tcPr")
-               (ensure-child "tcBorders")
-               (ensure-child "bottom")
-               (zip/replace border)
-               (find-enclosing-cell)))
-        row-loc
-        borders)))))
+    ("bottom")
+    (let [row-loc (find-last-child (comp #{"tr"} name :tag) (find-enclosing-table table-loc))]
+      (map-each-cells
+       (fn [cell-loc border]
+         (-> (ensure-child-path cell-loc "tcPr" "tcBorders" "bottom")
+             (zip/replace border)
+             (find-enclosing-cell)))
+       row-loc
+       borders))))
 
 (defn- remove-current-column
   "A jelenlegi csomoponthoz tartozo oszlopot eltavolitja a tablazatbol.
