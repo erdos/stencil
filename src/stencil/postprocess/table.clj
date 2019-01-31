@@ -157,6 +157,20 @@
           (find-enclosing-table fixed-row))))
     table))
 
+(defn map-each-cells
+  "Maps f over every cell in a row. Returns the zipper on the row."
+  [f row & colls]
+  (assert (fn? f))
+  (assert (loc-row? row))
+  (if-let [first-cell (find-closest-cell-right (zip/down row))]
+    (loop [current-cell first-cell
+           colls        colls]
+      (let [fixed-cell (apply f current-cell (map first colls))]
+        (if-let [next-cell (some-> fixed-cell zip/right find-closest-cell-right)]
+          (recur next-cell (map next colls))
+          (find-enclosing-row fixed-cell))))
+    row))
+
 (defn remove-children-at-indices [loc indices]
   (assert (zipper? loc))
   (assert (set? indices))
@@ -284,7 +298,19 @@
                (find-enclosing-row))
            row)
          row))
-     (find-enclosing-table table-loc) borders)))
+     (find-enclosing-table table-loc) borders)
+    ("bottom"
+     (let [row-loc (find-last-child (comp #{"tr"} name :tag) (find-enclosing-table table-loc))]
+       (map-each-cells
+        (fn [cell-loc border]
+          (->> cell-loc
+               (ensure-child "tcPr")
+               (ensure-child "tcBorders")
+               (ensure-child "bottom")
+               (zip/replace border)
+               (find-enclosing-cell)))
+        row-loc
+        borders)))))
 
 (defn- remove-current-column
   "A jelenlegi csomoponthoz tartozo oszlopot eltavolitja a tablazatbol.
