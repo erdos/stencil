@@ -37,13 +37,14 @@
   (assert (zipper? loc))
   (find-first pred (iterations zip/up loc)))
 
-(defn- find-enclosing-cell [loc] (first-parent loc-cell? loc))
-(defn- find-enclosing-row [loc] (first-parent loc-row? loc))
+(defn- find-enclosing-cell  [loc] (first-parent loc-cell? loc))
+(defn- find-enclosing-row   [loc] (first-parent loc-row? loc))
 (defn- find-enclosing-table [loc] (first-parent loc-table? loc))
 
-(defn- find-closest-row-right [loc] (first-right-sibling loc-row? loc))
+(defn- find-closest-row-right  [loc] (first-right-sibling loc-row? loc))
+(defn- find-closest-row-left   [loc] (first-left-sibling loc-row? loc))
 (defn- find-closest-cell-right [loc] (first-right-sibling loc-cell? loc))
-(defn- find-closest-cell-left [loc] (first-left-sibling loc-cell? loc))
+(defn- find-closest-cell-left  [loc] (first-left-sibling loc-cell? loc))
 
 (defn- goto-nth-sibling-cell [n loc]
   (assert (integer? n))
@@ -57,10 +58,12 @@
   (assert (zipper? loc))
   (find-first (comp pred zip/node) (take-while some? (iterations zip/right (zip/down loc)))))
 
+(defn- tag-matches? [tag elem] (and (map? elem) (some-> elem :tag name #{tag})))
+
 (defn- ensure-child [loc tag-name]
   (assert string? tag-name)
   (assert (zipper? loc))
-  (or (find-first-child #(and (map? %) (#{tag-name} (name (:tag %)))) loc)
+  (or (find-first-child (partial tag-matches? tag-name) loc)
       (zip/next (zip/insert-child loc {:tag (keyword tag-name) :content []}))))
 
 (defn- ensure-child-path [loc & tag-names] (reduce ensure-child loc tag-names))
@@ -70,7 +73,7 @@
   [tag-name loc]
   (assert (zipper? loc))
   (assert (string? tag-name))
-  (find-first-child #(some-> % :tag name (= tag-name)) loc))
+  (find-first-child (partial tag-matches? tag-name) loc))
 
 (defn- cell-width
   "Az aktualis table cella logikai szelesseget adja vissza. Alapertelmezetten 1."
@@ -150,7 +153,7 @@
 (defn map-each-rows [f table & colls]
   (assert (fn? f))
   (assert (loc-table? table))
-  (if-let [first-row (find-closest-row-right (zip/down table))]
+  (if-let [first-row   (find-closest-row-right (zip/down table))]
     (loop [current-row first-row
            colls       colls]
       (let [fixed-row (apply f current-row (map first colls))]
@@ -215,7 +218,7 @@
   (assert (loc-table? table-loc))
   (assert (keyword? column-resize-strategy))
   (assert (set? removed-column-indices))
-  (let [find-grid-loc (fn [loc] (find-first-in-tree (every-pred map? #(some-> % :tag name (#{"tblGrid"}))) loc))
+  (let [find-grid-loc (fn [loc] (find-first-in-tree (partial tag-matches? "tblGrid") loc))
         total-width (fn [table-loc]
                       (assert (zipper? table-loc))
                       (some->> table-loc
@@ -266,9 +269,7 @@
 (defn get-borders
   "Returns a lazy sequence of the border elements for a table."
   [direction original-start-loc]
-  (letfn [(tag-matches? [tag elem]
-            (and (map? elem) (some-> elem :tag name #{tag})))
-          (first-of-tag [tag xs]
+  (letfn [(first-of-tag [tag xs]
             (find-first (partial tag-matches? tag) (:content xs)))
           (last-of-tag [tag xs]
             (find-last (partial tag-matches? tag) (:content xs)))]
@@ -283,7 +284,6 @@
             :when (tag-matches? "tc" cell)]
         (some->> cell (last-of-tag "tcPr") (last-of-tag "tcBorders") (last-of-tag direction))))))
 
-;; TODO: implement algo for top borders too
 ;; TODO: handle case where grid withs should be handled too.
 (defn- table-set-borders
   "Ha egy tablazat utolso oszlopat tavolitottuk el, akkor az utolso elotti oszlop cellaibol a border-right ertekeket
@@ -295,22 +295,29 @@
     (map-each-rows
      (fn [row border]
        (if border
-         (if-let [last-col (find-last-child #(and (map? %) (some-> % :tag name #{"tc"})) row)]
-           (-> (ensure-child-path last-col "tcPr" "tcBorders" direction)
+         (if-let [col (({"right" find-last-child
+                         "left" find-first-child} direction)
+                       (partial tag-matches? "tc")
+                       row)]
+           (-> (ensure-child-path col "tcPr" "tcBorders" direction)
                (zip/replace border)
                (find-enclosing-row))
            row)
          row))
      (find-enclosing-table table-loc) borders)
-    ("bottom")
-    (let [row-loc (find-last-child (comp #{"tr"} name :tag) (find-enclosing-table table-loc))]
-      (map-each-cells
-       (fn [cell-loc border]
-         (-> (ensure-child-path cell-loc "tcPr" "tcBorders" "bottom")
+    ("bottom" "top")
+    (map-each-cells
+     (fn [cell-loc border]
+       (if border
+         (-> (ensure-child-path cell-loc "tcPr" "tcBorders" direction)
              (zip/replace border)
-             (find-enclosing-cell)))
-       row-loc
-       borders))))
+             (find-enclosing-cell))
+         cell-loc))
+     (({"bottom" find-last-child
+        "top"    find-first-child} direction)
+      (partial tag-matches? "tr")
+      (find-enclosing-table table-loc))
+     borders)))
 
 (defn- remove-current-column
   "A jelenlegi csomoponthoz tartozo oszlopot eltavolitja a tablazatbol.
@@ -332,10 +339,13 @@
 ;; TODO: handle rowspan property!
 (defn- remove-current-row [start]
   (assert (zipper? start))
-  (let [last-row? (nil? (find-closest-row-right (zip/right (find-enclosing-row start))))
-        bottom-borders (get-borders "bottom" (find-enclosing-table start))]
+  (let [last-row?  (nil? (find-closest-row-right (zip/right (find-enclosing-row start))))
+        first-row? (nil? (find-closest-row-left (zip/left (find-enclosing-row start))))
+        bottom-borders (get-borders "bottom" (find-enclosing-table start))
+        top-borders    (get-borders "top" (find-enclosing-table start))]
     (-> start (find-enclosing-row) (zip/remove)
-        (cond-> last-row? (table-set-borders "bottom" bottom-borders))
+        (cond-> last-row?  (table-set-borders "bottom" bottom-borders)
+                first-row? (table-set-borders "top" top-borders))
         (zip/root))))
 
 (defn remove-columns-by-markers-1
@@ -359,8 +369,7 @@
   "Ha a tablazatban van olyan oszlop, amely szelessege nagyon kicsi, az egesz oszlopot eltavolitja."
   [xml-tree]
   ;; Ha talalunk olyan gridCol oszlopot, ami nagyon kicsi
-  (if-let [loc (find-first-in-tree #(and (map? %)
-                                         (some-> % :tag name (#{"gridCol"}))
+  (if-let [loc (find-first-in-tree #(and (tag-matches? "gridCol" %)
                                          (some-> % :attrs ooxml/w ->int (< min-col-width))) (xml-zip xml-tree))]
     (let [col-idx (count (filter #(some-> % zip/node :tag) (next (iterations zip/left loc))))
           table-loc (find-enclosing-table (zip/remove loc))]

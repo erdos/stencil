@@ -4,33 +4,31 @@
             [stencil.util :refer [xml-zip]]))
 
 
+
 (deftest get-borders-test
+  ;; we set up a 2X2 table and query the borders for each side.
   (let [b (fn [dir val] {:tag dir :content [val]})
-        borders [(b "left" ::left-border)
-                 (b "right" ::right-border)
-                 (b "top" ::top-border)
-                 (b "bottom" ::bottom-border)]
-        borders2 [(b "left" ::left-border-2)
-                 (b "right" ::right-border-2)
-                 (b "top" ::top-border-2)
-                 (b "bottom" ::bottom-border-2)]
+        tl [(b "left" 1) (b "right" 2) (b "top" 3) (b "bottom" 4)]
+        tr [(b "left" 5) (b "right" 6) (b "top" 7) (b "bottom" 8)]
+        bl [(b "left" 9) (b "right" 10) (b "top" 11) (b "bottom" 12)]
+        br [(b "left" 13) (b "right" 14) (b "top" 15) (b "bottom" 16)]
+        ->tc (fn [borders]
+               {:tag "tc" :content [{:tag "tcPr" :content [{:tag "tcBorders" :content borders}]}]})
         bordered
         {:tag "tbl"
-         :content [{:tag "tr" :content [{:tag "tc" :content [{:tag "tcPr" :content [{:tag "tcBorders" :content borders}]}]}]}
-                   {:tag "tr" :content [{:tag "tc" :content [{:tag "tcPr" :content [{:tag "tcBorders" :content borders2}]}]}]}]}
+         :content [{:tag "tr" :content [(->tc tl) (->tc tr)]}
+                   {:tag "tr" :content [(->tc bl) (->tc br)]}]}
         table-zip (xml-zip bordered)]
 
     (testing "Left borders"
-      (is (= [{:tag "left" :content [::left-border]}
-              {:tag "left" :content [::left-border-2]}]
+      (is (= [{:tag "left" :content [5]} {:tag "left" :content [13]}]
              (get-borders "left" table-zip))))
     (testing "Right borders"
-      (is (= [{:tag "right" :content [::right-border]}
-              {:tag "right" :content [::right-border-2]}]
+      (is (= [{:tag "right" :content [6]} {:tag "right" :content [14]}]
              (get-borders "right" table-zip))))
     (testing "Top borders"
-      (is (= [{:tag "top" :content [::top-border]}]
+      (is (= [{:tag "top" :content [3]} {:tag "top" :content [7]}]
              (get-borders "top" table-zip))))
     (testing "Bottom borders"
-      (is (= [{:tag "bottom" :content [::bottom-border-2]}]
+      (is (= [{:tag "bottom" :content [12]} {:tag "bottom" :content [16]}]
              (get-borders "bottom" table-zip))))))
