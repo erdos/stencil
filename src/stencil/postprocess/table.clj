@@ -283,6 +283,8 @@
             :when (tag-matches? "tc" cell)]
         (some->> cell (last-of-tag "tcPr") (last-of-tag "tcBorders") (last-of-tag direction))))))
 
+;; TODO: implement algo for top borders too
+;; TODO: handle case where grid withs should be handled too.
 (defn- table-set-borders
   "Ha egy tablazat utolso oszlopat tavolitottuk el, akkor az utolso elotti oszlop cellaibol a border-right ertekeket
    at kell masolni az utolso oszlop cellaiba"
