@@ -329,6 +329,10 @@
                 column-first? (table-set-borders "left" left-borders))
         (zip/root))))
 
+;; TODO: handle rowspan property!
+(defn- remove-current-row [start]
+  (-> start (find-enclosing-row) (zip/remove) (zip/root)))
+
 (defn remove-columns-by-markers-1
   "Megkeresi az elso HideTableColumnMarkert es a tablazatbol a hozza tartozo
    oszlopot kitorli. Visszaadja az XML fat."
@@ -343,8 +347,7 @@
    sort kitorli. Visszaadja az XML fat."
   [xml-tree]
   (if-let [marker (find-first-in-tree hide-table-row-marker? (xml-zip xml-tree))]
-    ;; TODO: handle rowspan proerty!
-    (-> marker (find-enclosing-row) (zip/remove) (zip/root))
+    (remove-current-row marker)
     xml-tree))
 
 (defn remove-table-thin-columns-1
