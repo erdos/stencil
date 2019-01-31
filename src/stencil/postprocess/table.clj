@@ -247,38 +247,44 @@
           result-table))
       table-loc)))
 
-(defn get-borders [direction original-start-loc]
-  (letfn [(first-of-tag [tag xs] (first (filter  #(and (map? %) (some-> % :tag name #{tag})) (:content xs))))
-          (last-of-tag [tag xs] (last (filter  #(and (map? %) (some-> % :tag name #{tag})) (:content xs))))]
+(defn get-borders
+  "Returns a lazy sequence of the border elements for a table."
+  [direction original-start-loc]
+  (letfn [(tag-matches? [tag elem]
+            (and (map? elem) (some-> elem :tag name #{tag})))
+          (first-of-tag [tag xs]
+            (find-first (partial tag-matches? tag) (:content xs)))
+          (last-of-tag [tag xs]
+            (find-last (partial tag-matches? tag) (:content xs)))]
     (case direction
       ("left" "right")
       (for [row   (zip/children (find-enclosing-table original-start-loc))
-            :when (and (map? row) (#{"tr"} (name (:tag row))))]
+            :when (tag-matches? "tr" row)]
         (some->> row (last-of-tag "tc") (last-of-tag "tcPr") (last-of-tag "tcBorders") (last-of-tag direction)))
       ("top" "bottom")
-      (let [row (({"top" first-of-tag "bottom" last-of-tag} direction)
-                 "tr" (zip/node (find-enclosing-table original-start-loc)))]
-        (for [cell   (:content row)
-              :when (and (map? row) (#{"tc"} (name (:tag cell))))]
-          (some->> cell (last-of-tag "tcPr") (last-of-tag "tcBorders") (last-of-tag direction)))))))
+      (for [cell  (:content (({"top" first-of-tag "bottom" last-of-tag} direction)
+                             "tr" (zip/node (find-enclosing-table original-start-loc))))
+            :when (tag-matches? "tc" cell)]
+        (some->> cell (last-of-tag "tcPr") (last-of-tag "tcBorders") (last-of-tag direction))))))
 
 (defn- table-set-borders
   "Ha egy tablazat utolso oszlopat tavolitottuk el, akkor az utolso elotti oszlop cellaibol a border-right ertekeket
    at kell masolni az utolso oszlop cellaiba"
-  [table-loc direction right-borders]
-  (assert (#{"left" "right"} direction))
-  (assert (sequential? right-borders))
-  (map-each-rows
-   (fn [row border]
-     (if border
-       (if-let [last-col (find-last-child #(and (map? %) (some-> % :tag name #{"tc"})) row)]
-         (-> last-col
-             (->> (ensure-child "tcPr") (ensure-child "tcBorders") (ensure-child direction))
-             (zip/replace border)
-             (find-enclosing-row))
-         row)
-       row))
-   (find-enclosing-table table-loc) right-borders))
+  [table-loc direction borders]
+  (assert (sequential? borders))
+  (case direction
+    ("left" "right")
+    (map-each-rows
+     (fn [row border]
+       (if border
+         (if-let [last-col (find-last-child #(and (map? %) (some-> % :tag name #{"tc"})) row)]
+           (-> last-col
+               (->> (ensure-child "tcPr") (ensure-child "tcBorders") (ensure-child direction))
+               (zip/replace border)
+               (find-enclosing-row))
+           row)
+         row))
+     (find-enclosing-table table-loc) borders)))
 
 (defn- remove-current-column
   "A jelenlegi csomoponthoz tartozo oszlopot eltavolitja a tablazatbol.
