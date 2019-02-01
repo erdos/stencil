@@ -25,7 +25,7 @@
 ;; ez a marker jeloli, hogy egy oszlopot el kell rejteni.
 (defrecord HideTableColumnMarker [columns-resize])
 
-(def column-resize-modes #{:resize-last :rational :cut})
+(def column-resize-modes #{:resize-first :resize-last :rational :cut})
 
 (defn ->HideTableColumnMarker
   ([] (HideTableColumnMarker. :cut))

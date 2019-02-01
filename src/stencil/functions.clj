@@ -25,6 +25,7 @@
   (case (first args)
     ("cut") (->HideTableColumnMarker :cut)
     ("resize-last" "resizeLast" "resize_last") (->HideTableColumnMarker :resize-last)
+    ("resize-first" "resizeFirst resize_first") (->HideTableColumnMarker :resize-first)
     ("rational")                 (->HideTableColumnMarker :rational)
     ;; default
     (->HideTableColumnMarker)))
