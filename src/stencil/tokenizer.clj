@@ -36,9 +36,15 @@
       {:cmd        :echo
        :expression (infix/parse (.substring text 1))}
 
+      ;; fragment definition
       (.startsWith text "fragment ")
       {:cmd :cmd/fragment
        :name (infix/parse (.substring text 9))}
+
+      ;; fragment inclusion
+      (.startsWith text "include ")
+      {:cmd :cmd/include
+       :name (infix/parse (.substring text 8))}
 
       ;; `else if` expression
       (seq (re-seq pattern-elseif text))
