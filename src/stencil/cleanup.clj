@@ -99,11 +99,12 @@
   ;; TODO: recursively call further here!
   (assert (= 1 (count (:blocks fragment-command))))
   (let [fragment-name (-> fragment-command :name first)
-        block (get-in fragment-command [:blocks 0])]
+        block (get-in fragment-command [:blocks 0])
+        children (control-ast-normalize (:children block))]
     (assert (string? fragment-name))
     (assert *normalize-state* "norm-state hianyzik!")
     (swap! *normalize-state* assoc-in [:fragments fragment-name]
-           (->Fragment (:before block) (:after block) (:children block)))
+           (->Fragment (:before block) (:after block) children))
     ;; TODO amugy itt sanszos h ez nem eleg
     ;; hanem ki kell talalni egy virtualis elemet mi mindig beszurodik!!!
     ;; TODO: rekurzivan tovabb kell menni
