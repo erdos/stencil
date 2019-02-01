@@ -33,7 +33,8 @@
   (let [m (->executable stream)]
     {:variables  (:variables m)
      :type       :xml
-     :executable (:executable m)}))
+     :executable (:executable m)
+     :fragments  (:fragments m)}))
 
 (defn- prepare-zipped-xml-files [suffix ^InputStream stream]
   (assert (some? suffix))
@@ -51,6 +52,7 @@
       {:zip-dir    zip-dir
        :type       :docx
        :variables  (set (mapcat :variables (vals execs)))
+       :fragments  (into {} (keep :fragments (vals execs)))
        :exec-files (into {} (for [[k v] execs
                                   :when (:dynamic? v)]
                               [k (:executable v)]))})))

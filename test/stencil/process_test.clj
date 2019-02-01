@@ -24,7 +24,9 @@
 (deftest simple-substitution
   (test-equals "<a>3</a>" "<a>{%=x%}</a>" {"x" 3}))
 
-(deftest test-preparing-template
-  (is (= {:executable [{:open :a} {:open :b} (->close :b) {:open :c} {:close :c} {:close :a}]
-          :type :xml, :variables ()}
-         (test-prepare "<a><b>{%fragment \"elefant\"%}</b>Elem<c>{%end%}</c></a>"))))
+(deftest test-preparing-template-fragment
+  (testing "The location of the fragment is hidden."
+    (is (= {:executable [{:open :a} {:open :b} (->close :b) {:open :c} {:close :c} {:close :a}]
+            :type :xml, :variables ()}
+           (-> (test-prepare "<a><b>{%fragment \"elefant\"%}</b>Elem<c>{%end%}</c></a>")
+               (dissoc :fragments))))))

@@ -102,7 +102,8 @@
         block (get-in fragment-command [:blocks 0])]
     (assert (string? fragment-name))
     (assert *normalize-state* "norm-state hianyzik!")
-    (swap! *normalize-state* assoc-in [:fragments fragment-name] block)
+    (swap! *normalize-state* assoc-in [:fragments fragment-name]
+           (->Fragment (:before block) (:after block) (:children block)))
     ;; TODO amugy itt sanszos h ez nem eleg
     ;; hanem ki kell talalni egy virtualis elemet mi mindig beszurodik!!!
     ;; TODO: rekurzivan tovabb kell menni
@@ -202,6 +203,6 @@
       {:variables  (find-variables ast)
        :dynamic?   (boolean (some :cmd executable))
        :executable executable
-       :state @*normalize-state*})))
+       :fragments (:fragments @*normalize-state*)})))
 
 :OK
