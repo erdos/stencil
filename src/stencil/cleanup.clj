@@ -13,6 +13,8 @@
 
 (declare control-ast-normalize)
 
+(def ^:private ^:dynamic *normalize-state* nil)
+
 (defn- tokens->ast-step [[queue & ss0 :as stack] token]
   (case (:cmd token)
     (:if :for :cmd/fragment) (conj (mod-stack-top-conj stack token) [])
@@ -93,9 +95,18 @@
 #_ (defmethod control-ast-normalize-step :cmd/include [include-command] TODO)
 
 (defmethod control-ast-normalize-step :cmd/fragment [fragment-command]
-  (println (pr-str fragment-command))
   ;; itt van egy :blocks kulcs amiben benne van a korulolelt resz!
-  nil)
+  ;; TODO: recursively call further here!
+  (assert (= 1 (count (:blocks fragment-command))))
+  (let [fragment-name (-> fragment-command :name first)
+        block (get-in fragment-command [:blocks 0])]
+    (assert (string? fragment-name))
+    (assert *normalize-state* "norm-state hianyzik!")
+    (swap! *normalize-state* assoc-in [:fragments fragment-name] block)
+    ;; TODO amugy itt sanszos h ez nem eleg
+    ;; hanem ki kell talalni egy virtualis elemet mi mindig beszurodik!!!
+    ;; TODO: rekurzivan tovabb kell menni
+    (concat (stack-revert-close (:before block)) (:after block))))
 
 ;; A feltételes elágazásoknál mindig generálunk egy javított THEN ágat
 (defmethod control-ast-normalize-step :if [control-ast]
@@ -108,7 +119,7 @@
                           (:after then)
                           (keepv control-ast-normalize (:children else)))]
         (-> (dissoc control-ast :blocks)
-            (assoc :then then2, :else else2)))
+            (assoc :then (vec then2) :else (vec else2))))
 
     1 (let [[then] (:blocks control-ast)
             else   (:after then)]
@@ -135,7 +146,7 @@
   "Mélységi bejárással rekurzívan normalizálja az XML fát."
   [control-ast]
   (cond
-    (vector? control-ast) (keepv control-ast-normalize control-ast)
+    (vector? control-ast) (vec (flatten (keepv control-ast-normalize control-ast)))
     (:text control-ast)   control-ast
     (:open control-ast)   control-ast
     (:close control-ast)  control-ast
@@ -185,10 +196,12 @@
 ; (find-variables [])
 
 (defn process [raw-token-seq]
-  (let [ast (tokens->ast raw-token-seq)
-        executable (control-ast-normalize (annotate-environments ast))]
-    {:variables  (find-variables ast)
-     :dynamic?   (boolean (some :cmd executable))
-     :executable executable}))
+  (binding [*normalize-state* (atom {})]
+    (let [ast (tokens->ast raw-token-seq)
+          executable (control-ast-normalize (annotate-environments ast))]
+      {:variables  (find-variables ast)
+       :dynamic?   (boolean (some :cmd executable))
+       :executable executable
+       :state @*normalize-state*})))
 
 :OK

@@ -45,6 +45,7 @@
 (defn find-last [pred xs] (last (filter pred xs)))
 
 (defn keepv [f xs] (vec (keep f xs)))
+(defn concatv [& xs] (vec (apply concat xs))) ;; TODO: optimize here!
 
 (def xml-zip
   "Like clojure.zip/xml-zip but more flexible."

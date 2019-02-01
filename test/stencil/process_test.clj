@@ -25,5 +25,6 @@
   (test-equals "<a>3</a>" "<a>{%=x%}</a>" {"x" 3}))
 
 (deftest test-preparing-template
-  (is (= {:executable [{:open :a} {:close :a}], :type :xml, :variables ()}
-         (test-prepare "<a>{%fragment \"elefant\"%}Elem{%end%}</a>"))))
+  (is (= {:executable [{:open :a} {:open :b} (->close :b) {:open :c} {:close :c} {:close :a}]
+          :type :xml, :variables ()}
+         (test-prepare "<a><b>{%fragment \"elefant\"%}</b>Elem<c>{%end%}</c></a>"))))
