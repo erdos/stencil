@@ -12,7 +12,8 @@
 
 (defn text->cmd [^String text]
   (assert (string? text))
-  (let [text (.trim text)]
+  (let [text (.trim text)
+        pattern-elseif #"^(else\s*if|elif|elsif)(\(|\s+)"]
     (cond
       (#{"end" "endfor" "endif"} text) {:cmd :end}
       (= text "else") {:cmd :else}
@@ -26,7 +27,7 @@
        :condition (conj (vec (infix/parse (.substring text 7))) :not)}
 
       (.startsWith text "for ")
-      (let [[v expr] (vec (.split (.substring text 4) " in "))]
+      (let [[v expr] (vec (.split (.substring text 4) " in " 2))]
         {:cmd        :for
          :variable   (symbol (.trim ^String v))
          :expression (infix/parse expr)})
@@ -36,8 +37,8 @@
        :expression (infix/parse (.substring text 1))}
 
       ;; `else if` expression
-      (seq (re-seq #"^else\s+if\s+" text))
-      (let [prefix-len (count (first (re-seq #"^else\s+if\s+" text)))]
+      (seq (re-seq pattern-elseif text))
+      (let [prefix-len (count (ffirst (re-seq pattern-elseif text)))]
         {:cmd :else-if
          :expression (infix/parse (.substring text prefix-len))})
 
