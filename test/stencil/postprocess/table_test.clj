@@ -21,7 +21,7 @@
         table-zip (xml-zip bordered)]
 
     (testing "Left borders"
-      (is (= [{:tag "left" :content [5]} {:tag "left" :content [13]}]
+      (is (= [{:tag "left" :content [1]} {:tag "left" :content [9]}]
              (get-borders "left" table-zip))))
     (testing "Right borders"
       (is (= [{:tag "right" :content [6]} {:tag "right" :content [14]}]

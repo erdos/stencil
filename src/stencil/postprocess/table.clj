@@ -276,10 +276,11 @@
     (case direction
       ("left" "right")
       (for [row   (zip/children (find-enclosing-table original-start-loc))
-            :when (tag-matches? "tr" row)]
-        (some->> row (last-of-tag "tc") (last-of-tag "tcPr") (last-of-tag "tcBorders") (last-of-tag direction)))
+            :when (tag-matches? "tr" row)
+            :let [cell (({"right" last-of-tag, "left" first-of-tag} direction) "tc" row)]]
+        (some->> cell (last-of-tag "tcPr") (last-of-tag "tcBorders") (last-of-tag direction)))
       ("top" "bottom")
-      (for [cell  (:content (({"top" first-of-tag "bottom" last-of-tag} direction)
+      (for [cell  (:content (({"top" first-of-tag, "bottom" last-of-tag} direction)
                              "tr" (zip/node (find-enclosing-table original-start-loc))))
             :when (tag-matches? "tc" cell)]
         (some->> cell (last-of-tag "tcPr") (last-of-tag "tcBorders") (last-of-tag direction))))))
