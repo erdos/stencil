@@ -106,8 +106,8 @@
            (->Fragment (:before block) (:after block) children))
     (concat (stack-revert-close (:before block)) (:after block))))
 
-(defmethod control-ast-normalize-step :cmd/include [fragment-command]
-  (let [fragment-name (-> fragment-command :name first)]
+(defmethod control-ast-normalize-step :cmd/include [include-command]
+  (let [fragment-name (-> include-command :name first)]
     (assert (string? fragment-name))
     ;; todo: maybe store before/after stack snapshot
     ;; so the embedding can be seamless.
