@@ -36,6 +36,10 @@
       {:cmd        :echo
        :expression (infix/parse (.substring text 1))}
 
+      (.startsWith text "fragment ")
+      {:cmd :cmd/fragment
+       :name (infix/parse (.substring text 9))}
+
       ;; `else if` expression
       (seq (re-seq pattern-elseif text))
       (let [prefix-len (count (ffirst (re-seq pattern-elseif text)))]

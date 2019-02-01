@@ -44,6 +44,8 @@
 (defn find-first [pred xs] (first (filter pred xs)))
 (defn find-last [pred xs] (last (filter pred xs)))
 
+(defn keepv [f xs] (vec (keep f xs)))
+
 (def xml-zip
   "Like clojure.zip/xml-zip but more flexible."
   ;; TODO: milyen modon jobb???

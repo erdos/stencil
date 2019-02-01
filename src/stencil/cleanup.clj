@@ -15,7 +15,7 @@
 
 (defn- tokens->ast-step [[queue & ss0 :as stack] token]
   (case (:cmd token)
-    (:if :for) (conj (mod-stack-top-conj stack token) [])
+    (:if :for :cmd/fragment) (conj (mod-stack-top-conj stack token) [])
 
     :else      (conj (mod-stack-top-last ss0 update :blocks (fnil conj []) {:children queue}) [])
 
@@ -89,25 +89,31 @@
 
 ;; Itt nincsen blokk, amit normalizálni kellene
 (defmethod control-ast-normalize-step :echo [echo-command] echo-command)
-(defmethod control-ast-normalize-step :include [echo-command] echo-command)
+
+#_ (defmethod control-ast-normalize-step :cmd/include [include-command] TODO)
+
+(defmethod control-ast-normalize-step :cmd/fragment [fragment-command]
+  (println (pr-str fragment-command))
+  ;; itt van egy :blocks kulcs amiben benne van a korulolelt resz!
+  nil)
 
 ;; A feltételes elágazásoknál mindig generálunk egy javított THEN ágat
 (defmethod control-ast-normalize-step :if [control-ast]
   (case (count (:blocks control-ast))
     2 (let [[then else] (:blocks control-ast)
-            then2 (concat (map control-ast-normalize (:children then))
+            then2 (concat (keepv control-ast-normalize (:children then))
                           (stack-revert-close (:before else))
                           (:after else))
             else2 (concat (stack-revert-close (:before then))
                           (:after then)
-                          (map control-ast-normalize (:children else)))]
+                          (keepv control-ast-normalize (:children else)))]
         (-> (dissoc control-ast :blocks)
             (assoc :then then2, :else else2)))
 
     1 (let [[then] (:blocks control-ast)
             else   (:after then)]
         (-> (dissoc control-ast :blocks)
-            (assoc :then (map control-ast-normalize (:children then)), :else else)))))
+            (assoc :then (keepv control-ast-normalize (:children then)), :else else)))))
 
 ;; Egy ciklusnal kulon kell valasztani a kovetkezo eseteket:
 ;; - body-run-none: a body resz egyszer sem fut le, mert a lista nulla elemu.
@@ -118,7 +124,7 @@
   (assert (= 1 (count (:blocks control-ast)))
           "Egy ciklusnak csak egy body resze lehet!")
   (let [[{:keys [children before after]}] (:blocks control-ast)
-        children (mapv control-ast-normalize children)]
+        children (keepv control-ast-normalize children)]
     (-> control-ast
         (dissoc :blocks)
         (assoc :body-run-none (vec (concat (stack-revert-close before) after))
@@ -129,7 +135,7 @@
   "Mélységi bejárással rekurzívan normalizálja az XML fát."
   [control-ast]
   (cond
-    (vector? control-ast) (mapv control-ast-normalize control-ast)
+    (vector? control-ast) (keepv control-ast-normalize control-ast)
     (:text control-ast)   control-ast
     (:open control-ast)   control-ast
     (:close control-ast)  control-ast
