@@ -25,6 +25,9 @@
 ;; and meta information needed to be seamlessly merged into a document.
 (defrecord Fragment [before after content])
 
+;; Invocation of a fragment by name
+(defrecord FragmentInvoke [name])
+
 ;; egyedi parancs objektumok
 
 ;; ez a marker jeloli, hogy egy oszlopot el kell rejteni.

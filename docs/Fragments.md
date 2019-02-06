@@ -16,3 +16,13 @@ Then you can include a fragment by writing `{<i>% include "Fragment Name" %</i>}
 The fragment name must be a string literal meaning it can not come from a variable.
 
 
+## Specification
+
+<a><b>{%fragment "Elephant"%}fe</b><c>frag{%end%}</c></a>
+
+<a>{%elephant%}</a>
+-->
+<a><b>fe</b><c>frag</c></a>
+
+Otlet: az eredeti helyen menjunk fel es keressuk meg a paragraph elemet.
+Ezutan 

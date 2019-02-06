@@ -6,7 +6,9 @@
 
 (set! *warn-on-reflection* true)
 
-(defmulti ^:private eval-step (fn [function data item] (or (:cmd item) [:tag (:tag item)])))
+(defmulti ^:private eval-step (fn [function data item] (or (:cmd item)
+                                                          (when (map? item) [:tag (:tag item)])
+                                                          (type item))))
 
 (defmethod eval-step :default [_ _ item] [item])
 

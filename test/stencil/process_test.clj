@@ -25,8 +25,13 @@
   (test-equals "<a>3</a>" "<a>{%=x%}</a>" {"x" 3}))
 
 (deftest test-preparing-template-fragment
-  (testing "The location of the fragment is hidden."
+  (testing "Snippet contains a fragment"
     (is (= {:executable [{:open :a} {:open :b} (->close :b) {:open :c} {:close :c} {:close :a}]
             :type :xml, :variables ()}
            (-> (test-prepare "<a><b>{%fragment \"elefant\"%}</b>Elem<c>{%end%}</c></a>")
                (dissoc :fragments))))))
+
+(deftest test-preparing-template-fragment-invocation
+  (testing "Snippet contains a fragment invocation"
+    (is (= nil
+           (test-prepare "<a><b>{%include \"elefant\"%}</b></a>")))))

@@ -23,7 +23,7 @@
 
     :end       (mod-stack-top-last ss0 update :blocks conj {:children queue})
 
-    (:echo nil)        (mod-stack-top-conj stack token)))
+    (:echo nil :cmd/include) (mod-stack-top-conj stack token)))
 
 (defn tokens->ast
   "Flat token listabol nested AST-t csinal (listak listai)"
@@ -109,9 +109,8 @@
 (defmethod control-ast-normalize-step :cmd/include [include-command]
   (let [fragment-name (-> include-command :name first)]
     (assert (string? fragment-name))
-    ;; todo: maybe store before/after stack snapshot
-    ;; so the embedding can be seamless.
-    include-command))
+    (println "!!!>" (pr-str include-command))
+    (->FragmentInvoke fragment-name)))
 
 ;; A feltételes elágazásoknál mindig generálunk egy javított THEN ágat
 (defmethod control-ast-normalize-step :if [control-ast]
