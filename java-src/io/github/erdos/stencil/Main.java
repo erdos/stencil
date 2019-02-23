@@ -45,7 +45,7 @@ public class Main {
 
                 final Object data = format.get().parse(dataFile);
                 if (!(data instanceof Map)) {
-                    throw new IllegalArgumentException("Template data is not a map in file: " + dataFile);
+                    throw new IllegalArgumentException("Template data is not a map in file: " + dataFile + " of " + data.getClass());
                 } else {
                     final TemplateData templateData = TemplateData.fromMap((Map) data);
                     final EvaluatedDocument document = render(template, templateData);

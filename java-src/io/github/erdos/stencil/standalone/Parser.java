@@ -34,13 +34,13 @@ public class Parser {
         JSON {
             @Override
             public Object parse(File input) throws IOException {
-                return JsonParser.parse(fileContents(input));
+                return JsonParser.parse(fileContents(input)).get();
             }
         },
         EDN {
             @Override
             public Object parse(File input) throws IOException {
-                return EdnParser.parse(fileContents(input));
+                return EdnParser.parse(fileContents(input)).get();
             }
         };
 
