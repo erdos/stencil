@@ -7,6 +7,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.unmodifiableList;
 import static java.util.Collections.unmodifiableMap;
 
+@SuppressWarnings("WeakerAccess")
 public class ArgsParser {
 
     private final Set<ParamMarker> markers = new HashSet<>();

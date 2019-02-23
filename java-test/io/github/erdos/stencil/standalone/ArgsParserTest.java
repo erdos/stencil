@@ -85,6 +85,14 @@ public class ArgsParserTest {
 
         // WHEN-THEN
         try {
+            parser.parse("--no-number");
+            fail("expected exception!");
+        } catch (NoSuchElementException ignore) {
+            // intentional
+        }
+
+        // WHEN-THEN
+        try {
             parser.parse("--number", "100");
             fail("expected exception!");
         } catch (NoSuchElementException ignore) {
@@ -98,7 +106,7 @@ public class ArgsParserTest {
         } catch (NoSuchElementException ignore) {
             // intentional
         }
-        
+
         // WHEN-THEN
         try {
             parser.parse("-n", "100");
