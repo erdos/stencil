@@ -59,6 +59,6 @@ public class Main {
     }
 
     private static File targetFile(File targetDirectory, File template, File data) {
-        return new File(targetDirectory, (template) + "-" + removeExtension(data));
+        return new File(targetDirectory, template.getName() + "-" + removeExtension(data) + ".docx");
     }
 }
