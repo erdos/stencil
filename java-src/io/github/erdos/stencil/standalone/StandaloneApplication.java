@@ -72,7 +72,7 @@ public class StandaloneApplication {
             }
         }
     }
-    
+
     private Iterator<String> jobsIterator() {
         return parsed.getParamValue(JOBS_FILE).map(jobsFile -> {
             try {
@@ -84,7 +84,7 @@ public class StandaloneApplication {
     }
 
     private static File targetFile(File targetDirectory, File template, File data) {
-        final String part1 = template.getName();
+        final String part1 = removeExtension(data);
         final String part2 = removeExtension(data);
         final String ext = extension(template);
         return new File(targetDirectory, part1 + "-" + part2 + "." + ext);
