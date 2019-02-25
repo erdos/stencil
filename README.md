@@ -16,6 +16,16 @@ them to make the template more readable.
 [![EPL 2.0](https://img.shields.io/badge/License-EPL%202.0-red.svg)](https://www.eclipse.org/legal/epl-2.0/)
 
 
+## Features
+
+- Works with `docx` and `pptx` files
+- Simple value substitution
+- Substituting HTML text for dynamic text formatting
+- Conditional blocks in the template
+- Repeating blocks in the template
+- Dynamically show/hide rows and columns in tables
+
+
 ## Getting Started
 
 - Read the [Documentation](docs/index.md)
@@ -55,6 +65,7 @@ the `:dependencies` section of your `project.clj`
 file: `[io.github.erdos/stencil-core "0.2.8"]`
 
 Previous versions are available on the [Stencil Clojars](https://clojars.org/io.github.erdos/stencil-core) page.
+
 
 ## License
 

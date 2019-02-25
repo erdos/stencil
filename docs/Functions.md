@@ -91,7 +91,7 @@ It is possible to embed text with basic dynamic formatting using HTML notation. 
 
 Stencil uses a simple parsing algorithm to convert between the formats. At the moment only a limited set of basic formatting is implemented. You can use the following HTML tags:
 
-- `b`, `em` for bold text.
+- `b`, `em`, `strong` for bold text.
 - `i` for italics.
 - `u` for underlined text.
 - `s` for strikethrough text.
