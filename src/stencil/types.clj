@@ -1,4 +1,5 @@
 (ns stencil.types
+  (:import [clojure.lang IDeref])
   (:require [clojure.pprint])
   (:gen-class))
 
@@ -41,7 +42,7 @@
 ;; Function calls might return delayed values that are dereferenced
 ;; only in the postprocess stage.
 (defrecord DelayedValueMarker [delay-object]
-  clojure.lang.IDeref
+  IDeref
   (deref [_] @delay-object))
 
 (defmulti control? type)
