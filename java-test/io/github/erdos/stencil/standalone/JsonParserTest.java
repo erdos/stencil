@@ -8,9 +8,7 @@ import java.io.StringReader;
 import java.math.BigDecimal;
 
 import static java.util.Arrays.asList;
-import static java.util.Collections.emptyList;
-import static java.util.Collections.emptyMap;
-import static java.util.Collections.singletonList;
+import static java.util.Collections.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
@@ -66,11 +64,17 @@ public class JsonParserTest {
     }
 
     @Test
-    public void radMapTestEmpty() throws IOException {
+    public void readMapTestEmpty() throws IOException {
         assertEquals(emptyMap(), JsonParser.readMap(pbr("{}")));
         assertEquals(emptyMap(), JsonParser.readMap(pbr("{     }")));
         assertEquals(emptyMap(), JsonParser.readMap(pbr("{}x")));
         assertEquals(emptyMap(), JsonParser.readMap(pbr("{ }y")));
+    }
+
+    @Test
+    public void readMapTestSimple() throws IOException {
+        assertEquals(singletonMap("a", BigDecimal.ONE), JsonParser.readMap(pbr("{\"a\": 1}")));
+        assertEquals(singletonMap("b", singletonList(BigDecimal.ONE)), JsonParser.readMap(pbr("{\"b\": [1]}")));
     }
 
     @Test
