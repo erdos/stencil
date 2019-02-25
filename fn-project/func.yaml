@@ -1,0 +1,4 @@
+name: stencil-test
+version: 0.1.0
+runtime: Docker
+format: http
