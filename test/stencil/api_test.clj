@@ -1,7 +1,6 @@
 (ns stencil.api-test
   (:require [stencil.api :refer :all]))
 
-
 (comment ;; try to prepare then render a DOCX file
 
   (def template-1 (prepare "/home/erdos/Joy/stencil/test-resources/test-control-conditionals.docx"))
