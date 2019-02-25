@@ -34,7 +34,7 @@ public class Parser {
         JSON {
             @Override
             public Object parse(File input) throws IOException {
-                return JsonParser.parse(fileContents(input)).get();
+                return JsonParser.parse(fileContents(input));
             }
         },
         EDN {

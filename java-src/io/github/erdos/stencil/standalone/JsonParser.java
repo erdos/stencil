@@ -1,71 +1,162 @@
 package io.github.erdos.stencil.standalone;
 
-import jdk.nashorn.api.scripting.ScriptObjectMirror;
-
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-import javax.script.ScriptException;
-import java.io.BufferedReader;
-import java.util.HashMap;
+import java.io.IOException;
+import java.io.PushbackReader;
+import java.io.Reader;
+import java.io.StringReader;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.function.Function;
 
-import static java.util.Collections.unmodifiableList;
-import static java.util.Optional.empty;
-import static java.util.stream.Collectors.toList;
-
+/**
+ * A naive implementation based on recursive descent parsing.
+ */
 final class JsonParser {
-
-    private static final ScriptEngineManager em = new ScriptEngineManager();
-    private static final ScriptEngine engine = em.getEngineByExtension("js");
 
     /**
      * Parses string and returns read object if any.
      */
     @SuppressWarnings({"unchecked", "unused", "WeakerAccess"})
-    public static Optional<Object> parse(String contents) {
-        try {
-            ScriptObjectMirror parser = (ScriptObjectMirror) engine.eval("JSON.parse");
-            Function<String, Object> caller = x -> parser.call("", x);
-            ScriptObjectMirror result = (ScriptObjectMirror) caller.apply(contents);
-            return Optional.of(cleanup(result));
-        } catch (ScriptException e) {
-            return empty();
-        }
+    public static Object parse(String contents) throws IOException {
+        return read(new StringReader(contents));
     }
 
-    /**
-     * Maps Nashorn types to simple java types.
-     * <p>
-     * We need it because javascript arrays are maps too and it makes them more difficult to tell type in Clojure.
-     */
-    @SuppressWarnings("unchecked")
-    private static Object cleanup(Object o) {
-        if (o == null) {
-            return null;
-        } else if (o instanceof ScriptObjectMirror) {
-            final ScriptObjectMirror m = (ScriptObjectMirror) o;
-            if (m.isArray()) {
-                return unmodifiableList(m.values().stream().map(JsonParser::cleanup).collect(toList()));
+    public static Object read(Reader reader) throws IOException {
+        return simpleParse(new PushbackReader(reader));
+    }
+
+    public static char peekNextNonWs(PushbackReader reader) throws IOException {
+        // TODO: can optimize this with larger chunks.
+        final char[] c = new char[1];
+        while (true) {
+            int l = reader.read(c, 0, 1);
+            if (l == -1) {
+                throw new IllegalStateException("Unexpected end of input!");
+            } else if (Character.isWhitespace(c[0])) {
+                //noinspection UnnecessaryContinue
+                continue;
             } else {
-                return cleanMap(m);
+                reader.unread(c[0]);
+                return c[0];
             }
-        } else if (o instanceof List) {
-            return unmodifiableList(((List<Object>) o).stream().map(JsonParser::cleanup).collect(toList()));
-        } else if (o instanceof Map) {
-            return cleanMap((Map) o);
-        } else {
-            return o;
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private static <K, V> Map<K, V> cleanMap(Map<K, V> originalMap) {
-        // beware: Collectors.toMap throws NullPointerException here
-        final Map<K, V> result = new HashMap<>();
-        originalMap.forEach((k, v) -> result.put((K) cleanup(k), (V) cleanup(v)));
-        return result;
+    public static Object simpleParse(PushbackReader pb) throws IOException {
+        char c = peekNextNonWs(pb);
+        if (c == '{') {
+            return readMap(pb);
+        } else if (c == '[') {
+            return readVec(pb);
+        } else if (c == '"') {
+            return readStr(pb);
+        } else if (c == 't') {
+            expectWord("true", pb);
+            return Boolean.TRUE;
+        } else if (c == 'f') {
+            expectWord("false", pb);
+            return Boolean.FALSE;
+        } else if (c == 'n') {
+            expectWord("null", pb);
+            return null;
+        } else if (Character.isDigit(c)) {
+            return readNumber(pb);
+        } else {
+            throw new IllegalStateException("Unexpected character: '" + c + "'");
+        }
+    }
+
+    public static Number readNumber(PushbackReader pb) throws IOException {
+        char[] arr = new char[128];
+        int len = pb.read(arr, 0, arr.length);
+
+        assert Character.isDigit(arr[0]);
+
+        int i = 0;
+        while (i < len && (arr[i] == '.' || arr[i] == '-' || arr[i] == 'e' || Character.isDigit(arr[i]))) {
+            i++;
+        }
+
+        if (i < len) {
+            pb.unread(arr, i, len - i);
+        }
+        try {
+            return new BigDecimal(arr, 0, i);
+        } catch (NumberFormatException e) {
+            throw new IllegalStateException("Could not parse '" + new String(arr, 0, i) + "'", e);
+        }
+    }
+
+    public static String readStr(PushbackReader pb) throws IOException {
+        expectWord("\"", pb);
+
+        final StringBuffer buf = new StringBuffer();
+        while (true) {
+            final int read = pb.read();
+
+            if (read == -1) {
+                throw new IllegalStateException("Unexpected end of file!");
+            } else if (read == '\\') {
+                int c2 = pb.read();
+                if (c2 == '\\' || c2 == '"') {
+                    buf.append((char) c2);
+                } else if (c2 == 'n') {
+                    buf.append('\n');
+                } else if (c2 == 't') {
+                    buf.append('\t');
+                } else if (c2 == 'r') {
+                    buf.append('\r');
+                } else {
+                    throw new IllegalStateException("Unexpected character: \\" + ((char) c2));
+                }
+            } else if (read == '"') {
+                return buf.toString();
+            } else {
+                buf.append((char) read);
+            }
+        }
+    }
+
+    public static void expectWord(String word, PushbackReader pb) throws IOException {
+        final char[] c = new char[word.length()];
+        if (!(pb.read(c, 0, c.length) == c.length && Arrays.equals(c, word.toCharArray()))) {
+            throw new IllegalStateException("Expected: " + word + " but found " + new String(c) + " instead.");
+        }
+    }
+
+    static List<Object> readVec(PushbackReader pb) throws IOException {
+        expectWord("[", pb);
+        final List<Object> buf = new ArrayList<>();
+        while (true) {
+            char c = peekNextNonWs(pb);
+            if (c == ']') {
+                pb.read();
+                return Collections.unmodifiableList(buf);
+            } else if (c == ',') {
+                pb.read();
+                continue;
+            } else {
+                final Object obj = simpleParse(pb);
+                buf.add(obj);
+                continue;
+            }
+        }
+    }
+
+    private static Object readMap(PushbackReader pb) throws IOException {
+        expectWord("{", pb);
+
+        /*while (true) {
+            char c = peekNextNonWs(pb);
+            if (c == '"') {
+                String k = readStr(pb);
+                expectWord(":", pb);
+                Object v = read(pb);
+            }
+        }
+        return null;*/
+        return null;
     }
 }
