@@ -44,8 +44,7 @@ public class StandaloneApplication {
     public void run() throws IOException {
         checkRestFilesExist();
 
-
-        Iterator<String> rest = jobsIterator();
+        final Iterator<String> rest = jobsIterator();
         while (rest.hasNext()) {
             final File templateFile = new File(rest.next()).getAbsoluteFile();
             final PreparedTemplate template = prepare(templateFile);
