@@ -3,7 +3,28 @@
 You can call functions from within the template files and embed the call result easily by writing
 <code>{<i>%=functionName(arg1, arg2, arg3, ...)%</i>}</code> expression in the document template.
 
-This is a short description of the functions implemented in Stencil.
+This is a short description of the functions implemented in Stencil:
+
+- [ceil](#ceil)
+- [coalesce](#coalesce)
+- `currency`
+- [date](#date)
+- [empty](#empty)
+- [floor](#floor)
+- [format](#format)
+- `hideColumn`
+- `hideRow`
+- [html](#html)
+- [join](#join)
+- [length](#length)
+- [lowercase](#lowercase)
+- `percent`
+- `range`
+- [round](#round)
+- [str](#str)
+- `switch`
+- `titlecase`
+- `uppercase`
 
 ## Basic Functions
 
@@ -35,17 +56,15 @@ of an array or hide the whole paragraph when the array is empty.
 
 These functions deal with textual data.
 
-## Format
+### Join
 
-Calls [String.format](https://docs.oracle.com/javase/7/docs/api/java/util/Formatter.html) function.
+Joins a list of items with an optional separator.
 
-**Example:**
+**Example:** call join(xs, ",") to join them with a comma.
 
-This example formats the value of `price` as a price string:
-<code>{<i>%=format("$ %(,.2f"", price) %</i>}</code>. It may output `$ (6,217.58)`.
+**Example:** call join(xs) to just concatenate the items.
 
-
-## Date
+### Date
 
 Formats a date value according to a given [format string](https://docs.oracle.com/javase/6/docs/api/java/text/SimpleDateFormat.html).
 
@@ -66,7 +85,7 @@ Also, try these formats strings:
 - `"EEE MMM d HH:mm:ss yyyy"` (ASCTIME)
 - `"yyyy-MM-dd'T'HH:mm:ss.SSSXXX"` (ISO8601)
 
-## HTML
+### HTML
 
 It is possible to embed text with basic dynamic formatting using HTML notation. The HTML code will be converted to OOXML and inserted in the document.
 
@@ -87,6 +106,34 @@ The rendering throws an exception on invalid HTML input or unexpected HTML tags.
 Write the following to embed the content of `x` as HTML in the document:
 - <code>{<i>%=html(x) %</i>}</code>.
 
+### Format
+
+
+Calls [String.format](https://docs.oracle.com/javase/7/docs/api/java/util/Formatter.html) function.
+
+**Example:**
+
+This example formats the value of `price` as a price string:
+<code>{<i>%=format("$ %(,.2f"", price) %</i>}</code>. It may output `$ (6,217.58)`.
+
+
+### Length
+
+The `length(x)` function returns the length of the value in `x`:
+
+- Returns the number of characters when `x` is a string.
+- Returns the number of elements the `x` is a list/array.
+- Returns the number of key/value pairs when `x` is an object/map.
+
+Returns zero when `x` is `null`.
+
+### Lowercase
+
+The `lowercase(x)` function turns its string argument into a lowercase string. For example: `lowercase("HELLO")` returns `"hello"`.
+
+### Str
+
+The `str(x)` functions convers its non-null arguments into a string. Returns an empty string when all arguments are null. 
 
 ## Numeric functions
 

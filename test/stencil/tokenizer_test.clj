@@ -67,10 +67,19 @@
            [{:open :a} {:cmd :if :condition '(x :not)} {:text " akkor "} {:cmd :else} {:text " egyebkent "} {:cmd :end} {:close :a}]))))
 
 (deftest read-tokens-if-elif-then-else
-  (testing "If-elis-then-else branching"
+  (testing "If-else if-then-else branching"
     (is (= '({:open :a} {:text "Hello "} {:cmd :if, :condition [x]} {:text "iksz"}
-                        {:cmd :else-if, :expression [y]} {:text "ipszilon"} {:cmd :else}
-                        {:text "egyebkent"} {:cmd :end} {:text  " Hola"} {:close :a})
-           (run "<a>Hello {%if x%}iksz{%else if y%}ipszilon{%else%}egyebkent{%end%} Hola</a>")))))
+             {:cmd :else-if, :expression [y]} {:text "ipszilon"} {:cmd :else}
+             {:text "egyebkent"} {:cmd :end} {:text  " Hola"} {:close :a})
+           (run "<a>Hello {%if x%}iksz{%else if y%}ipszilon{%else%}egyebkent{%end%} Hola</a>")
+           (run "<a>Hello {%if x%}iksz{%elseif y%}ipszilon{%else%}egyebkent{%end%} Hola</a>")
+           (run "<a>Hello {%if x%}iksz{%elsif y%}ipszilon{%else%}egyebkent{%end%} Hola</a>")
+           (run "<a>Hello {%if x%}iksz{%elif y%}ipszilon{%else%}egyebkent{%end%} Hola</a>")))))
+
+(deftest read-tokens-for
+  (testing "Simple loop"
+    (is (= '[{:open :a} {:cmd :for, :expression [xs], :variable x}
+             {:text "item"} {:cmd :end} {:close :a}]
+           (run "<a>{%for x in xs%}item{% end %}</a>")))))
 
 :OK

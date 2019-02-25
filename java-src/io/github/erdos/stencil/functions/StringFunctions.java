@@ -1,7 +1,9 @@
 package io.github.erdos.stencil.functions;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.IllegalFormatException;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -28,6 +30,42 @@ public enum StringFunctions implements Function {
                 } catch (ClassCastException | IllegalFormatException e) {
                     throw new IllegalArgumentException(e);
                 }
+            }
+        }
+    },
+
+    JOIN {
+        @SuppressWarnings("unchecked")
+        @Override
+        public Object call(Object... arguments) {
+            if (arguments.length == 0) {
+                throw new IllegalArgumentException("At least one arg is expected!");
+            } else if (arguments.length == 1 || (arguments.length == 2 && arguments[1] == null)) {
+                if (arguments[0] == null) {
+                    return "";
+                } else if (arguments[0] instanceof Collection) {
+                    final Collection<Object> items = (Collection<Object>) arguments[0];
+                    return items.stream()
+                            .filter(Objects::nonNull)
+                            .map(Objects::toString)
+                            .collect(Collectors.joining());
+                } else {
+                    throw new IllegalArgumentException("First parameter must be a Collection!");
+                }
+            } else if (arguments.length == 2) {
+                if (!(arguments[0] instanceof Collection)) {
+                    throw new IllegalArgumentException("First parameter must be a Collection!");
+                } else if (!(arguments[1] instanceof String)) {
+                    throw new IllegalArgumentException("Second parameter must be a String!");
+                } else {
+                    final Collection<Object> items = (Collection<Object>) arguments[0];
+                    return items.stream()
+                            .filter(Objects::nonNull)
+                            .map(Objects::toString)
+                            .collect(Collectors.joining((String) (arguments[1])));
+                }
+            } else {
+                throw new IllegalArgumentException("Join function expects 1 or 2 arguments!");
             }
         }
     },

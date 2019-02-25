@@ -42,6 +42,7 @@
 (defn zipper? [loc] (-> loc meta (contains? :zip/branch?)))
 (defn iterations [f xs] (take-while some? (iterate f xs)))
 (defn find-first [pred xs] (first (filter pred xs)))
+(defn find-last [pred xs] (last (filter pred xs)))
 
 (def xml-zip
   "Like clojure.zip/xml-zip but more flexible."

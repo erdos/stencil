@@ -1,10 +1,10 @@
 (ns stencil.api
   "A simple public API for document generation from templates."
-  (:require [clojure.walk :refer [stringify-keys]])
   (:import [io.github.erdos.stencil API PreparedTemplate TemplateData]
            [java.io InputStreamReader]
-           [java.util Map]))
-
+           [java.util Map])
+  (:require [clojure.walk :refer [stringify-keys]]
+            [clojure.java.io :as io]))
 
 (set! *warn-on-reflection* true)
 (set! *unchecked-math* :warn-on-boxed)
@@ -15,7 +15,7 @@
   (cond
     (instance? PreparedTemplate input) input
     (nil? input)  (throw (ex-info "Template is missing!" {}))
-    :otherwise    (API/prepare (clojure.java.io/file input))))
+    :otherwise    (API/prepare (io/file input))))
 
 (defn- make-template-data [x]
   (if (map? x)
@@ -44,7 +44,7 @@
       (new InputStreamReader (.getInputStream result))
 
       (:output opts)
-      (let [f (clojure.java.io/file (:output opts))]
+      (let [f (io/file (:output opts))]
         (when (.exists f)
           (if (:overwrite? opts)
             (.delete f)
@@ -58,5 +58,5 @@
 
 (defn cleanup! [template]
   (assert (instance? PreparedTemplate template))
-  (doto template
+  (doto ^PreparedTemplate template
     (.cleanup)))
