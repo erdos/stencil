@@ -14,10 +14,12 @@ public class Main {
         final ArgsParser.ParseResult parsed = StencilArgsParser.parse(args);
         final StandaloneApplication app = new StandaloneApplication(parsed);
 
-        // run application
-        app.run();
-
-        // stop Clojure thread pools
-        callShutdownAgents();
+        try {
+            // run application
+            app.run();
+        } finally {
+            // stop Clojure thread pools
+            callShutdownAgents();
+        }
     }
 }
