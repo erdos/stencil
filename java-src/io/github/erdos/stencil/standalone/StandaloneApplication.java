@@ -7,15 +7,19 @@ import io.github.erdos.stencil.impl.FileHelper;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Stream;
 
 import static io.github.erdos.stencil.API.prepare;
 import static io.github.erdos.stencil.API.render;
 import static io.github.erdos.stencil.impl.FileHelper.extension;
 import static io.github.erdos.stencil.impl.FileHelper.removeExtension;
 import static io.github.erdos.stencil.standalone.Parser.maybeDataFileFormat;
+import static io.github.erdos.stencil.standalone.StencilArgsParser.JOBS_FILE;
 
 public class StandaloneApplication {
 
@@ -40,15 +44,23 @@ public class StandaloneApplication {
 
     public void run() throws IOException {
         checkRestFilesExist();
+        
+        final AtomicReference<Iterator<String>> rest = new AtomicReference<>(parsed.getRestArgs().iterator());
 
-        final Iterator<String> rest = parsed.getRestArgs().iterator();
+        parsed.getParamValue(JOBS_FILE).map(jobsFile -> {
+            try {
+                return Stream.concat(Files.lines(jobsFile.toPath()), parsed.getRestArgs().stream()).iterator();
+            } catch (IOException e) {
+                throw new RuntimeException("Error reading jobs file: " + e);
+            }
+        }).ifPresent(rest::set);
 
-        while (rest.hasNext()) {
-            final File templateFile = new File(rest.next()).getAbsoluteFile();
+        while (rest.get().hasNext()) {
+            final File templateFile = new File(rest.get().next()).getAbsoluteFile();
             final PreparedTemplate template = prepare(templateFile);
 
-            while (rest.hasNext()) {
-                final File dataFile = new File(rest.next()).getAbsoluteFile();
+            while (rest.get().hasNext()) {
+                final File dataFile = new File(rest.get().next()).getAbsoluteFile();
                 final Optional<Parser.DataFileFormat> format = maybeDataFileFormat(dataFile);
                 if (!format.isPresent()) {
                     throw new IllegalArgumentException("Unknown extension, only JSON and EDN are supported: " + dataFile);

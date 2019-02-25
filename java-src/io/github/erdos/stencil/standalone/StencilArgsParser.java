@@ -1,6 +1,7 @@
 package io.github.erdos.stencil.standalone;
 
 import java.io.File;
+import java.nio.file.Files;
 import java.util.Optional;
 
 @SuppressWarnings("WeakerAccess")
@@ -30,6 +31,22 @@ public final class StencilArgsParser {
     public static ArgsParser.ParseResult parse(String... args) {
         return PARSER.parse(args);
     }
+
+    /**
+     * A file that contains job data.
+     */
+    public static final ArgsParser.ParamMarker<File> JOBS_FILE = PARSER.addParam('j', "jobs", "File containing jobs", x -> {
+        final File jobsFile = new File(x);
+        if (!jobsFile.exists()) {
+            throw new IllegalArgumentException("Job file does not exist: " + jobsFile);
+        } else if (!jobsFile.isFile()) {
+            throw new IllegalArgumentException("Job file is not a file:" + jobsFile);
+        } else if (!Files.isReadable(jobsFile.toPath())) {
+            throw new IllegalArgumentException("Job file is not readable: " + jobsFile);
+        } else {
+            return jobsFile;
+        }
+    });
 
     /**
      * Finds output directory in parsed parameters or returns current working directory.
