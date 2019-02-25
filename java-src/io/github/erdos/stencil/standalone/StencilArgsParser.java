@@ -54,9 +54,8 @@ public final class StencilArgsParser {
     /**
      * Finds output directory in parsed parameters or returns current working directory.
      *
-     * @return output directory where rendered files will be put
-     * @throws NullPointerException     if param is null
-     * @throws IllegalArgumentException if output file path does not exist or is not a directory
+     * @return should resulting files override existing files?
+     * @throws NullPointerException if param is null
      */
     public static Boolean getOutputOverwritten(ArgsParser.ParseResult result) {
         return result.getParamValue(OVERWRITE).orElse(false);
