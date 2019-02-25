@@ -11,6 +11,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 public class JsonParserTest {
 
@@ -78,6 +79,13 @@ public class JsonParserTest {
         final Number result = JsonParser.readNumber(pbr);
         assertEquals(new BigDecimal("123456789.123456789"), result);
         assertEquals((Character) 'x', (Character) (char) pbr.read());
+    }
+
+    @Test
+    public void readScalarsTest() throws IOException {
+        assertEquals(true, JsonParser.read(pbr("true")));
+        assertEquals(false, JsonParser.read(pbr("false")));
+        assertNull(JsonParser.read(pbr("null")));
     }
 
     private static PushbackReader pbr(String s) {
