@@ -44,7 +44,6 @@ public class ClojureHelper {
     /**
      * Clojure :zip-dir keyword
      */
-
     public static final Keyword KV_ZIP_DIR = Keyword.intern("zip-dir");
 
     // requires stencil.process namespace so stencil is loaded.
