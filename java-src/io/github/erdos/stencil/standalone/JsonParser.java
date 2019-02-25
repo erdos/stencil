@@ -133,11 +133,9 @@ final class JsonParser {
                 return Collections.unmodifiableList(buf);
             } else if (c == ',') {
                 pb.read();
-                continue;
             } else {
                 final Object obj = simpleParse(pb);
                 buf.add(obj);
-                continue;
             }
         }
     }

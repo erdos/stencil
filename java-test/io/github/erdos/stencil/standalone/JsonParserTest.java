@@ -6,6 +6,8 @@ import java.io.IOException;
 import java.io.PushbackReader;
 import java.io.StringReader;
 import java.math.BigDecimal;
+import java.util.HashMap;
+import java.util.Map;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.*;
@@ -75,6 +77,17 @@ public class JsonParserTest {
     public void readMapTestSimple() throws IOException {
         assertEquals(singletonMap("a", BigDecimal.ONE), JsonParser.readMap(pbr("{\"a\": 1}")));
         assertEquals(singletonMap("b", singletonList(BigDecimal.ONE)), JsonParser.readMap(pbr("{\"b\": [1]}")));
+    }
+
+    @Test
+    public void readMapTestComplex() throws IOException {
+        final Map<String, Object> expected = new HashMap<>();
+        expected.put("a", BigDecimal.ONE);
+        expected.put("b", singletonList("c"));
+
+        final String input = "{\"a\": 1, \"b\":[\"c\"]}";
+
+        assertEquals(expected, JsonParser.readMap(pbr(input)));
     }
 
     @Test
