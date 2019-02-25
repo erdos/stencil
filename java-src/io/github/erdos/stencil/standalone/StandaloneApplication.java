@@ -11,7 +11,6 @@ import java.nio.file.Files;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Stream;
 
 import static io.github.erdos.stencil.API.prepare;
@@ -44,23 +43,15 @@ public class StandaloneApplication {
 
     public void run() throws IOException {
         checkRestFilesExist();
-        
-        final AtomicReference<Iterator<String>> rest = new AtomicReference<>(parsed.getRestArgs().iterator());
 
-        parsed.getParamValue(JOBS_FILE).map(jobsFile -> {
-            try {
-                return Stream.concat(Files.lines(jobsFile.toPath()), parsed.getRestArgs().stream()).iterator();
-            } catch (IOException e) {
-                throw new RuntimeException("Error reading jobs file: " + e);
-            }
-        }).ifPresent(rest::set);
 
-        while (rest.get().hasNext()) {
-            final File templateFile = new File(rest.get().next()).getAbsoluteFile();
+        Iterator<String> rest = jobsIterator();
+        while (rest.hasNext()) {
+            final File templateFile = new File(rest.next()).getAbsoluteFile();
             final PreparedTemplate template = prepare(templateFile);
 
-            while (rest.get().hasNext()) {
-                final File dataFile = new File(rest.get().next()).getAbsoluteFile();
+            while (rest.hasNext()) {
+                final File dataFile = new File(rest.next()).getAbsoluteFile();
                 final Optional<Parser.DataFileFormat> format = maybeDataFileFormat(dataFile);
                 if (!format.isPresent()) {
                     throw new IllegalArgumentException("Unknown extension, only JSON and EDN are supported: " + dataFile);
@@ -81,6 +72,16 @@ public class StandaloneApplication {
                 }
             }
         }
+    }
+    
+    private Iterator<String> jobsIterator() {
+        return parsed.getParamValue(JOBS_FILE).map(jobsFile -> {
+            try {
+                return Stream.concat(Files.lines(jobsFile.toPath()), parsed.getRestArgs().stream()).iterator();
+            } catch (IOException e) {
+                throw new RuntimeException("Error reading jobs file: " + e);
+            }
+        }).orElse(parsed.getRestArgs().iterator());
     }
 
     private static File targetFile(File targetDirectory, File template, File data) {
