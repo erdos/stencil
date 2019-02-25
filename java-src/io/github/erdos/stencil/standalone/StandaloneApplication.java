@@ -3,6 +3,7 @@ package io.github.erdos.stencil.standalone;
 import io.github.erdos.stencil.EvaluatedDocument;
 import io.github.erdos.stencil.PreparedTemplate;
 import io.github.erdos.stencil.TemplateData;
+import io.github.erdos.stencil.impl.FileHelper;
 
 import java.io.File;
 import java.io.IOException;
@@ -20,10 +21,12 @@ public class StandaloneApplication {
 
     private final ArgsParser.ParseResult parsed;
     private final File outputDir;
+    private final boolean overwriteOutput;
 
     public StandaloneApplication(ArgsParser.ParseResult parsed) {
         this.parsed = parsed;
         this.outputDir = StencilArgsParser.getOutputDirectory(parsed);
+        this.overwriteOutput = StencilArgsParser.getOutputOverwritten(parsed);
     }
 
     private void checkRestFilesExist() {
@@ -59,6 +62,9 @@ public class StandaloneApplication {
                     final EvaluatedDocument document = render(template, templateData);
 
                     final File targetFile = targetFile(outputDir, templateFile, dataFile);
+                    if (targetFile.exists() && overwriteOutput) {
+                        FileHelper.forceDelete(targetFile);
+                    }
                     document.writeToFile(targetFile);
                 }
             }

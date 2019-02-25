@@ -22,6 +22,11 @@ public final class StencilArgsParser {
         }
     });
 
+    /**
+     * Result files will be overwritten when already exist in target directory.
+     */
+    public static final ArgsParser.ParamMarker<Boolean> OVERWRITE = PARSER.addFlagOption('O', "overwrite", "Overwrite existing files");
+
     public static ArgsParser.ParseResult parse(String... args) {
         return PARSER.parse(args);
     }
@@ -44,5 +49,16 @@ public final class StencilArgsParser {
         } else {
             return f;
         }
+    }
+
+    /**
+     * Finds output directory in parsed parameters or returns current working directory.
+     *
+     * @return output directory where rendered files will be put
+     * @throws NullPointerException     if param is null
+     * @throws IllegalArgumentException if output file path does not exist or is not a directory
+     */
+    public static Boolean getOutputOverwritten(ArgsParser.ParseResult result) {
+        return result.getParamValue(OVERWRITE).orElse(false);
     }
 }
