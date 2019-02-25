@@ -21,7 +21,7 @@ final class JsonParser {
     }
 
     public static Object read(Reader reader) throws IOException {
-        return simpleParse(new PushbackReader(reader));
+        return simpleParse(new PushbackReader(reader, 128));
     }
 
     private static char peekNextNonWs(PushbackReader reader) throws IOException {
