@@ -9,6 +9,7 @@ import java.math.BigDecimal;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -62,6 +63,14 @@ public class JsonParserTest {
         final String input = "[1,10]";
         final Object result = JsonParser.readVec(pbr(input));
         assertEquals(asList(BigDecimal.ONE, BigDecimal.TEN), result);
+    }
+
+    @Test
+    public void radMapTestEmpty() throws IOException {
+        assertEquals(emptyMap(), JsonParser.readMap(pbr("{}")));
+        assertEquals(emptyMap(), JsonParser.readMap(pbr("{     }")));
+        assertEquals(emptyMap(), JsonParser.readMap(pbr("{}x")));
+        assertEquals(emptyMap(), JsonParser.readMap(pbr("{ }y")));
     }
 
     @Test

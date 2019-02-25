@@ -5,10 +5,7 @@ import java.io.PushbackReader;
 import java.io.Reader;
 import java.io.StringReader;
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 /**
  * A naive implementation based on recursive descent parsing.
@@ -27,7 +24,7 @@ final class JsonParser {
         return simpleParse(new PushbackReader(reader));
     }
 
-    public static char peekNextNonWs(PushbackReader reader) throws IOException {
+    private static char peekNextNonWs(PushbackReader reader) throws IOException {
         // TODO: can optimize this with larger chunks.
         final char[] c = new char[1];
         while (true) {
@@ -44,7 +41,7 @@ final class JsonParser {
         }
     }
 
-    public static Object simpleParse(PushbackReader pb) throws IOException {
+    private static Object simpleParse(PushbackReader pb) throws IOException {
         char c = peekNextNonWs(pb);
         if (c == '{') {
             return readMap(pb);
@@ -68,7 +65,7 @@ final class JsonParser {
         }
     }
 
-    public static Number readNumber(PushbackReader pb) throws IOException {
+    static Number readNumber(PushbackReader pb) throws IOException {
         char[] arr = new char[128];
         int len = pb.read(arr, 0, arr.length);
 
@@ -89,7 +86,7 @@ final class JsonParser {
         }
     }
 
-    public static String readStr(PushbackReader pb) throws IOException {
+    static String readStr(PushbackReader pb) throws IOException {
         expectWord("\"", pb);
 
         final StringBuffer buf = new StringBuffer();
@@ -119,7 +116,7 @@ final class JsonParser {
         }
     }
 
-    public static void expectWord(String word, PushbackReader pb) throws IOException {
+    static void expectWord(String word, PushbackReader pb) throws IOException {
         final char[] c = new char[word.length()];
         if (!(pb.read(c, 0, c.length) == c.length && Arrays.equals(c, word.toCharArray()))) {
             throw new IllegalStateException("Expected: " + word + " but found " + new String(c) + " instead.");
@@ -145,18 +142,37 @@ final class JsonParser {
         }
     }
 
-    private static Object readMap(PushbackReader pb) throws IOException {
+    static Object readMap(PushbackReader pb) throws IOException {
         expectWord("{", pb);
 
-        /*while (true) {
+        final Map<String, Object> buf = new HashMap<>();
+        while (true) {
             char c = peekNextNonWs(pb);
-            if (c == '"') {
-                String k = readStr(pb);
-                expectWord(":", pb);
-                Object v = read(pb);
+            if (c == '}') {
+                pb.read();
+                return Collections.unmodifiableMap(buf);
+            } else {
+                final String key = readStr(pb);
+                char sep = peekNextNonWs(pb);
+                if (sep != ':') {
+                    throw new IllegalStateException("Unexpected character " + sep + ", expected ':'");
+                }
+                pb.read();
+
+                final Object val = simpleParse(pb);
+
+                buf.put(key, val);
+
+                final char c2 = peekNextNonWs(pb);
+                if (c2 == '}') {
+                    continue;
+                } else if (c2 == ',') {
+                    pb.read();
+                    continue;
+                } else {
+                    throw new IllegalStateException("Unexpected character after key-value pair in JSON: '" + c2 + "'");
+                }
             }
         }
-        return null;*/
-        return null;
     }
 }
