@@ -12,6 +12,7 @@ import java.util.Optional;
 
 import static io.github.erdos.stencil.API.prepare;
 import static io.github.erdos.stencil.API.render;
+import static io.github.erdos.stencil.impl.ClojureHelper.callShutdownAgents;
 import static io.github.erdos.stencil.impl.FileHelper.removeExtension;
 import static io.github.erdos.stencil.standalone.Parser.maybeDataFileFormat;
 
@@ -56,6 +57,8 @@ public class Main {
 
             }
         }
+        
+        callShutdownAgents();
     }
 
     private static File targetFile(File targetDirectory, File template, File data) {
