@@ -1,5 +1,7 @@
 (ns stencil.serverless.core
-  (:gen-class))
+  (:gen-class)
+  (:require [clojure.java.io :as io]
+            [clojure.pprint :refer [pprint]]))
 
 (defn -main [& args]
-  (println "Hello World!"))
+  (println (read-line)))

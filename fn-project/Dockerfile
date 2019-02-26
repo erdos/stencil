@@ -21,7 +21,10 @@ RUN native-image -jar app-standalone.jar
 
 # e44b69907603-H:+ReportUnsupportedElementsAtRuntime
 
-FROM scratch
+FROM alpine:latest
+
+# used to wrap app
+COPY --from=fnproject/hotwrap:latest  /hotwrap /hotwrap
 
 COPY --from=BASE /lib64/libc.so.6 /lib64/libc.so.6
 COPY --from=BASE /lib64/libdl.so.2 /lib64/libdl.so.2
@@ -35,3 +38,4 @@ COPY --from=BASE /lib64/libfreebl3.so /lib64/libfreebl3.so
 COPY --from=BASE /app/app-standalone /
 
 CMD ["/app-standalone"]
+ENTRYPOINT ["/hotwrap"]

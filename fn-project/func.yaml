@@ -1,4 +1,9 @@
+schema_version: 20180708
 name: stencil-test
-version: 0.1.0
+version: 0.1.5
 runtime: Docker
 format: http
+triggers:
+- name: yo
+  type: http
+  source: /yoyo
