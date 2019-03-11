@@ -78,7 +78,7 @@
   (let [data   (into {} data)
         {:keys [zip-dir exec-files]} template
         source-dir   (io/file zip-dir)
-        pp           (.toPath source-dir)
+        source-dir-path (.toPath source-dir)
         outstream    (new PipedOutputStream)
         input-stream (new PipedInputStream outstream)
         executed-files (into {}
@@ -90,7 +90,7 @@
           (doseq [file  (file-seq source-dir)
                   :when (not      (.isDirectory ^File file))
                   :let  [path     (.toPath ^File file)
-                         rel-path (str (.relativize pp path))
+                         rel-path (FileHelper/toUnixSeparatedString (.relativize source-dir-path path))
                          ze       (new ZipEntry rel-path)]]
             (.putNextEntry zipstream ze)
             (if-let [writer (get executed-files rel-path)]

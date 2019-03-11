@@ -2,6 +2,8 @@ package io.github.erdos.stencil.impl;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
 import java.util.UUID;
 
 /**
@@ -102,6 +104,25 @@ public final class FileHelper {
         if (file.isDirectory()) {
             for (File child : file.listFiles()) {
                 forceDeleteOnExit(child);
+            }
+        }
+    }
+
+    /**
+     * Returns a string representation of path with unix separators ("/") instead of the
+     * system-dependent separators (which can be a backslash on windows.)
+     */
+    public static String toUnixSeparatedString(Path path) {
+        if (path == null) {
+            throw new IllegalArgumentException("Path can not be null!");
+        } else {
+            final String separator = FileSystems.getDefault().getSeparator();
+            if (separator.equals("/")) {
+                // on unix systems
+                return path.toString();
+            } else {
+                // on windows systems
+                return path.toString().replaceAll(separator, "/");
             }
         }
     }
