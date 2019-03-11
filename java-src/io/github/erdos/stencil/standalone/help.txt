@@ -1,0 +1,32 @@
+Stencil - template engine for office documents
+
+This tool provides and easy-to-use standalone utility for generating office documents from templates. It can be used to
+generate documents from shell scripts or batch processes.
+
+Usage: COMMAND [options...] [--] [files...]
+
+where options include:
+
+    -h or --help       Displays the current help screen.
+    -v or --version    Displays version information.
+
+    -O or --overwrite  Generated files may overwrite already existing files.
+
+    The program generates the template documents by processing a list of file names. This list is a sequence of template
+    file and data file names. Each template file is rendered using the data files immediately succeeding it in the list.
+    By default, the list of file names comes from the [files] section of the command arguments, however, you can specify
+    alternative sources of input file names with the following parameters:
+
+    -j JOBSFILE or --jobs JOBSFILE or --jobs=JOBSFILE
+                       Reads the jobs for batch processing from a text file line-by-line.
+
+    -s or --stdin      Reads the jobs from the standard input line-by-line.
+
+Examples
+
+    To just render a template file with a json data file:
+    $ PROGRAM template.docx datafile.json
+
+    To render multiple files:
+    $ PROGRAM --overwrite -- template1.docx data1.json data2.json template2.docx data3.json
+

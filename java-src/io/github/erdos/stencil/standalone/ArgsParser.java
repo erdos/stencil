@@ -43,6 +43,30 @@ public class ArgsParser {
 
                     result.put(flag.getKey(), flag.getValue());
                 } else {
+
+                    if (item.startsWith("--no-")) {
+                        // long form
+                        if (markerForLong(item.substring(5)).orElseThrow(() -> new IllegalArgumentException("Unexpected option: " + item)).isFlag()) {
+                            Map.Entry<ParamMarker, String> pair = parsePair(item, null);
+                            result.put(pair.getKey(), pair.getValue());
+                            continue;
+                        }
+                    } else if (item.startsWith("--")) {
+                        // long form
+                        if (markerForLong(item.substring(2)).orElseThrow(() -> new IllegalArgumentException("Unexpected option: " + item)).isFlag()) {
+                            Map.Entry<ParamMarker, String> pair = parsePair(item, null);
+                            result.put(pair.getKey(), pair.getValue());
+                            continue;
+                        }
+                    } else {
+                        // short form
+                        if (markerForShort(item.charAt(1)).orElseThrow(() -> new IllegalArgumentException("Unexpected option: " + item)).isFlag()) {
+                            Map.Entry<ParamMarker, String> pair = parsePair(item, null);
+                            result.put(pair.getKey(), pair.getValue());
+                            continue;
+                        }
+                    }
+
                     // maybe the next item is a value
                     final String nextItem = i + 1 < args.length ? args[i + 1] : null;
                     if (nextItem == null || nextItem.startsWith("-")) {
@@ -77,7 +101,7 @@ public class ArgsParser {
             } else {
                 return new AbstractMap.SimpleImmutableEntry<>(marker, v);
             }
-        } else if (k.startsWith("-") && v == null) {
+        } else if (k.startsWith("-") && k.length() == 2 && v == null) {
             final ParamMarker marker = markerForShort(k.charAt(1)).get();
             return new AbstractMap.SimpleImmutableEntry<>(marker, "true");
         } else {
@@ -97,16 +121,18 @@ public class ArgsParser {
     private static final Set<String> YES = Collections.unmodifiableSet(new HashSet<>(asList("yes", "y", "true", "t", "1")));
     private static final Set<String> NO = Collections.unmodifiableSet(new HashSet<>(asList("no", "n", "false", "f", "0")));
 
+    private static final Function<String, Boolean> PARSE_BOOLEAN = x -> {
+        if (YES.contains(x.toLowerCase())) {
+            return true;
+        } else if (NO.contains(x.toLowerCase())) {
+            return false;
+        } else {
+            throw new IllegalArgumentException("Could not parse argument value as boolean: " + x);
+        }
+    };
+
     public ParamMarker<Boolean> addFlagOption(char shortName, String longName, String description) {
-        final ParamMarker<Boolean> added = new ParamMarker<>(x -> {
-            if (YES.contains(x.toLowerCase())) {
-                return true;
-            } else if (NO.contains(x.toLowerCase())) {
-                return false;
-            } else {
-                throw new IllegalArgumentException("Could not parse argument value as boolean: " + x);
-            }
-        }, shortName, longName, description, true);
+        final ParamMarker<Boolean> added = new ParamMarker<>(PARSE_BOOLEAN, shortName, longName, description, true);
         markers.add(added);
         return added;
     }

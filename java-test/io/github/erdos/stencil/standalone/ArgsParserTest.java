@@ -79,7 +79,7 @@ public class ArgsParserTest {
         try {
             parser.parse("--number");
             fail("expected exception!");
-        } catch (NoSuchElementException ignore) {
+        } catch (IllegalArgumentException ignore) {
             // intentional
         }
 
@@ -87,7 +87,7 @@ public class ArgsParserTest {
         try {
             parser.parse("--no-number");
             fail("expected exception!");
-        } catch (NoSuchElementException ignore) {
+        } catch (IllegalArgumentException ignore) {
             // intentional
         }
 
@@ -95,7 +95,7 @@ public class ArgsParserTest {
         try {
             parser.parse("--number", "100");
             fail("expected exception!");
-        } catch (NoSuchElementException ignore) {
+        } catch (IllegalArgumentException ignore) {
             // intentional
         }
 
@@ -103,7 +103,7 @@ public class ArgsParserTest {
         try {
             parser.parse("-n");
             fail("expected exception!");
-        } catch (NoSuchElementException ignore) {
+        } catch (IllegalArgumentException ignore) {
             // intentional
         }
 

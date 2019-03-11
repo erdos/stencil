@@ -28,6 +28,16 @@ public final class StencilArgsParser {
      */
     public static final ArgsParser.ParamMarker<Boolean> OVERWRITE = PARSER.addFlagOption('O', "overwrite", "Overwrite existing files");
 
+    /**
+     * Should display help message.
+     */
+    public static final ArgsParser.ParamMarker<Boolean> SHOW_HELP = PARSER.addFlagOption('h', "help", "Displays help screen");
+
+    /**
+     * Should display version info.
+     */
+    public static final ArgsParser.ParamMarker<Boolean> SHOW_VERSION = PARSER.addFlagOption('v', "version", "Displays version information");
+
     public static ArgsParser.ParseResult parse(String... args) {
         return PARSER.parse(args);
     }
@@ -47,6 +57,8 @@ public final class StencilArgsParser {
             return jobsFile;
         }
     });
+
+    public static final ArgsParser.ParamMarker<Boolean> JOBS_FROM_STDIN = PARSER.addFlagOption('s', "stdin", "Jobs come from the standard input");
 
     /**
      * Finds output directory in parsed parameters or returns current working directory.
