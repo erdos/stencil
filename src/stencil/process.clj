@@ -43,7 +43,7 @@
       (ZipHelper/unzipStreamIntoDirectory zip-stream zip-dir))
     (let [files (fn [dir] (for [w (.list (io/file zip-dir dir))
                                :when (.endsWith (.toLowerCase (str w)) ".xml")]
-                           (str (io/file dir w))))
+                           (FileHelper/toUnixSeparatedString (.toPath (io/file dir w)))))
           xml-files (concat (files "word") (files (io/file "ppt" (io/file "slides"))))
           execs     (zipmap xml-files (map #(->executable (io/file zip-dir %)) xml-files))]
       ;; TODO: maybe make it smarter by loading only important xml files
