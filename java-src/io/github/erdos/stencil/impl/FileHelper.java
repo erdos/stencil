@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 /**
  * File handling utilities.
@@ -110,19 +111,23 @@ public final class FileHelper {
 
     /**
      * Returns a string representation of path with unix separators ("/") instead of the
-     * system-dependent separators (which can be a backslash on windows.)
+     * system-dependent separators (which is backslash on windows.)
+     *
+     * @param path not null path object
+     * @return string of path with slash separators
+     * @throws IllegalArgumentException if path is null
      */
     public static String toUnixSeparatedString(Path path) {
         if (path == null) {
-            throw new IllegalArgumentException("Path can not be null!");
+            throw new IllegalArgumentException("Path must not be null!");
         } else {
             final String separator = FileSystems.getDefault().getSeparator();
             if (separator.equals("/")) {
                 // on unix systems
                 return path.toString();
             } else {
-                // on windows systems
-                return path.toString().replaceAll(separator, "/");
+                // on windows systems we replace backslash with slashes
+                return path.toString().replaceAll(Pattern.quote(separator), "/");
             }
         }
     }
