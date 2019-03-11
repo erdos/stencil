@@ -41,10 +41,10 @@
   (let [zip-dir   (FileHelper/createNonexistentTempFile "stencil-" (str suffix ".zip.contents"))]
     (with-open [zip-stream stream] ;; FIXME: maybe not deleted immediately
       (ZipHelper/unzipStreamIntoDirectory zip-stream zip-dir))
-    (let [files (fn [dir] (for [w (concat (.list (File. zip-dir (str dir))))
-                                :when (.endsWith (str w) ".xml")]
-                            (str dir "/" w)))
-          xml-files (concat (files "word") (files "ppt/slides"))
+    (let [files (fn [dir] (for [w (.list (io/file zip-dir dir))
+                               :when (.endsWith (.toLowerCase (str w)) ".xml")]
+                           (str (io/file dir w))))
+          xml-files (concat (files "word") (files (io/file "ppt" (io/file "slides"))))
           execs     (zipmap xml-files (map #(->executable (File. zip-dir (str %))) xml-files))]
       ;; TODO: maybe make it smarter by loading only important xml files
       ;; such as document.xml and footers/headers
