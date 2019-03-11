@@ -45,7 +45,7 @@
                                :when (.endsWith (.toLowerCase (str w)) ".xml")]
                            (str (io/file dir w))))
           xml-files (concat (files "word") (files (io/file "ppt" (io/file "slides"))))
-          execs     (zipmap xml-files (map #(->executable (File. zip-dir (str %))) xml-files))]
+          execs     (zipmap xml-files (map #(->executable (io/file zip-dir %)) xml-files))]
       ;; TODO: maybe make it smarter by loading only important xml files
       ;; such as document.xml and footers/headers
       {:zip-dir    zip-dir
