@@ -13,7 +13,7 @@
 
 (def legal-tags
   "Set of supported HTML tags"
-  #{:b :em :i :u :s :sup :sub :span :br})
+  #{:b :em :i :u :s :sup :sub :span :br :strong})
 
 (defn- validate-tags
   "Throws ExceptionInfo on invalid HTML tag in tree"
@@ -44,7 +44,7 @@
 
 (defn- path->styles [path]
   (cond-> []
-    (some #{:b :em} path) (conj {:tag ooxml/b :attrs {ooxml/val "true"}})
+    (some #{:b :em :strong} path) (conj {:tag ooxml/b :attrs {ooxml/val "true"}})
     (some #{:i} path) (conj {:tag ooxml/i :attrs {ooxml/val "true"}})
     (some #{:s} path) (conj {:tag ooxml/strike :attrs {ooxml/val "true"}})
     (some #{:u} path) (conj {:tag ooxml/u :attrs {ooxml/val "single"}})
