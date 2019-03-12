@@ -5,12 +5,13 @@ import io.github.erdos.stencil.PreparedTemplate;
 import io.github.erdos.stencil.TemplateData;
 import io.github.erdos.stencil.impl.FileHelper;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URL;
 import java.nio.file.Files;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Stream;
 
 import static io.github.erdos.stencil.API.prepare;
@@ -19,6 +20,7 @@ import static io.github.erdos.stencil.impl.FileHelper.extension;
 import static io.github.erdos.stencil.impl.FileHelper.removeExtension;
 import static io.github.erdos.stencil.standalone.Parser.maybeDataFileFormat;
 import static io.github.erdos.stencil.standalone.StencilArgsParser.JOBS_FILE;
+import static io.github.erdos.stencil.standalone.StencilArgsParser.JOBS_FROM_STDIN;
 
 public class StandaloneApplication {
 
@@ -42,9 +44,23 @@ public class StandaloneApplication {
     }
 
     public void run() throws IOException {
+
         checkRestFilesExist();
 
         final Iterator<String> rest = jobsIterator();
+
+        try {
+            if (!rest.hasNext() || parsed.getParamValue(StencilArgsParser.SHOW_HELP).orElse(false)) {
+                displayHelpInfo();
+            } else {
+                processJobs(rest);
+            }
+        } catch (EndOfFilesException ignored) {
+            // processed all files
+        }
+    }
+
+    private void processJobs(Iterator<String> rest) throws IOException {
         while (rest.hasNext()) {
             final File templateFile = new File(rest.next()).getAbsoluteFile();
             final PreparedTemplate template = prepare(templateFile);
@@ -74,13 +90,39 @@ public class StandaloneApplication {
     }
 
     private Iterator<String> jobsIterator() {
-        return parsed.getParamValue(JOBS_FILE).map(jobsFile -> {
-            try {
-                return Stream.concat(Files.lines(jobsFile.toPath()), parsed.getRestArgs().stream()).iterator();
-            } catch (IOException e) {
-                throw new RuntimeException("Error reading jobs file: " + e);
+        final Optional<File> jobsFile = parsed.getParamValue(JOBS_FILE);
+        final Optional<Boolean> jobsStdin = parsed.getParamValue(JOBS_FROM_STDIN);
+
+        if (jobsStdin.isPresent() && jobsFile.isPresent()) {
+            throw new IllegalArgumentException("Can not specify both the --stdin and --jobs parameters!");
+        } else if (jobsFile.isPresent()) {
+            if (!parsed.getRestArgs().isEmpty()) {
+                throw new IllegalArgumentException("Can not specify both --jobs and template parameters!");
+            } else {
+                try {
+                    return Files.lines(jobsFile.get().toPath()).iterator();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }
-        }).orElse(parsed.getRestArgs().iterator());
+        } else if (jobsStdin.isPresent()) {
+            if (!parsed.getRestArgs().isEmpty()) {
+                throw new IllegalArgumentException("Can not specify both --stdin and template parameters!");
+            } else {
+                return Stream.generate(() -> {
+                    try {
+                        return new Scanner(System.in).nextLine();
+                    } catch (NoSuchElementException e) {
+                        throw new EndOfFilesException();
+                    }
+                }).iterator();
+            }
+        } else {
+            return parsed.getRestArgs().iterator();
+        }
+    }
+
+    private static final class EndOfFilesException extends RuntimeException {
     }
 
     private static File targetFile(File targetDirectory, File template, File data) {
@@ -88,5 +130,18 @@ public class StandaloneApplication {
         final String part2 = removeExtension(data);
         final String ext = extension(template);
         return new File(targetDirectory, part1 + "-" + part2 + "." + ext);
+    }
+
+    private void displayHelpInfo() throws IOException {
+        final URL url = getClass().getResource("help.txt");
+        if (url == null) {
+            throw new IllegalStateException("Missing help.txt file!");
+        }
+
+        try (final BufferedReader in = new BufferedReader(new InputStreamReader(url.openStream()))) {
+            for (String inputLine; (inputLine = in.readLine()) != null; ) {
+                System.out.println(inputLine);
+            }
+        }
     }
 }
