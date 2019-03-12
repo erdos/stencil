@@ -10,7 +10,7 @@
 
 (set! *warn-on-reflection* true)
 
-(defn text->cmd [^String text]
+(defn- text->cmd-impl [^String text]
   (assert (string? text))
   (let [text (.trim text)
         pattern-elseif #"^(else\s*if|elif|elsif)(\(|\s+)"]
@@ -44,6 +44,11 @@
 
       :otherwise (throw (ex-info "Unexpected command" {:command text})))))
 
+(defn text->cmd [text]
+  (try (text->cmd-impl text)
+    (catch clojure.lang.ExceptionInfo e
+      (throw (parsing-exception (str open-tag text close-tag) (.getMessage e))))))
+
 (defn- structure->seq [parsed]
   (cond
     (string? parsed) [{:text parsed}] ; (split-text-token parsed)
@@ -69,8 +74,6 @@
          (structure->seq)
          (map-actions-in-token-list)
          (map map-token))))
-
-(def empty-stack '(()))
 
 (defn- tokens-seq-reducer [stack token]
   (cond
@@ -98,7 +101,8 @@
 (defn tokens-seq->document
   "From token seq builds an XML tree."
   [tokens-seq]
-  (let [result (reduce tokens-seq-reducer empty-stack tokens-seq)]
+  (let [start '(())
+        result (reduce tokens-seq-reducer start tokens-seq)]
     (assert (= 1 (count result)) (str (pr-str result)))
     (assert (= 1 (count (first result))))
     (ffirst result)))
