@@ -6,7 +6,9 @@ import io.github.erdos.stencil.standalone.ArgsParser;
 import io.github.erdos.stencil.standalone.StandaloneApplication;
 import io.github.erdos.stencil.standalone.StencilArgsParser;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.FileAlreadyExistsException;
 
 import static io.github.erdos.stencil.impl.ClojureHelper.callShutdownAgents;
 
@@ -31,6 +33,12 @@ public class Main {
             System.out.println("Error rendering template!");
             printException(e);
             System.exit(4);
+        } catch (FileAlreadyExistsException e) {
+            System.out.println("Output file already exists! Use the --overwrite switch to force files to be deleted before rendering.");
+            if (e.getFile() != null) {
+                System.out.println("File: " + new File(e.getFile()).getCanonicalPath());
+            }
+            System.exit(5);
         } finally {
             // stop Clojure thread pools
             callShutdownAgents();

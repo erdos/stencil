@@ -22,7 +22,7 @@
     (throw-ex-parsing? "<a>{%=%}</a>")
     (throw-ex-parsing? "<a>{%=a++%}</a>")
     (throw-ex-parsing? "<a>{%====%}</a>")))
-                                        ;
+
 (deftest test-not-closed
   (testing "Expressions are not closed properly"
     (throw-ex-info? "<a>{%=</a>")
