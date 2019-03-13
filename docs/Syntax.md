@@ -61,6 +61,22 @@ also make it easier to understand a template if it gets complicated.
 
 <img src="screenshot-conditional-1-before.png"/>
 
+#### Elseif
+
+Elseif, as its name suggests, is a combination of `else` and `if`. Instead of nesting `if` expresisons
+in `else` branches, you can simply write an `elseif` expression and close it with one `end`.
+
+For example:
+
+<code>
+{<i>% if CONDITION1 %</i>} THEN do this
+{<i>% else if CONDITION2 %</i>} Or do this
+{<i>% else %</i>} Or if none of the conditions matched, do this.
+{<i>% end %</i>}
+</code>
+
+Instead of `else if` you can also write `elseif` or `elsif` or `elif`. Both of those syntaxes are supported in Stencil.
+
 
 #### Reverted conditionals
 
