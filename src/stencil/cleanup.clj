@@ -17,9 +17,17 @@
   (case (:cmd token)
     (:if :for) (conj (mod-stack-top-conj stack token) [])
 
-    :else      (conj (mod-stack-top-last ss0 update :blocks (fnil conj []) {:children queue}) [])
+    :else
+    (if (empty? ss0)
+      (throw (parsing-exception (str open-tag "else" close-tag)
+                                "Unexpected {%else%} tag, it must come right after a condition!"))
+      (conj (mod-stack-top-last ss0 update :blocks (fnil conj []) {:children queue}) []))
 
-    :end       (mod-stack-top-last ss0 update :blocks conj {:children queue})
+    :end
+    (if (empty? ss0)
+      (throw (parsing-exception (str open-tag "end" close-tag)
+                                "Too many {%end%} tags!"))
+      (mod-stack-top-last ss0 update :blocks conj {:children queue}))
 
     (:echo nil)        (mod-stack-top-conj stack token)))
 
@@ -107,7 +115,10 @@
     1 (let [[then] (:blocks control-ast)
             else   (:after then)]
         (-> (dissoc control-ast :blocks)
-            (assoc :then (map control-ast-normalize (:children then)), :else else)))))
+            (assoc :then (map control-ast-normalize (:children then)), :else else)))
+    ;; default
+    (throw (parsing-exception (str open-tag "else" close-tag)
+                              "Too many {%else%} tags in one condition!"))))
 
 ;; Egy ciklusnal kulon kell valasztani a kovetkezo eseteket:
 ;; - body-run-none: a body resz egyszer sem fut le, mert a lista nulla elemu.
@@ -115,8 +126,9 @@
 ;; - body-run-next: a body resz masodik, harmadik, stb. beillesztese, haa lista legalabb 2 elemu.
 ;; Ezekbol az esetekbol kell futtataskor a megfelelo(ket) kivalasztani es behelyettesiteni.
 (defmethod control-ast-normalize-step :for [control-ast]
-  (assert (= 1 (count (:blocks control-ast)))
-          "Egy ciklusnak csak egy body resze lehet!")
+  (when-not (= 1 (count (:blocks control-ast)))
+    (throw (parsing-exception (str open-tag "else" close-tag)
+                              "Unexpected {%else%} in a loop!")))
   (let [[{:keys [children before after]}] (:blocks control-ast)
         children (mapv control-ast-normalize children)]
     (-> control-ast

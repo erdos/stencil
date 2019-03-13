@@ -11,10 +11,10 @@
        (new java.io.ByteArrayInputStream)
        (prepare-template :xml)))
 
-(defmacro throw-ex-info? [expr]
+(defmacro ^:private throw-ex-info? [expr]
   `(is (~'thrown? clojure.lang.ExceptionInfo (test-prepare ~expr {}))))
 
-(defmacro throw-ex-parsing? [expr]
+(defmacro ^:private throw-ex-parsing? [expr]
   `(is (~'thrown? ParsingException (test-prepare ~expr {}))))
 
 (deftest test-arithmetic-errors
@@ -22,6 +22,14 @@
     (throw-ex-parsing? "<a>{%=%}</a>")
     (throw-ex-parsing? "<a>{%=a++%}</a>")
     (throw-ex-parsing? "<a>{%====%}</a>")))
+
+(deftest test-unexpected-else
+  (testing "Unexpected else tag"
+    (throw-ex-parsing? "<a>{%else%}</a>"))
+  (testing "Too many else tags"
+    (throw-ex-parsing? "<a>{%if 1%}a{%else%}2{%else%}3{%end%}</a>"))
+  (testing "Unexpected else tag in loop"
+    (throw-ex-parsing? "<a>{%for x in xs%}a{%else%}2{%end%}</a>")))
 
 (deftest test-not-closed
   (testing "Expressions are not closed properly"

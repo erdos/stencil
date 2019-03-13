@@ -21,7 +21,7 @@
   "Egy stack legfelso elemenek legutolso elemet modositja.
    Ha nincs elem, IllegalStateException kivetelt dob."
   [stack f & args]
-  (assert (list? stack))
+  (assert (list? stack) (str "Stack is not a list: " (pr-str stack)))
   (assert (ifn? f))
   (conj (rest stack)
         (conj (pop (first stack))
