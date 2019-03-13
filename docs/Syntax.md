@@ -68,10 +68,10 @@ in `else` branches, you can simply write an `elseif` expression and close it wit
 
 For example:
 
-<code><pre>{<i>% if CONDITION1 %</i>} THEN do this
+<pre>{<i>% if CONDITION1 %</i>} THEN do this
 {<i>% else if CONDITION2 %</i>} Or do this
 {<i>% else %</i>} Or if none of the conditions matched, do this.
-{<i>% end %</i>}</pre></code>
+{<i>% end %</i>}</pre>
 
 Instead of `else if` you can also write its shorter forms: `elseif` or `elsif` or even `elif`.
 
