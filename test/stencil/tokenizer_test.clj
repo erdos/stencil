@@ -56,6 +56,38 @@
             {:text " utana"}
             {:close :a}]))))
 
+(deftest read-tokens-if-then-elif
+  (testing "Simple conditional with THEN+ELIF branches"
+    (is (= (run "<a>elotte{%if x%}akkor{%else if y%}de{%end%}utana</a>")
+           [{:open :a}
+            {:text "elotte"}
+            {:cmd :if :condition '(x)}
+            {:text "akkor"}
+            {:cmd :else}
+            {:cmd :if :condition '(y)}
+            {:text "de"}
+            {:end}
+            {:end}
+            {:text " utana"}
+            {:close :a}]))))
+
+(deftest read-tokens-if-then-elif-else
+  (testing "Simple conditional with THEN+ELIF+ELE branches"
+    (is (= (run "<a>elotte{%if x%}akkor{%else if y%}de{%else%}egyebkent{%end%}utana</a>")
+           [{:open :a}
+            {:text "elotte"}
+            {:cmd :if :condition '(x)}
+            {:text "akkor"}
+            {:cmd :else}
+            {:cmd :if :condition '(y)}
+            {:text "de"}
+            {:cmd :else}
+            {:text "egyebkent"}
+            {:end}
+            {:end}
+            {:text " utana"}
+            {:close :a}]))))
+
 (deftest read-tokens-unless-then
   (testing "Simple conditional with THEN branch only"
     (is (= (run "<a>{%unless x%} akkor {% end %}</a>")
