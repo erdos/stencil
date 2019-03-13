@@ -66,7 +66,7 @@ also make it easier to understand a template if it gets complicated.
 Elseif, as its name suggests, is a combination of `else` and `if`. Instead of nesting `if` expresisons
 in `else` branches, you can simply write an `elseif` expression and close it with one `end`.
 
-**For example:**
+For example:
 
 <code><pre>{<i>% if CONDITION1 %</i>} THEN do this
 {<i>% else if CONDITION2 %</i>} Or do this
