@@ -73,7 +73,7 @@ For example:
 {<i>% else %</i>} Or if none of the conditions matched, do this.
 {<i>% end %</i>}</pre>
 
-Instead of `else if` you can also write its shorter forms: `elseif` or `elsif` or even `elif`.
+There are multiple supported syntaxes: `else if`, `elseif`, `elsif`, `elif`.
 
 #### Reverted conditionals
 
