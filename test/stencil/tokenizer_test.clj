@@ -66,8 +66,8 @@
             {:cmd :else}
             {:cmd :if :condition '(y)}
             {:text "de"}
-            {:end}
-            {:end}
+            {:cmd :end}
+            {:cmd :end}
             {:text " utana"}
             {:close :a}]))))
 
@@ -83,8 +83,8 @@
             {:text "de"}
             {:cmd :else}
             {:text "egyebkent"}
-            {:end}
-            {:end}
+            {:cmd :end}
+            {:cmd :end}
             {:text " utana"}
             {:close :a}]))))
 
