@@ -40,7 +40,7 @@
       (seq (re-seq pattern-elseif text))
       (let [prefix-len (count (ffirst (re-seq pattern-elseif text)))]
         {:cmd :else-if
-         :expression (infix/parse (.substring text prefix-len))})
+         :condition (infix/parse (.substring text prefix-len))})
 
       :otherwise (throw (ex-info "Unexpected command" {:command text})))))
 
