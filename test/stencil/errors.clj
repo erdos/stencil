@@ -29,7 +29,9 @@
   (testing "Too many else tags"
     (throw-ex-parsing? "<a>{%if 1%}a{%else%}2{%else%}3{%end%}</a>"))
   (testing "Unexpected else tag in loop"
-    (throw-ex-parsing? "<a>{%for x in xs%}a{%else%}2{%end%}</a>")))
+    (throw-ex-parsing? "<a>{%for x in xs%}a{%else%}2{%end%}</a>"))
+  (testing "Unexpected elseif tag in loop"
+    (throw-ex-parsing? "<a>{%for x in xs%}a{%elseif y%}2{%end%}</a>")))
 
 (deftest test-not-closed
   (testing "Expressions are not closed properly"

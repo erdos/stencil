@@ -23,11 +23,24 @@
                                 "Unexpected {%else%} tag, it must come right after a condition!"))
       (conj (mod-stack-top-last ss0 update :blocks (fnil conj []) {:children queue}) []))
 
+    :else-if
+    (if (empty? ss0)
+      (throw (parsing-exception (str open-tag "else" close-tag)
+                                "Unexpected {%else%} tag, it must come right after a condition!"))
+      (-> ss0
+          (mod-stack-top-last update :blocks (fnil conj []) {:children queue})
+          (conj [(assoc token :cmd :if :r true)])
+          (conj [])))
+
     :end
     (if (empty? ss0)
       (throw (parsing-exception (str open-tag "end" close-tag)
                                 "Too many {%end%} tags!"))
-      (mod-stack-top-last ss0 update :blocks conj {:children queue}))
+      (loop [[queue & ss0] stack]
+        (let [new-stack (mod-stack-top-last ss0 update :blocks conj {:children queue})]
+          (if (:r (peek (first new-stack)))
+            (recur (mod-stack-top-last  new-stack dissoc :r))
+            new-stack))))
 
     (:echo nil)        (mod-stack-top-conj stack token)))
 
