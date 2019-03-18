@@ -56,6 +56,34 @@
             {:text " utana"}
             {:close :a}]))))
 
+(deftest read-tokens-if-then-elif
+  (testing "Simple conditional with THEN+ELIF branches"
+    (is (= (run "<a>elotte{%if x%}akkor{%else if y%}de{%end%}utana</a>")
+           '[{:open :a}
+             {:text "elotte"}
+             {:cmd :if :condition [x]}
+             {:text "akkor"}
+             {:cmd :else-if :condition [y]}
+             {:text "de"}
+             {:cmd :end}
+             {:text "utana"}
+             {:close :a}]))))
+
+(deftest read-tokens-if-then-elif-else
+  (testing "Simple conditional with THEN+ELIF+ELE branches"
+    (is (= (run "<a>elotte{%if x%}akkor{%else if y%}de{%else%}egyebkent{%end%}utana</a>")
+           '[{:open :a}
+             {:text "elotte"}
+             {:cmd :if :condition [x]}
+             {:text "akkor"}
+             {:cmd :else-if :condition [y]}
+             {:text "de"}
+             {:cmd :else}
+             {:text "egyebkent"}
+             {:cmd :end}
+             {:text "utana"}
+             {:close :a}]))))
+
 (deftest read-tokens-unless-then
   (testing "Simple conditional with THEN branch only"
     (is (= (run "<a>{%unless x%} akkor {% end %}</a>")
@@ -69,7 +97,7 @@
 (deftest read-tokens-if-elif-then-else
   (testing "If-else if-then-else branching"
     (is (= '({:open :a} {:text "Hello "} {:cmd :if, :condition [x]} {:text "iksz"}
-             {:cmd :else-if, :expression [y]} {:text "ipszilon"} {:cmd :else}
+             {:cmd :else-if, :condition [y]} {:text "ipszilon"} {:cmd :else}
              {:text "egyebkent"} {:cmd :end} {:text  " Hola"} {:close :a})
            (run "<a>Hello {%if x%}iksz{%else if y%}ipszilon{%else%}egyebkent{%end%} Hola</a>")
            (run "<a>Hello {%if x%}iksz{%elseif y%}ipszilon{%else%}egyebkent{%end%} Hola</a>")

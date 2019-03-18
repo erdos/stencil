@@ -3,7 +3,7 @@ package io.github.erdos.stencil.functions;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.Collections;
+import java.util.IllegalFormatException;
 
 import static io.github.erdos.stencil.functions.StringFunctions.FORMAT;
 import static io.github.erdos.stencil.functions.StringFunctions.JOIN;
@@ -42,6 +42,12 @@ public class StringFunctionsTest {
         assertEquals("1,2,3", JOIN.call(asList(1, 2, 3), ","));
 
         assertEquals("", JOIN.call(emptyList(), null));
-        assertEquals("", JOIN.call(emptyList(), ","));
+
+        try {
+            assertEquals("", JOIN.call(null, ","));
+            Assert.fail("Expected exception!");
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
     }
 }

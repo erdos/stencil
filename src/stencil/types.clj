@@ -1,4 +1,5 @@
 (ns stencil.types
+  (:import [clojure.lang IDeref])
   (:require [clojure.pprint])
   (:gen-class))
 
@@ -33,7 +34,7 @@
 ;; ez a marker jeloli, hogy egy oszlopot el kell rejteni.
 (defrecord HideTableColumnMarker [columns-resize])
 
-(def column-resize-modes #{:resize-last :rational :cut})
+(def column-resize-modes #{:resize-first :resize-last :rational :cut})
 
 (defn ->HideTableColumnMarker
   ([] (HideTableColumnMarker. :cut))
@@ -49,7 +50,7 @@
 ;; Function calls might return delayed values that are dereferenced
 ;; only in the postprocess stage.
 (defrecord DelayedValueMarker [delay-object]
-  clojure.lang.IDeref
+  IDeref
   (deref [_] @delay-object))
 
 (defmulti control? type)

@@ -42,11 +42,11 @@
   (let [zip-dir   (FileHelper/createNonexistentTempFile "stencil-" (str suffix ".zip.contents"))]
     (with-open [zip-stream stream] ;; FIXME: maybe not deleted immediately
       (ZipHelper/unzipStreamIntoDirectory zip-stream zip-dir))
-    (let [files (fn [dir] (for [w (concat (.list (File. zip-dir (str dir))))
-                                :when (.endsWith (str w) ".xml")]
-                            (str dir "/" w)))
-          xml-files (concat (files "word") (files "ppt/slides"))
-          execs     (zipmap xml-files (map #(->executable (File. zip-dir (str %))) xml-files))]
+    (let [files (fn [dir] (for [w (.list (io/file zip-dir dir))
+                               :when (.endsWith (.toLowerCase (str w)) ".xml")]
+                           (FileHelper/toUnixSeparatedString (.toPath (io/file dir w)))))
+          xml-files (concat (files "word") (files (io/file "ppt" (io/file "slides"))))
+          execs     (zipmap xml-files (map #(->executable (io/file zip-dir %)) xml-files))]
       ;; TODO: maybe make it smarter by loading only important xml files
       ;; such as document.xml and footers/headers
       {:zip-dir    zip-dir
@@ -80,7 +80,7 @@
   (let [data   (into {} data)
         {:keys [zip-dir exec-files]} template
         source-dir   (io/file zip-dir)
-        pp           (.toPath source-dir)
+        source-dir-path (.toPath source-dir)
         outstream    (new PipedOutputStream)
         input-stream (new PipedInputStream outstream)
         executed-files (into {}
@@ -92,7 +92,7 @@
           (doseq [file  (file-seq source-dir)
                   :when (not      (.isDirectory ^File file))
                   :let  [path     (.toPath ^File file)
-                         rel-path (str (.relativize pp path))
+                         rel-path (FileHelper/toUnixSeparatedString (.relativize source-dir-path path))
                          ze       (new ZipEntry rel-path)]]
             (.putNextEntry zipstream ze)
             (if-let [writer (get executed-files rel-path)]

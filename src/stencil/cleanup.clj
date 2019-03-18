@@ -19,9 +19,30 @@
   (case (:cmd token)
     (:if :for :cmd/fragment) (conj (mod-stack-top-conj stack token) [])
 
-    :else      (conj (mod-stack-top-last ss0 update :blocks (fnil conj []) {:children queue}) [])
+    :else
+    (if (empty? ss0)
+      (throw (parsing-exception (str open-tag "else" close-tag)
+                                "Unexpected {%else%} tag, it must come right after a condition!"))
+      (conj (mod-stack-top-last ss0 update :blocks (fnil conj []) {:children queue}) []))
 
-    :end       (mod-stack-top-last ss0 update :blocks conj {:children queue})
+    :else-if
+    (if (empty? ss0)
+      (throw (parsing-exception (str open-tag "else" close-tag)
+                                "Unexpected {%else%} tag, it must come right after a condition!"))
+      (-> ss0
+          (mod-stack-top-last update :blocks (fnil conj []) {:children queue})
+          (conj [(assoc token :cmd :if :r true)])
+          (conj [])))
+
+    :end
+    (if (empty? ss0)
+      (throw (parsing-exception (str open-tag "end" close-tag)
+                                "Too many {%end%} tags!"))
+      (loop [[queue & ss0] stack]
+        (let [new-stack (mod-stack-top-last ss0 update :blocks conj {:children queue})]
+          (if (:r (peek (first new-stack)))
+            (recur (mod-stack-top-last  new-stack dissoc :r))
+            new-stack))))
 
     (:echo nil :cmd/include) (mod-stack-top-conj stack token)))
 
@@ -128,7 +149,10 @@
     1 (let [[then] (:blocks control-ast)
             else   (:after then)]
         (-> (dissoc control-ast :blocks)
-            (assoc :then (keepv control-ast-normalize (:children then)), :else else)))))
+            (assoc :then (keepv control-ast-normalize (:children then)), :else else)))
+    ;; default
+    (throw (parsing-exception (str open-tag "else" close-tag)
+                              "Too many {%else%} tags in one condition!"))))
 
 ;; Egy ciklusnal kulon kell valasztani a kovetkezo eseteket:
 ;; - body-run-none: a body resz egyszer sem fut le, mert a lista nulla elemu.
@@ -136,8 +160,9 @@
 ;; - body-run-next: a body resz masodik, harmadik, stb. beillesztese, haa lista legalabb 2 elemu.
 ;; Ezekbol az esetekbol kell futtataskor a megfelelo(ket) kivalasztani es behelyettesiteni.
 (defmethod control-ast-normalize-step :for [control-ast]
-  (assert (= 1 (count (:blocks control-ast)))
-          "Egy ciklusnak csak egy body resze lehet!")
+  (when-not (= 1 (count (:blocks control-ast)))
+    (throw (parsing-exception (str open-tag "else" close-tag)
+                              "Unexpected {%else%} in a loop!")))
   (let [[{:keys [children before after]}] (:blocks control-ast)
         children (keepv control-ast-normalize children)]
     (-> control-ast

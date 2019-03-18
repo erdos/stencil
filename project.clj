@@ -1,4 +1,4 @@
-(defproject io.github.erdos/stencil-core "0.2.9-SNAPSHOT"
+(defproject io.github.erdos/stencil-core "0.2.10"
   :url "https://github.com/erdos/stencil"
   :description       "Templating engine for office documents."
   :license {:name "Eclipse Public License - v 2.0"
@@ -12,7 +12,7 @@
                  [org.slf4j/slf4j-api "1.8.0-beta2"]]
   :pom-addition ([:properties ["maven.compiler.source" "8"] ["maven.compiler.target" "8"]])
   :pom-plugins [[org.apache.maven.plugins/maven-surefire-plugin "2.20"]]
-
+  :main io.github.erdos.stencil.Main
   :plugins [[lein-javadoc "0.3.0"]
             [lein-test-out "0.3.1"]]
   :aliases      {"junit" ["with-profile" "test" "do" "test-out" "junit" "junit.xml"]}

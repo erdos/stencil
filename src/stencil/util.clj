@@ -21,7 +21,7 @@
   "Egy stack legfelso elemenek legutolso elemet modositja.
    Ha nincs elem, IllegalStateException kivetelt dob."
   [stack f & args]
-  (assert (list? stack))
+  (assert (list? stack) (str "Stack is not a list: " (pr-str stack)))
   (assert (ifn? f))
   (conj (rest stack)
         (conj (pop (first stack))
@@ -70,7 +70,7 @@
 (defmacro trace [msg & details]
   (assert (string? msg) "Log message must be a string")
   `(when print-trace?
-     (println (format ~msg ~(for [d details] `(pr-str ~d))))))
+     (println (format ~msg ~@(for [d details] `(pr-str ~d))))))
 
 (defn parsing-exception [expression message]
   (ParsingException/fromMessage (str expression) (str message)))

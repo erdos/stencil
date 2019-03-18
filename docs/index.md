@@ -13,7 +13,9 @@ You can find the project on [Stencil's GitHub](https://github.com/erdos/stencil)
 - Read about built-in [Functions](Functions.md) you can use in the templates
 - Find out how to use [Dynamic Tables](Tables.md)
 - Reuse parts of templates with [Fragments](Fragments.md)
+- Run it in [Standalone Mode](Standalone.md) for batch processing
 - Dynamic images are coming soon!
+
 
 ## For Programmers
 
