@@ -1,14 +1,31 @@
 (ns stencil.model
   (:require [clojure.java.io :refer [file]]
             [clojure.data.xml :as xml]
-            [clojure.java.io :as io]))
+            [clojure.java.io :as io]
+            [stencil.ooxml :as ooxml]))
 
-;; we need a method to rewrite relations in
+;; TODO
+;;
+;; - merge content types
+;; - merge relations
+;; - merge font tables
+;; - merge style definitions
+;;
+;;
+;;
+;
+
+
 
 ;; http://officeopenxml.com/anatomyofOOXML.php
 ;;
 ;;
 ;;
+
+(def tag-style :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/style)
+(def attr-style-id :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/styleId)
+
+(def tag-based-on :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/basedOn)
 
 (def default-extensions {"jpeg" "image/jpeg", "png" "image/png"})
 
@@ -17,6 +34,36 @@
 
 (def rels-content-type
   "application/vnd.openxmlformats-package.relationships+xml")
+
+(defn- update-child-tag-attr [xml tag attr update-fn]
+  (update xml :content
+          (partial mapv (fn [child]
+                          (if (= tag (:tag child))
+                            (update-in child [:attrs attr] update-fn)
+                            child)))))
+
+
+(defn- add-styles [xml-styles xml-styles-new]
+  (assert (= "styles" (name (:tag xml-styles))))
+  (assert (= "styles" (name (:tag xml-styles-new))))
+  ;; a jobb oldalrol
+  ;; TODO: ha van egy szablay, ami epul egy masikra mit felulirunk, akkor
+  ;; a raepulesnel is masikat kell hasznalni!!!
+  (let [old-styles (set (filter (comp #{tag-style} :tag) (:content xml-styles)))
+        new-styles (remove old-styles (filter (comp #{tag-style} :tag) (:content xml-styles-new)))
+        [rename out] (reduce (fn [[rename out] new-style]
+                               (let [old-id (get-in new-style [:attrs attr-style-id])
+                                     ;; TODO: id generation should ensure no collisions!
+                                     new-id (gensym "sId")]
+                                 [(assoc rename old-id new-id)
+                                  (conj out (assoc-in new-style [:attrs attr-style-id] new-id))]))
+                             [{} []] new-styles)
+        out (for [rule out]
+              (update-child-tag-attr rule tag-based-on ooxml/val (fn [x] (rename x x))))]
+    {:xml (update xml-styles :content into out)
+     :style-id-renames rename
+     }))
+
 
 (defn- parse-content-types [cts]
   (assert cts)
@@ -76,6 +123,29 @@
       {:t :parsed-relation})))
 
 ;; (parse-relation (file "/home/erdos/Downloads/word/_rels/document.xml.rels"))
+
+
+(defn- parse-style [style-file]
+  (let [parsed (with-open [r (io/input-stream (file style-file))]
+
+                 (-> (xml/parse r)
+                     (clojure.pprint/pprint))
+
+                 )]
+    parsed
+    #_(with-meta
+      (into (sorted-map)
+            (for [d (:content parsed)
+                  :when (map? d)
+                  :when (= "Relationship" (name (:tag d)))]
+              [(:Id (:attrs d))
+               ;; TODO: maybe target type too!
+               {:type (:Type (:attrs d)), :target (:Target (:attrs d))}]))
+      {:t :parsed-relation})))
+
+(parse-style (file "/home/erdos/Downloads/word/styles.xml"))
+
+
 
 (defn merge-relations
   ;; atnevezi az id-ket es a fajlokat.
