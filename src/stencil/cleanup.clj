@@ -130,7 +130,6 @@
 (defmethod control-ast-normalize-step :cmd/include [include-command]
   (let [fragment-name (-> include-command :name first)]
     (assert (string? fragment-name))
-    (println "!!!>" (pr-str include-command))
     (->FragmentInvoke fragment-name)))
 
 ;; A feltételes elágazásoknál mindig generálunk egy javított THEN ágat
