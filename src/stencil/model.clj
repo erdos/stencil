@@ -1,26 +1,11 @@
 (ns stencil.model
+  (:import [java.io File])
   (:require [clojure.java.io :refer [file]]
             [clojure.data.xml :as xml]
             [clojure.java.io :as io]
             [stencil.ooxml :as ooxml]))
 
-;; TODO
-;;
-;; - merge content types
-;; - merge relations
-;; - merge font tables
-;; - merge style definitions
-;;
-;;
-;;
-;
-
-
-
 ;; http://officeopenxml.com/anatomyofOOXML.php
-;;
-;;
-;;
 
 (def tag-style :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/style)
 (def attr-style-id :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/styleId)
@@ -36,12 +21,9 @@
   "application/vnd.openxmlformats-package.relationships+xml")
 
 (defn- update-child-tag-attr [xml tag attr update-fn]
-  (update xml :content
-          (partial mapv (fn [child]
-                          (if (= tag (:tag child))
-                            (update-in child [:attrs attr] update-fn)
-                            child)))))
-
+  (->> (fn [child] (if (= tag (:tag child)) (update-in child [:attrs attr] update-fn) child))
+       (partial mapv)
+       (update xml :content)))
 
 (defn- add-styles [xml-styles xml-styles-new]
   (assert (= "styles" (name (:tag xml-styles))))
@@ -126,24 +108,18 @@
 
 
 (defn- parse-style [style-file]
-  (let [parsed (with-open [r (io/input-stream (file style-file))]
+  (with-open [r (io/input-stream (file style-file))]
+    (into (sorted-map)
+          (for [d (:content (xml/parse r))
+                :when (map? d)
+                ;:when (= "Relationship" (name (:tag d)))
+                ]
+            [(str d)
+                                        ;(:Id (:attrs d))
+             ;; TODO: maybe target type too!
+             {:type (:Type (:attrs d)), :target (:Target (:attrs d))}]))))
 
-                 (-> (xml/parse r)
-                     (clojure.pprint/pprint))
-
-                 )]
-    parsed
-    #_(with-meta
-      (into (sorted-map)
-            (for [d (:content parsed)
-                  :when (map? d)
-                  :when (= "Relationship" (name (:tag d)))]
-              [(:Id (:attrs d))
-               ;; TODO: maybe target type too!
-               {:type (:Type (:attrs d)), :target (:Target (:attrs d))}]))
-      {:t :parsed-relation})))
-
-(parse-style (file "/home/erdos/Downloads/word/styles.xml"))
+; (parse-style (file "/home/erdos/Downloads/word/styles.xml"))
 
 
 
@@ -161,33 +137,41 @@
      :id-renames [{}]
      :target-renames [{}]}))
 
-(defn merge-styles [& style-xmls]
-  ;;q
-  )
+;; returns a map of {:elems [ITEMS]} that contains insertable elements from the fragment
+(defn- read-xml-main [xml-file]
+  (with-open [r (io/input-stream (file xml-file))]
+    {:elems
+     (doall
+      (for [body (:content (xml/parse r))
+            :when (= "body" (name (:tag body)))
+            elem (:content body)
+            :when (not= "sectPr" (name (:tag elem)))]
+        elem))}))
 
-#_
-(defn parse-package [pkg]
-  (let [{:keys [defaults overrides]}
-        (parse-content-types (file pgs "[Content Types].xml"))
 
-        rels-files (for [[k v] overrides
-                         :when (= v rels-content-type)] (file pkg k))
-        rels (parse-rels (file pgs "_rels/.rels"))
+(defn prepare-fragment [^File dir]
+  (assert (.exists dir) (str "Does not exist: " dir))
+  (assert (.isDirectory dir))
+  (let [content-types (parse-content-types (file dir "[Content_Types].xml"))
+        main-file (some #(when (= main-content-type (val %))
+                           (file dir (.substring (str (key %)) 1)))
+                        (:overrides content-types))
+        _ (assert main-file "No document.xml in [Content_Types].xml file!")
+        main-rels-file (file (.getParentFile main-file) "_rels" (str (.getName main-file) ".rels"))
+        main-rels (parse-relation main-rels-file)
         ]
+    (assert (.exists main-rels-file))
+    main-rels
+    {:frag-main-file main-file
+     :frag-main-rels-file main-rels-file
+     :frag-main-rels main-rels
+     :frag-main-style-file nil
 
-
+     ;; xml tree of main
+     :frag-xml
+     ;; file path to file writer - to copy font/image files
+     :files-to-add {}
+     }
     ))
 
-
-;; returned keys:
-;; :id -
-;; :target -
-;; :type -
-;; :target-mode -
-
-;; az osszes relaciot atmapeljuk generalt ertekekre.
-;;
-
-;;
-#_
-(defn emit-rels [rels])
+(prepare-fragment (file "/home/erdos/Downloads"))

@@ -10,7 +10,7 @@
 
 
 (deftest test-add-styles
-  (testing "A elems should be merged, second B elem should be renamed."
+  (testing "The 'A' elems should be merged, second 'B' elem should be renamed."
     (->
      (-add-styles
       {:tag "styles"
