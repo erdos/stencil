@@ -5,14 +5,38 @@ import io.github.erdos.stencil.impl.NativeTemplateFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Map;
+
+import static java.util.Collections.emptyMap;
 
 public final class API {
 
+    /**
+     * Prepares a document template file from the file system.
+     */
     public static PreparedTemplate prepare(File templateFile) throws IOException {
         return new NativeTemplateFactory().prepareTemplateFile(templateFile);
     }
 
+    /**
+     * Prepares a document fragment from the file system. Fragments can be used to embed extra content when rendering
+     * document templates. For example, custom headers and footers can be reused across documents this way.
+     *
+     * @param fragmentFile template file from file system to be used as document fragment
+     * @return fragment instance, not null
+     * @throws IllegalArgumentException      when fragmentFile is null
+     * @throws IOException                   on file system error
+     * @throws java.io.FileNotFoundException when file is not found on file system
+     */
+    public static PreparedFragment fragment(File fragmentFile) throws IOException {
+        return new NativeTemplateFactory().prepareFragmentFile(fragmentFile);
+    }
+
     public static EvaluatedDocument render(PreparedTemplate template, TemplateData data) {
+        return render(template, emptyMap(), data);
+    }
+
+    public static EvaluatedDocument render(PreparedTemplate template, Map<String, PreparedFragment> fragments, TemplateData data) {
         return new NativeEvaluator().render(template, data);
     }
 }

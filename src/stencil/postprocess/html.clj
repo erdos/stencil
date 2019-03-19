@@ -66,6 +66,7 @@
                             {:tag ooxml/br :content []}
                             {:tag ooxml/t :content [(str text)]})))}))))
 
+;; splits enclosing t and r tags
 (defn- fix-html-chunk [chunk-loc]
   (assert (instance? HtmlChunk (zip/node chunk-loc)))
   (let [lefts (zip/lefts chunk-loc)

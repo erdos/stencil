@@ -2,10 +2,7 @@ package io.github.erdos.stencil.impl;
 
 import clojure.lang.IFn;
 import clojure.lang.Keyword;
-import io.github.erdos.stencil.PreparedTemplate;
-import io.github.erdos.stencil.TemplateDocumentFormats;
-import io.github.erdos.stencil.TemplateFactory;
-import io.github.erdos.stencil.TemplateVariables;
+import io.github.erdos.stencil.*;
 import io.github.erdos.stencil.exceptions.ParsingException;
 
 import java.io.File;
@@ -36,6 +33,14 @@ public final class NativeTemplateFactory implements TemplateFactory {
         try (InputStream input = new FileInputStream(inputTemplateFile)) {
             return prepareTemplateImpl(templateDocFormat.get(), input, inputTemplateFile);
         }
+    }
+
+    public PreparedFragment prepareFragmentFile(final File fragmentFile) throws IOException {
+        if (fragmentFile == null) {
+            throw new IllegalArgumentException("Fragment file parameter is null!");
+        }
+
+
     }
 
     /**

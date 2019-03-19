@@ -12,4 +12,5 @@
         fix-tables
         fix-whitespaces
         unmap-ignored-attr
-        fix-html-chunks))
+        fix-html-chunks
+        unpack-fragments))

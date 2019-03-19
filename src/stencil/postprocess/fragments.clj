@@ -4,11 +4,14 @@
             [stencil.types :refer :all]
             [stencil.util :refer :all]))
 
-#_
 (defn- unpack-fragment [tree-loc]
-  (zip/replace tree-loc "ASDF"))
+  (zip/replace tree-loc "ASDF")
+  ;; itt azt kellene, hogy elindulunk folfele es kettevagjuk a p es t tagokat.
+  ;; a kettevagott p tag koze beszurjuk a fragment meghivasabol kapott reszeket.
+  ;;
+  ;; hasonlo kod kell, mint a fix-html-chunk fuggveny!
+  )
 
-#_
 (defn unpack-fragments
   "Walks the tree (Depth First) and evaluates DelayedValueMarker objects."
   [xml-tree]
