@@ -47,6 +47,9 @@
 (defn keepv [f xs] (vec (keep f xs)))
 (defn concatv [& xs] (vec (apply concat xs))) ;; TODO: optimize here!
 
+;; maybe faster
+;; (defn concatv [& xs] (presistent! (reduce (partial apply conj!) (transient []) xs)))
+
 (def xml-zip
   "Like clojure.zip/xml-zip but more flexible."
   ;; TODO: milyen modon jobb???

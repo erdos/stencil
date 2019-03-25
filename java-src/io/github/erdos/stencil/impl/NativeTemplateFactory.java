@@ -14,7 +14,6 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static io.github.erdos.stencil.TemplateDocumentFormats.ofExtension;
-import static io.github.erdos.stencil.impl.ClojureHelper.KV_ZIP_DIR;
 import static io.github.erdos.stencil.impl.FileHelper.forceDeleteOnExit;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.unmodifiableSet;
@@ -40,16 +39,42 @@ public final class NativeTemplateFactory implements TemplateFactory {
             throw new IllegalArgumentException("Fragment file parameter is null!");
         }
 
+        final IFn prepareFunction = ClojureHelper.findFunction("prepare-fragment");
 
+        final Map<Keyword, Object> prepared;
+
+        try {
+            //noinspection unchecked
+            prepared = (Map<Keyword, Object>) prepareFunction.invoke(fragmentFile);
+        } catch (ParsingException e) {
+            throw e;
+        } catch (Exception e) {
+            //noinspection ConstantConditions
+            if (e instanceof IOException) {
+                // possible because of Clojure magic :-(
+                throw (IOException) e;
+            } else {
+                throw ParsingException.wrapping("Could not parse template file!", e);
+            }
+        }
+
+        final File zipDirResource = (File) prepared.get(ClojureHelper.Keywords.ZIP_DIR.kw);
+        if (zipDirResource != null) {
+            forceDeleteOnExit(zipDirResource);
+        }
+
+        final Object content = prepared.get(ClojureHelper.Keywords.CONTENT.kw);
+
+        return new PreparedFragment(content);
     }
 
     /**
-     * Retrieves content of :variables keyword from map as a set.
+     * Retrieves content of :variables kw from map as a set.
      */
     @SuppressWarnings("unchecked")
     private Set variableNames(Map prepared) {
-        return prepared.containsKey(ClojureHelper.KV_VARIABLES)
-                ? unmodifiableSet(new HashSet<Set>((Collection) prepared.get(ClojureHelper.KV_VARIABLES)))
+        return prepared.containsKey(ClojureHelper.Keywords.VARIABLES)
+                ? unmodifiableSet(new HashSet<Set>((Collection) prepared.get(ClojureHelper.Keywords.VARIABLES)))
                 : emptySet();
     }
 
@@ -70,7 +95,7 @@ public final class NativeTemplateFactory implements TemplateFactory {
 
         final TemplateVariables vars = TemplateVariables.fromPaths(variableNames(prepared));
 
-        final File zipDirResource = (File) prepared.get(KV_ZIP_DIR);
+        final File zipDirResource = (File) prepared.get(ClojureHelper.Keywords.ZIP_DIR.kw);
         if (zipDirResource != null) {
             forceDeleteOnExit(zipDirResource);
         }
@@ -122,6 +147,11 @@ public final class NativeTemplateFactory implements TemplateFactory {
             @Override
             public void finalize() {
                 cleanup();
+            }
+
+            @Override
+            public String toString() {
+                return "<Template from file " + originalFile + ">";
             }
         };
     }

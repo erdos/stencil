@@ -37,6 +37,6 @@ public final class API {
     }
 
     public static EvaluatedDocument render(PreparedTemplate template, Map<String, PreparedFragment> fragments, TemplateData data) {
-        return new NativeEvaluator().render(template, data);
+        return new NativeEvaluator().render(template, fragments, data);
     }
 }

@@ -4,7 +4,9 @@
             [clojure.data.xml :as xml]
             [clojure.java.io :as io]
             [clojure.walk :refer [postwalk]]
-            [stencil.ooxml :as ooxml]))
+            [stencil.ooxml :as ooxml]
+            [stencil.tokenizer :as tokenizer]
+            [stencil.cleanup :as cleanup]))
 
 ;; http://officeopenxml.com/anatomyofOOXML.php
 
@@ -23,6 +25,8 @@
 
 (def relationship-style
   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles")
+
+(def ^:dynamic ^:private *current-styles* nil)
 
 (defn- update-child-tag-attr [xml tag attr update-fn]
   (->> (fn [child] (if (= tag (:tag child)) (update-in child [:attrs attr] update-fn) child))
@@ -146,16 +150,18 @@
 
 ;; returns a map of {:insertable [ITEMS]} that contains insertable elements from the fragment
 (defn- read-xml-main [xml-file]
-  ;; TODO: a namespace fixalo kodot itt is meg kell hivni, mert a beszuras miatt szetcseszodik.
-  ;; lasd: ignored_tag.clj fajl
-  (with-open [r (io/input-stream (file xml-file))]
+  (with-open [stream (io/input-stream (file xml-file))]
     {:insertable
-     (doall
-      (for [body (:content (xml/parse r))
-            :when (= "body" (name (:tag body)))
-            elem (:content body)
-            :when (not= "sectPr" (name (:tag elem)))]
-        elem))}))
+     (cleanup/process (tokenizer/parse-to-tokens-seq stream))}))
+
+(defn extract-body-parts [xml-tree]
+  (assert (:tag xml-tree))
+  (doall
+   (for [body (:content xml-tree)
+         :when (= "body" (name (:tag body)))
+         elem (:content body)
+         :when (not= "sectPr" (name (:tag elem)))]
+     elem)))
 
 (defn- rename-style-ids [xml style-id-renames]
   (assert (:tag xml))
@@ -219,8 +225,6 @@
     (fn [writer]
       ;; itt a stiluslap faba beleinzertalunk tovabbi stilus definiciokat es minden kiraly.
       )))
-
-(def ^:dynamic ^:private *current-styles* nil)
 
 ;; inserts style definition to current document, returns style id (maybe generated new)
 (defn- insert-style! [style-definition]

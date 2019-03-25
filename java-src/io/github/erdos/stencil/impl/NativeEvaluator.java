@@ -2,10 +2,7 @@ package io.github.erdos.stencil.impl;
 
 import clojure.lang.AFunction;
 import clojure.lang.IFn;
-import io.github.erdos.stencil.EvaluatedDocument;
-import io.github.erdos.stencil.PreparedTemplate;
-import io.github.erdos.stencil.TemplateData;
-import io.github.erdos.stencil.TemplateDocumentFormats;
+import io.github.erdos.stencil.*;
 import io.github.erdos.stencil.exceptions.EvalException;
 import io.github.erdos.stencil.functions.FunctionEvaluator;
 import org.slf4j.Logger;
@@ -18,6 +15,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static io.github.erdos.stencil.impl.Logging.debugStopWatch;
 import static java.util.Collections.emptyList;
@@ -40,7 +38,7 @@ public final class NativeEvaluator {
      * @return evaluated document ready to save to fs
      * @throws IllegalArgumentException when any arg is null
      */
-    public EvaluatedDocument render(PreparedTemplate template, TemplateData data) {
+    public EvaluatedDocument render(PreparedTemplate template, Map<String, PreparedFragment> fragments, TemplateData data) {
         if (template == null) {
             throw new IllegalArgumentException("Template object is missing!");
         } else if (data == null) {
@@ -52,7 +50,7 @@ public final class NativeEvaluator {
 
         final IFn fn = ClojureHelper.findFunction("do-eval-stream");
 
-        Map argsMap = makeArgsMap(template.getSecretObject(), data.getData());
+        Map argsMap = makeArgsMap(template.getSecretObject(), fragments, data.getData());
 
         final Object result;
         try {
@@ -67,6 +65,10 @@ public final class NativeEvaluator {
     }
 
 
+    /**
+     * It can be used to externally add function definitions.
+     */
+    @SuppressWarnings("unused")
     public FunctionEvaluator getFunctionEvaluator() {
         return functions;
     }
@@ -86,27 +88,34 @@ public final class NativeEvaluator {
     }
 
     private static InputStream resultInputStream(Map result) {
-        if (!result.containsKey(ClojureHelper.KV_STREAM)) {
+        if (!result.containsKey(ClojureHelper.Keywords.STREAM.kw)) {
             throw new IllegalArgumentException("Input map does not contains :stream key!");
         } else {
-            return (InputStream) result.get(ClojureHelper.KV_STREAM);
+            return (InputStream) result.get(ClojureHelper.Keywords.STREAM.kw);
         }
     }
 
     @SuppressWarnings("unchecked")
-    private Map makeArgsMap(Object template, Object data) {
+    private Map makeArgsMap(Object template, Map<String, PreparedFragment> fragments, Object data) {
         final Map result = new HashMap();
-        result.put(ClojureHelper.KV_TEMPLATE, template);
-        result.put(ClojureHelper.KV_DATA, data);
-        result.put(ClojureHelper.KV_FUNCTION, new FunctionCaller());
+        result.put(ClojureHelper.Keywords.TEMPLATE.kw, template);
+        result.put(ClojureHelper.Keywords.DATA.kw, data);
+        result.put(ClojureHelper.Keywords.FUNCTION.kw, new FunctionCaller());
+
+
+        // string to clojure map
+        final Map<String, Object> kvs = fragments.entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, v -> v.getValue().getImpl()));
+        result.put(ClojureHelper.Keywords.FRAGMENTS.kw, kvs);
+
         return result;
     }
 
     private final class FunctionCaller extends AFunction {
 
         /**
-         * First argument is callable fn name as string.
-         * Second argument is a collection of argumets to pass to fn.
+         * @param functionName callable fn name
+         * @param argsList     a Collection of arguments
          */
         @Override
         @SuppressWarnings("unchecked")

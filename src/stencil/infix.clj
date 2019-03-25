@@ -66,7 +66,7 @@
 (defn- precedence [token]
   (get operation-tokens token))
 
-;; operator is left or right associative? returns :left or :right keyword.
+;; operator is left or right associative? returns :left or :right kw.
 (defn associativity [token] (if (#{:neg :power :not} token) :right :left))
 
 (defn read-string-literal

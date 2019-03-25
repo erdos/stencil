@@ -17,7 +17,7 @@
     (nil? input)  (throw (ex-info "Template is missing!" {}))
     :otherwise    (API/prepare (io/file input))))
 
-(defn- make-template-data [x]
+(defn- ^TemplateData make-template-data [x]
   (if (map? x)
     (TemplateData/fromMap ^Map (stringify-keys x))
     (throw (ex-info (str "Unsupported template data type " (type x) "!")
@@ -31,6 +31,21 @@
     (nil? f)   (throw (ex-info "Fragment can not be null!" {}))
     :otherwise (API/fragment (io/file f))))
 
+(comment
+  (time (fragment "/home/erdos/Work/moby-aegon/templates/stencil/DIJELSZAMOLAS.docx"))
+
+
+  (render! "/home/erdos/stencil/test-resources/multipart/main.docx"
+           {:name "John Doe"}
+           :overwrite? true
+           :output "/home/erdos/stencil-fragments-out.docx"
+           :fragments {"header" "/home/erdos/stencil/test-resources/multipart/header.docx"
+                       "footer" "/home/erdos/stencil/test-resources/multipart/footer.docx"
+                       "body" "/home/erdos/stencil/test-resources/multipart/body.docx"})
+
+  )
+
+
 (defn render!
   "Takes a prepared template instance and renders it.
    By default it returns an InputStream of the rendered document.
@@ -43,8 +58,9 @@
   - {:output :reader} returns the input stream reader of the result document."
   [template template-data & {:as opts}]
   (let [template      (prepare template)
+        fragments     (into {} (for [[k v] (:fragments opts)] [(name k) (fragment v)]))
         template-data (make-template-data template-data)
-        result (API/render template ^TemplateData template-data)]
+        result (API/render template fragments template-data)]
     (cond
       (#{:stream :input-stream} (:output opts))
       (.getInputStream result)

@@ -11,41 +11,11 @@ import clojure.lang.Symbol;
 @SuppressWarnings("WeakerAccess")
 public class ClojureHelper {
 
-    /**
-     * Clojure :data keyword
-     */
-    public static final Keyword KV_DATA = Keyword.intern("data");
+    enum Keywords {
+        DATA, FORMAT, FUNCTION, FRAGMENTS, STREAM, TEMPLATE, VARIABLES, ZIP_DIR, CONTENT;
 
-    /**
-     * Clojure :format keyword
-     */
-    public static final Keyword KV_FORMAT = Keyword.intern("format");
-
-    /**
-     * Clojure :function keyword
-     */
-    public static final Keyword KV_FUNCTION = Keyword.intern("function");
-
-    /**
-     * Clojure :stream keyword
-     */
-    public static final Keyword KV_STREAM = Keyword.intern("stream");
-
-    /**
-     * Clojure :template keyword
-     */
-    public static final Keyword KV_TEMPLATE = Keyword.intern("template");
-
-    /**
-     * Clojure :variables keyword
-     */
-    public static final Keyword KV_VARIABLES = Keyword.intern("variables");
-
-    /**
-     * Clojure :zip-dir keyword
-     */
-
-    public static final Keyword KV_ZIP_DIR = Keyword.intern("zip-dir");
+        public final Keyword kw = Keyword.intern(name().toLowerCase().replace('_', '-'));
+    }
 
     // requires stencil.process namespace so stencil is loaded.
     static {

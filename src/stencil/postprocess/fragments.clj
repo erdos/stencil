@@ -1,5 +1,6 @@
 (ns stencil.postprocess.fragments
   "Calls deref on delayed values in an XML tree."
+  (:import [stencil.types FragmentInvoke])
   (:require [clojure.zip :as zip]
             [stencil.types :refer :all]
             [stencil.util :refer :all]))

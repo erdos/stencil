@@ -5,11 +5,10 @@
            [java.util.zip ZipEntry ZipOutputStream]
            [io.github.erdos.stencil.impl FileHelper ZipHelper])
   (:require [clojure.data.xml :as xml]
-            [clojure.data.xml.pu-map :as pu-map]
             [clojure.java.io :as io]
-            [clojure.string :as s]
             [stencil.postprocess.ignored-tag :as ignored-tag]
             [stencil
+             [model :as model]
              [tokenizer :as tokenizer]
              [cleanup :as cleanup]
              [eval :as eval]
@@ -60,13 +59,27 @@
 (defmethod  prepare-template :docx [suffix stream] (prepare-zipped-xml-files suffix stream))
 (defmethod  prepare-template :pptx [suffix stream] (prepare-zipped-xml-files suffix stream))
 
+(defn prepare-fragment [input]
+  (assert (some? input))
+  (let [zip-dir (FileHelper/createNonexistentTempFile
+                 "stencil-fragment-" ".zip.contents")]
+    (with-open [zip-stream (io/input-stream input)] ;; FIXME: maybe not deleted immediately
+      (ZipHelper/unzipStreamIntoDirectory zip-stream zip-dir))
+    {:zip-dir zip-dir
+     :content (model/prepare-fragment zip-dir)}))
+
+(comment
+  (prepare-fragment "/home/erdos/Work/moby-aegon/templates/stencil/DIJELSZAMOLAS.docx")
+  )
+
 (defn- run-executable-and-return-writer
   "Returns a function that writes output to its output-stream parameter"
-  [executable function data]
+  [executable fragments function data]
   (let [result (-> (eval/normal-control-ast->evaled-seq data function executable)
                    (tokenizer/tokens-seq->document)
                    (tree-postprocess/postprocess)
-                   (ignored-tag/unmap-ignored-attr))]
+                   #_ (ignored-tag/unmap-ignored-attr) ;; tree postprocess already contains this
+                   )]
     (fn [output-stream]
       (let [writer (io/writer output-stream)]
         (xml/emit result writer)
@@ -74,7 +87,12 @@
 
 (defmulti do-eval-stream (comp :type :template))
 
-(defn- handle-zipped-xml-files [{:keys [template data function]}]
+;; returns a map of relative path to stream writer function.
+(defn- exec->writers [exec-files fragments function data]
+  (into {} (for [[path executable] exec-files]
+             [path (run-executable-and-return-writer executable fragments function data)])))
+
+(defn- handle-zipped-xml-files [{:keys [template data function fragments] :as args}]
   (assert (:zip-dir template))
   (assert (:exec-files template))
   (let [data   (into {} data)
@@ -83,9 +101,7 @@
         source-dir-path (.toPath source-dir)
         outstream    (new PipedOutputStream)
         input-stream (new PipedInputStream outstream)
-        executed-files (into {}
-                             (for [[rel-path executable] exec-files]
-                               [rel-path (run-executable-and-return-writer executable function data)]))]
+        executed-files (exec->writers exec-files fragments function data)]
     (future
       (try
         (with-open [zipstream (new ZipOutputStream outstream)]
@@ -108,13 +124,14 @@
 
 (defmethod do-eval-stream :pptx [template] (handle-zipped-xml-files template))
 
-(defmethod do-eval-stream :xml [{:keys [template data function] :as input}]
+;; TODO: maybe remove this chunk!
+(defmethod do-eval-stream :xml [{:keys [template data function fragments] :as input}]
   (assert (:executable template))
   (let [data         (into {} data)
         executable   (:executable template)
         out-stream   (new PipedOutputStream)
         input-stream (new PipedInputStream out-stream)
-        writer (run-executable-and-return-writer executable function data)]
+        writer (run-executable-and-return-writer executable fragments function data)]
     (future
       ;; TODO: itt hogyan kezeljunk hibat?
       (try
