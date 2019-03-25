@@ -1,5 +1,6 @@
 (ns stencil.model
-  (:import [java.io File])
+  (:import [java.io File]
+           [io.github.erdos.stencil.impl FileHelper])
   (:require [clojure.java.io :refer [file]]
             [clojure.data.xml :as xml]
             [clojure.java.io :as io]
@@ -12,7 +13,6 @@
 ;; http://officeopenxml.com/anatomyofOOXML.php
 
 (def tag-style :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/style)
-(def attr-style-id :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/styleId)
 
 (def tag-based-on :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/basedOn)
 
@@ -37,28 +37,6 @@
   (->> (fn [child] (if (= tag (:tag child)) (update-in child [:attrs attr] update-fn) child))
        (partial mapv)
        (update xml :content)))
-
-(defn- add-styles [xml-styles xml-styles-new]
-  (assert (= "styles" (name (:tag xml-styles))))
-  (assert (= "styles" (name (:tag xml-styles-new))))
-  ;; a jobb oldalrol
-  ;; TODO: ha van egy szablay, ami epul egy masikra mit felulirunk, akkor
-  ;; a raepulesnel is masikat kell hasznalni!!!
-  (let [old-styles (set (filter (comp #{tag-style} :tag) (:content xml-styles)))
-        new-styles (remove old-styles (filter (comp #{tag-style} :tag) (:content xml-styles-new)))
-        [rename out] (reduce (fn [[rename out] new-style]
-                               (let [old-id (get-in new-style [:attrs attr-style-id])
-                                     ;; TODO: id generation should ensure no collisions!
-                                     new-id (name (gensym "sId"))]
-                                 [(assoc rename old-id new-id)
-                                  (conj out (assoc-in new-style [:attrs attr-style-id] new-id))]))
-                             [{} []] new-styles)
-        out (for [rule out]
-              (update-child-tag-attr rule tag-based-on ooxml/val (fn [x] (rename x x))))]
-    {:xml (update xml-styles :content into out)
-     :style-id-renames rename
-     }))
-
 
 (defn- parse-content-types [cts]
   (assert cts)
@@ -118,19 +96,16 @@
 ;; (parse-relation (file "/home/erdos/Downloads/word/_rels/document.xml.rels"))
 
 
-(defn- parse-style [style-file]
+(defn- parse-style
+  "Returns a map where key is style id and value is style definition."
+  [style-file]
+  (assert style-file)
   (with-open [r (io/input-stream (file style-file))]
     (into (sorted-map)
           (for [d (:content (xml/parse r))
                 :when (map? d)
-                ;:when (= "Relationship" (name (:tag d)))
-                ]
-            [(str d)
-                                        ;(:Id (:attrs d))
-             ;; TODO: maybe target type too!
-             {:type (:Type (:attrs d)), :target (:Target (:attrs d))}]))))
-
-; (parse-style (file "/home/erdos/Downloads/word/styles.xml"))
+                :when (= ooxml/style (:tag d))]
+            [(ooxml/style-id (:attrs d)) d]))))
 
 (defn merge-relations
   ;; atnevezi az id-ket es a fajlokat.
@@ -196,14 +171,17 @@
   (assert (.exists xml-file))
   (assert (.isFile xml-file))
   (assert (.endsWith (.getName xml-file) ".xml"))
-  (let [main-rels-file (file (.getParentFile xml-file) "_rels" (str (.getName xml-file) ".rels"))
-        main-rels (parse-relation main-rels-file)
+  (let [main-rels-file (file "_rels" (str (.getName xml-file) ".rels"))
+        main-rels (parse-relation (file (.getParentFile xml-file) main-rels-file))
         style-file (some (fn [[id {:keys [type target]}]]
-                           (when (= relationship-style type)) target) main-rels)]
+                           (when (= relationship-style type)
+                             (file target))) main-rels)]
+    (assert (.exists (file (.getParentFile xml-file) main-rels-file)))
+    (assert (.exists (file (.getParentFile xml-file) style-file)))
     {:xml-file   xml-file
      :rels-file  main-rels-file
      :rels       main-rels
-     :style-file style-file}))
+     :style-file (file (.getParentFile xml-file) style-file)}))
 
 
 (defn prepare-document [^File dir]
@@ -217,8 +195,13 @@
     {:main-file       (:xml-file prepared)
      :main-rels-file  (:rels-file prepared)
      :main-rels       (:rels prepared)
-     :main-style-file (:style-file prepared)}))
-
+     :main-style-file (:style-file prepared)
+     :main-style-path (->> (:style-file prepared)
+                           (file)
+                           (.toPath)
+                           (.relativize (.toPath dir))
+                           (FileHelper/toUnixSeparatedString))
+     :main-style-definitions (parse-style (:style-file prepared))}))
 
 (defn prepare-fragment [^File dir]
   (let [document (prepare-document dir)]
@@ -227,6 +210,8 @@
      :frag-main-rels       (:main-rels document)
      :frag-main-style-file (:main-style-file document)
 
+     :frag-style-definitions (parse-style (:main-style-file document))
+
      ;; content
      :frag-xml (read-xml-main (:main-file document))
 
@@ -234,13 +219,17 @@
 
 ;; visszaad egy fuggvenyt ami beleir a writer-be!
 (defn write-main-style-file [main-document]
-  (assert (:main-file main-document))
   (assert *current-styles*)
-  (let [main-style (:frag-main-style-file main-document)
-        extra-styles (vals @*current-styles*)]
-    (fn [writer]
-      ;; itt a stiluslap faba beleinzertalunk tovabbi stilus definiciokat es minden kiraly.
-      )))
+  (let [original-style-file (file (:main-style-file main-document))
+        extended-tree (with-open [r (io/input-stream original-style-file)]
+                        (let [tree (xml/parse r)
+                              all-ids (set (keep (comp ooxml/style-id :attrs) (:content tree)))
+                              insertable (vals (apply dissoc @*current-styles* all-ids))]
+                          (update tree :content concat insertable)))]
+    (fn [output-stream]
+      (let [writer (io/writer output-stream)]
+        (xml/emit extended-tree writer)
+        (.flush writer)))))
 
 ;; inserts style definition to current document, returns style id (maybe generated new)
 (defn- insert-style! [style-definition]
@@ -252,28 +241,47 @@
       (if (= old-style style-definition)
         id
         (let [new-id    (name (gensym "sid"))
-              new-style (assoc-in style-definition [:attrs ooxml/style-id] new-id)]
+              new-style (assoc-in style-definition [:attrs ooxml/style-id] new-id)
+              new-style (update new-style :content
+                                #(for [c %]
+                                   ;; TODO: itt leptetni kell majd,
+                                   ;; hogy a nev rendes erteket kapjon!!!!
+                                   (if (= ooxml/name (:tag c))
+                                     (assoc-in c [:attrs ooxml/val] (name (gensym "title")))
+                                     c)))]
           (swap! *current-styles* assoc new-id new-style)
           new-id))
       (do (swap! *current-styles* assoc id style-definition)
           id))))
 
-(defmacro fragment-context [fragments-map & bodies]
+(defn insert-styles!
+  ;; visszaadja az osszes stilus definiciot.
+  [style-file]
+  (assert (instance? java.io.File style-file))
+  (let [style-defs (parse-style style-file)]
+    (assert style-defs)
+    (reduce (fn [m [id style]]
+              (let [id2 (insert-style! style)]
+                (if (= id id2) m (assoc m id id2))))
+            {} style-defs)))
+
+(defmacro fragment-context [opts & bodies]
+  (assert (map? opts))
+  (assert (:main opts))
   `(binding [*current-styles* (atom {})
-             *all-fragments*  (or ~fragments-map
-                                  (assert false "A fragment map nem lehet ures!"))]
+             *all-fragments*  (into {} (or ~(:fragments opts)
+                                           (assert false "Fragment map must not be empty!")))]
+     ;; todo: itt a fo stilus fajlt be kell olvasni!
+     (insert-styles! (or (:main-style-file ~(:main opts))
+                         (assert false "main-style-file is missing!")))
      ~@bodies))
 
 (defn- insert-fragment-impl [frag-map local-data-map]
   (assert (:frag-xml frag-map))
   (assert (map? local-data-map))
-  (let [style-ids-rename
-        (reduce (fn [m [id style]]
-                  (let [id2 (insert-style! style)]
-                    (if (= id id2) m (assoc m id id2))))
-                {} (:frag-style-definitions frag-map))
-
-        executable (-> frag-map :frag-xml :insertable :executable (executable-rename-style-ids style-ids-rename))
+  (let [style-ids-rename (insert-styles! (:frag-main-style-file frag-map))
+        executable (-> frag-map :frag-xml :insertable :executable
+                       (executable-rename-style-ids style-ids-rename))
         evaled-seq (eval/normal-control-ast->evaled-seq local-data-map {} executable)
         evaled-tree (tokenizer/tokens-seq->document evaled-seq)
         evaled-tree-parts (extract-body-parts evaled-tree)]
@@ -290,11 +298,12 @@
 
 (defn get-additional-writers-map
   "Collects fragment parts. Returns a map of relative paths and writers."
-  []
+  [main-document]
   (assert @*current-styles* "This function must be called from a fragment context!")
+  ;; itt ellenorzunk arra, hogy a history valtozott-e. ha igen, akkor
+  (let [main-style-file (:main-style-path main-document)]
+    (assert main-style-file)
+    { main-style-file (write-main-style-file main-document)}))
 
-  {}
-  )
 
-
-(do (prepare-fragment (file "/home/erdos/Downloads")) :ok)
+; (do (prepare-fragment (file "/home/erdos/Downloads")) :ok)

@@ -31,19 +31,19 @@
 
   (let [p-left (-> chunk-loc
                    remove-all-rights
-                   remove+up ; t
+                   remove+up ; text
                    remove-all-rights
-                   zip/up ; r
+                   zip/up ; run
                    remove-all-rights
-                   zip/up ; p
+                   zip/up ; paragraph
                    zip/node)
         p-right (-> chunk-loc
                     remove-all-lefts
-                    remove+up ; t
+                    remove+up ; text
                     remove-all-lefts
-                    zip/up ; r
+                    zip/up ; run
                     remove-all-lefts
-                    zip/up ; p
+                    zip/up ; paragraph
                     zip/node)]
     (assert (= ooxml/p (:tag p-left)) (str (pr-str p-left)))
     (assert (= ooxml/p (:tag p-right)))
@@ -78,7 +78,6 @@
 
 ;; Hatra van:
 ;;
-;; - footer + header is tudjon fragmentet behivni
-;; - styling informacio legyen frissitve a fo dokumentumon
-;; - relaciok legyenek mergelve + a hivatkozott fajlok bemasolva a dokumentumba
-;;
+;; - relaciok legyenek mergelve + a hivatkozott fajlok bemasolva a dokumentumba: kepek, fontok
+;; - egy pelda doksi + dokumentacio bovebb leirassal
+;; - fontosabb metodusokhoz egysegtesztek

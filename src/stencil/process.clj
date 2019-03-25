@@ -8,6 +8,7 @@
             [clojure.java.io :as io]
             [stencil.postprocess.ignored-tag :as ignored-tag]
             [stencil
+             [util :refer :all]
              [model :as model]
              [tokenizer :as tokenizer]
              [cleanup :as cleanup]
@@ -91,27 +92,28 @@
 (defmulti do-eval-stream (comp :type :template))
 
 ;; returns a map of relative path to stream writer function.
-(defn- exec->writers [exec-files fragments-map function data]
+(defn- exec->writers [main-document exec-files fragments-map function data]
+  {:post [(every? string? (keys %))
+          (every? fn? (vals %))]}
   (model/fragment-context
-   fragments-map
-   (->
-    (for [[path executable] exec-files]
-      [path (run-executable-and-return-writer executable function data)])
-    (->> (into {}))
-    (into (model/get-additional-writers-map))
-    ;; TODO: also return writer for [Content_Types].xml file and main document rels file!
-    )))
+   {:fragments fragments-map
+    :main      main-document}
+   (-> (for [[path executable] exec-files]
+         [path (run-executable-and-return-writer executable function data)])
+       (->> (into {}))
+       (into (doto (model/get-additional-writers-map main-document)
+               (->> (println "Additional writers: ")))))))
 
 (defn- handle-zipped-xml-files [{:keys [template data function fragments] :as args}]
   (assert (:zip-dir template))
   (assert (:exec-files template))
   (let [data   (into {} data)
-        {:keys [zip-dir exec-files]} template
-        source-dir   (io/file zip-dir)
+        source-dir   (io/file (:zip-dir template))
         source-dir-path (.toPath source-dir)
         outstream    (new PipedOutputStream)
         input-stream (new PipedInputStream outstream)
-        executed-files (exec->writers exec-files fragments function data)]
+        main-document (model/prepare-document source-dir)
+        executed-files (atom (exec->writers main-document (:exec-files template) fragments function data))]
     (future
       (try
         (with-open [zipstream (new ZipOutputStream outstream)]
@@ -121,9 +123,15 @@
                          rel-path (FileHelper/toUnixSeparatedString (.relativize source-dir-path path))
                          ze       (new ZipEntry rel-path)]]
             (.putNextEntry zipstream ze)
-            (if-let [writer (get executed-files rel-path)]
-              (writer zipstream)
+            (if-let [writer (get @executed-files rel-path)]
+              (do (writer zipstream)
+                  (swap! executed-files dissoc rel-path))
               (java.nio.file.Files/copy path zipstream))
+            (.closeEntry zipstream))
+          (doseq [[f writer] @executed-files
+                  :let [ze (new ZipEntry f)]]
+            (.putNextEntry zipstream ze)
+            (writer zipstream)
             (.closeEntry zipstream)))
         (catch Throwable e
           (println "Zipping exception: " e))))
