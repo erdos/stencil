@@ -5,6 +5,7 @@
             [clojure.java.io :as io]
             [clojure.walk :refer [postwalk]]
             [stencil.ooxml :as ooxml]
+            [stencil.eval :as eval]
             [stencil.tokenizer :as tokenizer]
             [stencil.cleanup :as cleanup]))
 
@@ -26,7 +27,11 @@
 (def relationship-style
   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles")
 
+;; style definitions of the main document
 (def ^:dynamic ^:private *current-styles* nil)
+
+;; all insertable fragments
+(def ^:private ^:dynamic *all-fragments* nil)
 
 (defn- update-child-tag-attr [xml tag attr update-fn]
   (->> (fn [child] (if (= tag (:tag child)) (update-in child [:attrs attr] update-fn) child))
@@ -164,7 +169,9 @@
      elem)))
 
 (defn- rename-style-ids [xml style-id-renames]
-  (assert (:tag xml))
+  (assert (:tag xml)
+          (str "Unexpected xml: "
+               (pr-str xml)))
   (assert (map? style-id-renames))
   (if (empty? style-id-renames)
     xml
@@ -174,6 +181,15 @@
          (update-some elem [:attrs ooxml/val] style-id-renames)
          elem))
      xml)))
+
+ (defn- executable-rename-style-ids [executable style-id-renames]
+   (assert (sequential? executable)
+           (str "Not sequential: " (pr-str executable)))
+   (assert (map? style-id-renames))
+   (doall (for [item executable]
+            (if (some-> (or (:open item) (:open+close item)) (str) (.endsWith "Style"))
+              (update-some item [:attrs ooxml/val] style-id-renames)
+              item))))
 
 
 (defn prepare-document-file [^File xml-file]
@@ -242,19 +258,43 @@
       (do (swap! *current-styles* assoc id style-definition)
           id))))
 
-(defmacro fragment-context [& bodies]
-  `(binding [*current-styles* (atom {})]
+(defmacro fragment-context [fragments-map & bodies]
+  `(binding [*current-styles* (atom {})
+             *all-fragments*  (or ~fragments-map
+                                  (assert false "A fragment map nem lehet ures!"))]
      ~@bodies))
 
-(defn insert-fragment! [frag-map]
+(defn- insert-fragment-impl [frag-map local-data-map]
   (assert (:frag-xml frag-map))
+  (assert (map? local-data-map))
   (let [style-ids-rename
         (reduce (fn [m [id style]]
                   (let [id2 (insert-style! style)]
                     (if (= id id2) m (assoc m id id2))))
                 {} (:frag-style-definitions frag-map))
-        frag-xml (rename-style-ids (:frag-xml frag-map) style-ids-rename)]
-    {:frag-xml frag-xml}))
+
+        executable (-> frag-map :frag-xml :insertable :executable (executable-rename-style-ids style-ids-rename))
+        evaled-seq (eval/normal-control-ast->evaled-seq local-data-map {} executable)
+        evaled-tree (tokenizer/tokens-seq->document evaled-seq)
+        evaled-tree-parts (extract-body-parts evaled-tree)]
+    {:frag-evaled-tree evaled-tree
+     :frag-evaled-parts evaled-tree-parts}))
+
+(defn insert-fragment! [frag-name local-data-map]
+  (assert (string? frag-name))
+  (assert (map? local-data-map))
+  (assert *all-fragments* "Nem fragment kontextusban vagyunk!")
+  (if-let [frag-map (get *all-fragments* frag-name)]
+    (insert-fragment-impl frag-map local-data-map)
+    (assert false "Did not find fragment for name!")))
+
+(defn get-additional-writers-map
+  "Collects fragment parts. Returns a map of relative paths and writers."
+  []
+  (assert @*current-styles* "This function must be called from a fragment context!")
+
+  {}
+  )
 
 
 (do (prepare-fragment (file "/home/erdos/Downloads")) :ok)

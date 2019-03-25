@@ -43,7 +43,10 @@
                        "footer" "/home/erdos/stencil/test-resources/multipart/footer.docx"
                        "body" "/home/erdos/stencil/test-resources/multipart/body.docx"})
 
-  )
+
+
+
+  comment)
 
 
 (defn render!

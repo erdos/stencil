@@ -85,6 +85,9 @@
     (:text token)
     (mod-stack-top-conj stack (:text token))
 
+    (:name token) ;; TODO: replace by instanceof call for fragmentinvoke
+    (mod-stack-top-conj stack token)
+
     (:open+close token)
     (let [elem (xml/element (:open+close token) (:attrs token))]
       (mod-stack-top-conj stack elem))
@@ -101,7 +104,7 @@
         stack))
 
     :default
-    (throw (ex-info (str "Unexpected token!" token) {:token token}))))
+    (throw (ex-info (str "Unexpected token: " token " of " (type token)) {:token token}))))
 
 (defn tokens-seq->document
   "From token seq builds an XML tree."

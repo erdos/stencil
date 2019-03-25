@@ -21,13 +21,8 @@
 (defn ->close [t] (->CloseTag t))
 (def ->open ->OpenTag)
 
-;; A fragment represents a template in a document.
-;; It can be copied and pasted to other templates. It contains all contextual
-;; and meta information needed to be seamlessly merged into a document.
-(defrecord Fragment [before after content])
-
 ;; Invocation of a fragment by name
-(defrecord FragmentInvoke [name])
+(defrecord FragmentInvoke [name data])
 
 ;; egyedi parancs objektumok
 
@@ -57,3 +52,4 @@
 (defmethod control? :default [_] false)
 (defmethod control? HideTableColumnMarker [_] true)
 (defmethod control? HideTableRowMarker [_] true)
+(defmethod control? FragmentInvoke [_] true)

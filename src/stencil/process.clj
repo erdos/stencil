@@ -74,7 +74,7 @@
 
 (defn- run-executable-and-return-writer
   "Returns a function that writes output to its output-stream parameter"
-  [executable fragments function data]
+  [executable function data]
   (let [result (-> (eval/normal-control-ast->evaled-seq data function executable)
                    (tokenizer/tokens-seq->document)
                    (tree-postprocess/postprocess)
@@ -82,15 +82,25 @@
                    )]
     (fn [output-stream]
       (let [writer (io/writer output-stream)]
-        (xml/emit result writer)
+        (try (xml/emit result writer)
+             (catch Throwable t
+               (clojure.pprint/pprint result)
+               (throw t)))
         (.flush writer)))))
 
 (defmulti do-eval-stream (comp :type :template))
 
 ;; returns a map of relative path to stream writer function.
-(defn- exec->writers [exec-files fragments function data]
-  (into {} (for [[path executable] exec-files]
-             [path (run-executable-and-return-writer executable fragments function data)])))
+(defn- exec->writers [exec-files fragments-map function data]
+  (model/fragment-context
+   fragments-map
+   (->
+    (for [[path executable] exec-files]
+      [path (run-executable-and-return-writer executable function data)])
+    (->> (into {}))
+    (into (model/get-additional-writers-map))
+    ;; TODO: also return writer for [Content_Types].xml file and main document rels file!
+    )))
 
 (defn- handle-zipped-xml-files [{:keys [template data function fragments] :as args}]
   (assert (:zip-dir template))
@@ -131,7 +141,7 @@
         executable   (:executable template)
         out-stream   (new PipedOutputStream)
         input-stream (new PipedInputStream out-stream)
-        writer (run-executable-and-return-writer executable fragments function data)]
+        writer (run-executable-and-return-writer executable function data)]
     (future
       ;; TODO: itt hogyan kezeljunk hibat?
       (try

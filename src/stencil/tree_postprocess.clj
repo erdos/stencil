@@ -9,9 +9,22 @@
 
 ;; calls postprocess
 (def postprocess
-  (comp unmap-ignored-attr ;; must be called last
-        deref-delayed-values
-        fix-tables
-        fix-whitespaces
-        fix-html-chunks
-        unpack-fragments))
+  (comp
+
+   ;; must be called last. replaces the Ignored attrubute values from ids to namespaces.
+   #'unmap-ignored-attr
+
+   ;; hides rows/columns where markers are present
+   #'fix-tables
+
+   ;; fixes xml:space attribute values where missing
+   #'fix-whitespaces
+
+   ;; includes html() call results.
+   #'fix-html-chunks
+
+   ;; not used at the moment
+   #'deref-delayed-values
+
+   ;; call this first. includes fragments and evaluates them too.
+   #'unpack-fragments))
