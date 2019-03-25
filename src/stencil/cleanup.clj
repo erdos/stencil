@@ -17,7 +17,7 @@
 
 (defn- tokens->ast-step [[queue & ss0 :as stack] token]
   (case (:cmd token)
-    (:if :for :cmd/fragment) (conj (mod-stack-top-conj stack token) [])
+    (:if :for) (conj (mod-stack-top-conj stack token) [])
 
     :else
     (if (empty? ss0)
@@ -112,20 +112,6 @@
 
 ;; Itt nincsen blokk, amit normalizálni kellene
 (defmethod control-ast-normalize-step :echo [echo-command] echo-command)
-
-#_ (defmethod control-ast-normalize-step :cmd/include [include-command] TODO)
-
-(defmethod control-ast-normalize-step :cmd/fragment [fragment-command]
-  ;; itt van egy :blocks kulcs amiben benne van a korulolelt resz!
-  ;; TODO: recursively call further here!
-  (assert (= 1 (count (:blocks fragment-command))))
-  (let [fragment-name (-> fragment-command :name first)
-        block (get-in fragment-command [:blocks 0])
-        children (control-ast-normalize (:children block))]
-    (assert (string? fragment-name))
-    (swap! *normalize-state* assoc-in [:fragments fragment-name]
-           (->Fragment (:before block) (:after block) children))
-    (concat (stack-revert-close (:before block)) (:after block))))
 
 (defmethod control-ast-normalize-step :cmd/include [include-command]
   (let [fragment-name (-> include-command :name first)]
