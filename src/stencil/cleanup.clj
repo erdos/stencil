@@ -114,10 +114,8 @@
 (defmethod control-ast-normalize-step :echo [echo-command] echo-command)
 
 (defmethod control-ast-normalize-step :cmd/include [include-command]
-  (let [fragment-name (-> include-command :name first)]
-    (assert (string? fragment-name))
-    (println "Got fragment inclide normalize step!")
-    (->FragmentInvoke fragment-name nil)))
+  (assert (string? (:name include-command)) (pr-str include-command))
+  include-command)
 
 ;; A feltételes elágazásoknál mindig generálunk egy javított THEN ágat
 (defmethod control-ast-normalize-step :if [control-ast]

@@ -1,5 +1,5 @@
 (ns stencil.postprocess.fragments
-  "Calls deref on delayed values in an XML tree."
+  "Inserts contents of fragments."
   (:import [stencil.types FragmentInvoke])
   (:require [clojure.zip :as zip]
             [stencil.types :refer :all]
@@ -10,15 +10,15 @@
 ;; removes current node and moves pointer to parent node.
 (defn- remove+up [loc] (if (zip/left loc) (zip/up (zip/remove loc)) (zip/remove loc)))
 
-;; returns node if it is a styling element
-(defn- tag-style [node] (when (contains? #{ooxml/pPr ooxml/rPr} (:tag node)) node))
+;; returns nil iff it is not a styling element
+(defn- tag-style [node] (#{ooxml/pPr ooxml/rPr} (:tag node)))
 
 ;; removes all left neighbors except for rPr, pPr nodes. stays at original loc.
 (defn- remove-all-lefts [loc']
   (loop [loc loc']
     (if (zip/left loc)
       (recur (zip/next (zip/remove (zip/left loc))))
-      (reduce zip/insert-left loc (keep tag-style (zip/lefts loc'))))))
+      (reduce zip/insert-left loc (filter tag-style (zip/lefts loc'))))))
 
 ;; removes all right neighbors. stays at original loc.
 (defn remove-all-rights [loc]
@@ -75,3 +75,10 @@
   "Walks the tree (Depth First) and evaluates FragmentInvoke objects."
   [xml-tree]
   (dfs-walk-xml-node xml-tree (partial instance? FragmentInvoke) unpack-fragment))
+
+;; Hatra van:
+;;
+;; - footer + header is tudjon fragmentet behivni
+;; - styling informacio legyen frissitve a fo dokumentumon
+;; - relaciok legyenek mergelve + a hivatkozott fajlok bemasolva a dokumentumba
+;;

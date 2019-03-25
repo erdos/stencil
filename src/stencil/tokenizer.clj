@@ -39,7 +39,7 @@
       ;; fragment inclusion
       (.startsWith text "include ")
       {:cmd :cmd/include
-       :name (infix/parse (.substring text 8))}
+       :name (first (infix/parse (.substring text 8)))}
 
       ;; `else if` expression
       (seq (re-seq pattern-elseif text))

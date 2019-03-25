@@ -2,14 +2,13 @@
   "converts Normalized Control AST -> Evaled token seq"
   (:import [stencil.types FragmentInvoke])
   (:require [stencil.infix :refer [eval-rpn]]
-            [stencil.types :refer [control?]]
+            [stencil.types :refer [control? ->FragmentInvoke]]
             [stencil.util :refer [trace]]))
 
 (set! *warn-on-reflection* true)
 
 (defmulti ^:private eval-step (fn [function data item]
                                 (or (:cmd item)
-                                    (when (instance? FragmentInvoke item) :fragment)
                                     (when (map? item) [:tag (:tag item)])
                                     (type item))))
 
@@ -36,18 +35,8 @@
         (mapcat (fn [data body] (mapcat (partial eval-step function data) body)) datas bodies))
       (:body-run-none item))))
 
-(defmethod eval-step :fragment [f data item]
-  [(assoc item :data data)])
-
-; (assoc (stencil.types/->FragmentInvoke 1 2) :data 44)
-
-#_ ; azert nem igy csinaljuk, mert nehez osszenyitni a Paragraph es Run objektumokt utana
-(defmethod eval-step :cmd/include FragmentInvoke [f data item]
-  (let [frag-name (:name item)
-        inserted (model/insert-fragment! frag-name data)
-        steps (:fragment/steps inserted)]
-    (assert (seq steps))
-    (doall (mapcat (partial eval-step f data) steps))))
+(defmethod eval-step :cmd/include [f data item]
+  [(->FragmentInvoke (:name item) data)])
 
 (defn normal-control-ast->evaled-seq [data function items]
   (assert (map? data))
