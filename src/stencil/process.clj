@@ -129,7 +129,7 @@
               (java.nio.file.Files/copy path zipstream))
             (.closeEntry zipstream))
           (doseq [[f writer] @executed-files
-                  :let [ze (new ZipEntry f)]]
+                  :let [ze (new ZipEntry ^String f)]]
             (.putNextEntry zipstream ze)
             (writer zipstream)
             (.closeEntry zipstream)))

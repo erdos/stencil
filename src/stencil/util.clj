@@ -38,6 +38,13 @@
   (assert (ifn? f))
   (conj (pop xs) (apply f (peek xs) args)))
 
+(defn update-some [m path f]
+  (if-some [x (get-in m path)]
+    (if-some [fx (f x)]
+      (assoc-in m path fx)
+      m)
+    m))
+
 (defn fixpt [f x] (let [fx (f x)] (if (= fx x) x (recur f fx))))
 (defn zipper? [loc] (-> loc meta (contains? :zip/branch?)))
 (defn iterations [f xs] (take-while some? (iterate f xs)))
