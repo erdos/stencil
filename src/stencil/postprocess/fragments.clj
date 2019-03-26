@@ -7,8 +7,16 @@
             [stencil.model :as model]
             [stencil.util :refer :all]))
 
-;; removes current node and moves pointer to parent node.
-(defn- remove+up [loc] (if (zip/left loc) (zip/up (zip/remove loc)) (zip/remove loc)))
+(defn- remove+up
+  "Removes current node and moves pointer to parent node."
+  [loc]
+  (let [|lefts| (count (zip/lefts loc))
+        parent-loc (zip/up loc)]
+    (->> (zip/make-node loc
+                        (zip/node parent-loc)
+                        (concat (take |lefts| (zip/children parent-loc))
+                                (drop (inc |lefts|) (zip/children parent-loc))))
+         (zip/replace parent-loc))))
 
 ;; returns nil iff it is not a styling element
 (defn- tag-style [node] (#{ooxml/pPr ooxml/rPr} (:tag node)))
@@ -20,22 +28,57 @@
       (recur (zip/next (zip/remove (zip/left loc))))
       (reduce zip/insert-left loc (filter tag-style (zip/lefts loc'))))))
 
-;; removes all right neighbors. stays at original loc.
-(defn remove-all-rights [loc]
-  (if (zip/right loc) (recur (zip/remove (zip/right loc))) loc))
+(defn remove-all-rights
+  "Removes all right siblings. Stays at original location."
+  [loc]
+  (let [parent-loc (zip/up loc)
+        |lefts| (inc (count (zip/lefts loc)))]
+    (->> (zip/make-node loc (zip/node parent-loc) (take |lefts| (zip/children parent-loc)))
+         (zip/replace parent-loc)
+         (zip/down)
+         (zip/rightmost))))
+
+(defn- has-texts? [tree]
+  (assert (= ooxml/p (:tag tree)))
+  (not (empty?
+        (for [run (:content tree)
+              :when (map? run)
+              :when (= ooxml/r (:tag run))
+              text (:content run)
+              :when (map? text)
+              :when (= ooxml/t (:tag text))
+              c (:content run)
+              :when (string? c)
+              :when (not-empty c)] c))))
+
+; (has-texts?
 
 (defn- split-paragraphs [chunk-loc & insertable-paragraphs]
   (assert (= ooxml/t (:tag (zip/node (zip/up chunk-loc)))))
   (assert (= ooxml/r (:tag (zip/node (zip/up (zip/up chunk-loc))))))
   (assert (= ooxml/p (:tag (zip/node (zip/up (zip/up (zip/up chunk-loc)))))))
 
-  (let [p-left (-> chunk-loc
+
+
+  (let [node-p?! (fn [x] (assert (= ooxml/p (:tag (zip/node x)))
+                                (str "Not p: " (pr-str (zip/node x)))
+                                ) x)
+        node-t?! (fn [x] (assert (= ooxml/t (:tag (zip/node x)))
+                                (str "Not t: " (pr-str (zip/node x)))) x)
+        node-r?! (fn [x] (assert (= ooxml/r (:tag (zip/node x)))) x)
+
+        p-left (-> chunk-loc
                    remove-all-rights
                    remove+up ; text
+                   (node-t?!)
                    remove-all-rights
+                   (node-t?!)
                    zip/up ; run
+                   (node-r?!)
                    remove-all-rights
+                   (node-r?!)
                    zip/up ; paragraph
+                   (node-p?!)
                    zip/node)
         p-right (-> chunk-loc
                     remove-all-lefts
@@ -45,6 +88,7 @@
                     remove-all-lefts
                     zip/up ; paragraph
                     zip/node)]
+    ;; bukta!!!
     (assert (= ooxml/p (:tag p-left)) (str (pr-str p-left)))
     (assert (= ooxml/p (:tag p-right)))
 
@@ -53,8 +97,8 @@
         (zip/up) ;; <r> tag: run
         (zip/up) ;; <p> tag: paragraph
 
-        (zip/insert-left p-left)
-        (zip/insert-right p-right)
+        (cond-> (has-texts? p-left) (zip/insert-left p-left))
+        (cond-> (has-texts? p-right) (zip/insert-right p-right))
 
         (as-> * (reduce zip/insert-left * insertable-paragraphs))
 
