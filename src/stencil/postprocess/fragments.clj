@@ -51,47 +51,35 @@
               :when (string? c)
               :when (not-empty c)] c))))
 
-; (has-texts?
+(defn node-p?! [x] (assert (= ooxml/p (:tag (zip/node x)))) x)
+(defn node-t?! [x] (assert (= ooxml/t (:tag (zip/node x)))) x)
+(defn node-r?! [x] (assert (= ooxml/r (:tag (zip/node x)))) x)
 
 (defn- split-paragraphs [chunk-loc & insertable-paragraphs]
-  (assert (= ooxml/t (:tag (zip/node (zip/up chunk-loc)))))
-  (assert (= ooxml/r (:tag (zip/node (zip/up (zip/up chunk-loc))))))
-  (assert (= ooxml/p (:tag (zip/node (zip/up (zip/up (zip/up chunk-loc)))))))
-
-
-
-  (let [node-p?! (fn [x] (assert (= ooxml/p (:tag (zip/node x)))
-                                (str "Not p: " (pr-str (zip/node x)))
-                                ) x)
-        node-t?! (fn [x] (assert (= ooxml/t (:tag (zip/node x)))
-                                (str "Not t: " (pr-str (zip/node x)))) x)
-        node-r?! (fn [x] (assert (= ooxml/r (:tag (zip/node x)))) x)
-
-        p-left (-> chunk-loc
-                   remove-all-rights
-                   remove+up ; text
+  (let [p-left (-> chunk-loc
+                   (remove-all-rights)
+                   (remove+up) ; text
                    (node-t?!)
-                   remove-all-rights
+                   (remove-all-rights)
                    (node-t?!)
-                   zip/up ; run
+                   (zip/up) ; run
                    (node-r?!)
-                   remove-all-rights
+                   (remove-all-rights)
                    (node-r?!)
-                   zip/up ; paragraph
+                   (zip/up) ; paragraph
                    (node-p?!)
                    zip/node)
         p-right (-> chunk-loc
-                    remove-all-lefts
-                    remove+up ; text
-                    remove-all-lefts
-                    zip/up ; run
-                    remove-all-lefts
-                    zip/up ; paragraph
-                    zip/node)]
-    ;; bukta!!!
-    (assert (= ooxml/p (:tag p-left)) (str (pr-str p-left)))
-    (assert (= ooxml/p (:tag p-right)))
-
+                    (remove-all-lefts)
+                    (remove+up) ; text
+                    (node-t?!)
+                    (remove-all-lefts)
+                    (zip/up) ; run
+                    (node-r?!)
+                    (remove-all-lefts)
+                    (zip/up) ; paragraph
+                    (node-p?!)
+                    (zip/node))]
     (-> chunk-loc
         (zip/up) ;; <t> tag: text
         (zip/up) ;; <r> tag: run
@@ -122,6 +110,7 @@
 
 ;; Hatra van:
 ;;
+;; - stilus definicio nevek legyenek egyediek es ertelmezhetok.
 ;; - relaciok legyenek mergelve + a hivatkozott fajlok bemasolva a dokumentumba: kepek, fontok
 ;; - egy pelda doksi + dokumentacio bovebb leirassal
 ;; - fontosabb metodusokhoz egysegtesztek
