@@ -13,8 +13,6 @@
 
 (declare control-ast-normalize)
 
-(def ^:private ^:dynamic *normalize-state* nil)
-
 (defn- tokens->ast-step [[queue & ss0 :as stack] token]
   (case (:cmd token)
     (:if :for) (conj (mod-stack-top-conj stack token) [])
@@ -209,12 +207,10 @@
 ; (find-variables [])
 
 (defn process [raw-token-seq]
-  (binding [*normalize-state* (atom {})]
-    (let [ast (tokens->ast raw-token-seq)
-          executable (control-ast-normalize (annotate-environments ast))]
-      {:variables  (find-variables ast)
-       :dynamic?   (boolean (some :cmd executable))
-       :executable executable
-       :fragments (:fragments @*normalize-state*)})))
+  (let [ast (tokens->ast raw-token-seq)
+        executable (control-ast-normalize (annotate-environments ast))]
+    {:variables  (find-variables ast)
+     :dynamic?   (boolean (some :cmd executable))
+     :executable executable}))
 
 :OK
