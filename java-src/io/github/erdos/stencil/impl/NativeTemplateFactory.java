@@ -67,7 +67,7 @@ public final class NativeTemplateFactory implements TemplateFactory {
     }
 
     /**
-     * Retrieves content of :variables kw from map as a set.
+     * Retrieves content of :variables keyword from map as a set.
      */
     @SuppressWarnings("unchecked")
     private Set variableNames(Map prepared) {
