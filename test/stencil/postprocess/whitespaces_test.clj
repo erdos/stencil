@@ -2,20 +2,18 @@
   (:require [stencil.types :refer :all]
             [clojure.test :refer [deftest is are testing]]
             [clojure.data.xml :as xml]
-            [stencil.process :refer :all]))
+            [stencil.process :refer :all]
+            [stencil.model :as model]))
 
-(declare do-eval-stream)
 
 (defn- test-eval [xml-str data-map]
-  (let [prepared (->> xml-str
-                      str
-                      .getBytes
-                      (new java.io.ByteArrayInputStream)
-                      (prepare-template :xml))]
-    (-> {:template prepared
-         :data data-map
-         :function (fn [& _] (assert false "ERROR"))}
-        do-eval-stream :stream slurp str)))
+  (let [input (->> xml-str
+                   str
+                   .getBytes
+                   (new java.io.ByteArrayInputStream))
+        part (model/->exec input)
+        evaled-xml (model/eval-executable part data-map {})]
+    (xml/emit-str evaled-xml)))
 
 (defmacro ^:private test-equals [expected input data]
   `(is (= (str "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" ~expected)

@@ -92,6 +92,11 @@
                               :when (= "Override" (name (:tag d)))]
                           [(file (str (:PartName (:attrs d)))), (:ContentType (:attrs d))]))})))
 
+(defn ->exec [xml-streamable]
+  (with-open [stream (io/input-stream xml-streamable)]
+    (select-keys (cleanup/process (tokenizer/parse-to-tokens-seq stream))
+                 [:variables :dynamic? :executable])))
+
 (defn load-template-model [^File dir]
   (assert (.exists dir))
   (assert (.isDirectory dir))
@@ -110,12 +115,7 @@
 
         main-style-path (some #(when (= rel-type-style (::type %))
                                  (str (file (.getParentFile (file main-document)) (::target %))))
-                              (vals (:parsed main-document-rels)))
-
-        ->exec (fn [xml-file]
-                 (with-open [stream (io/input-stream (file xml-file))]
-                   (select-keys (cleanup/process (tokenizer/parse-to-tokens-seq stream))
-                                [:variables :dynamic? :executable])))]
+                              (vals (:parsed main-document-rels)))]
     {:content-types (parse-content-types dir)
      :source-folder dir
      :relations     {:path (str (file "_rels" ".rels"))
@@ -151,19 +151,24 @@
       (xml/emit tree writer)
       (.flush writer))))
 
+(defn eval-executable [part data functions]
+  (assert (:executable part))
+  (;; TODO:
+   (eval 'stencil.tree-postprocess/postprocess)
+   (tokenizer/tokens-seq->document
+    (eval/normal-control-ast->evaled-seq data functions (:executable part)))))
+
 (defn- eval-model-part [part data functions]
   (assert (:executable part))
   ;; TODO: itt el kell agazni attol fuggoen h dinamikus v sem.
-  (let [[result fragments] (binding [*inserted-fragments* (atom #{})]
-                             [(;; TODO:
-                               (eval 'stencil.tree-postprocess/postprocess)
-                               (tokenizer/tokens-seq->document
-                                (eval/normal-control-ast->evaled-seq data functions (:executable part))))
-                              @*inserted-fragments*])]
-    (swap! *inserted-fragments* into fragments)
-    {:xml    result
-     :fragment-names fragments
-     :writer (->xml-writer result)}))
+  (expect-fragment-context!
+   (let [[result fragments] (binding [*inserted-fragments* (atom #{})]
+                              [(eval-executable part data functions)
+                               @*inserted-fragments*])]
+     (swap! *inserted-fragments* into fragments)
+     {:xml    result
+      :fragment-names fragments
+      :writer (->xml-writer result)})))
 
 (defn- style-file-writer [template]
   (expect-fragment-context!
@@ -240,8 +245,6 @@
    (->xml-writer)))
 
 (defn evaled-template-model->writers-map [evaled-template-model]
-
-
   (as-> (sorted-map) result
 
     ;; relations files that are created on-the-fly
@@ -307,6 +310,7 @@
        (do (swap! *current-styles* assoc id style-definition)
            id)))))
 
+
 (defn insert-styles!
   ;; visszaadja az osszes stilus definiciot.
   [style-defs]
@@ -317,6 +321,7 @@
             (let [id2 (-insert-style! style)]
               (if (= id id2) m (assoc m id id2))))
           {} style-defs))
+
 
 (defn- executable-rename-style-ids [executable style-id-renames]
   (assert (sequential? executable)
