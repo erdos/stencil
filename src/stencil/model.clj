@@ -16,6 +16,8 @@
             [stencil.util :refer :all]
             [stencil.cleanup :as cleanup]))
 
+(set! *warn-on-reflection* true)
+
 (def rel-type-main
   "Relationship type of main document in _rels/.rels file."
   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument")
@@ -185,7 +187,7 @@
 (defn- style-file-writer [template]
   (expect-fragment-context!
    (let [original-style-file (:source-file (:style (:main template)))
-         _ (assert (.exists original-style-file))
+         _ (assert (.exists ^File original-style-file))
          extended-tree (with-open [r (io/input-stream original-style-file)]
                          (let [tree (xml/parse r)
                                all-ids (set (keep (comp ooxml/style-id :attrs) (:content tree)))
@@ -370,7 +372,7 @@
       ::mode       (::mode m)
       :new-id      new-id
       :old-id      old-rel-id
-      :source-file (file (-> model :main :source-file .getParentFile) (::target m))
+      :source-file (file (-> model :main :source-file file .getParentFile) (::target m))
       :path        new-path})))
 
 
