@@ -7,6 +7,7 @@
            [io.github.erdos.stencil.impl FileHelper])
   (:require [clojure.java.io :refer [file]]
             [clojure.data.xml :as xml]
+            [clojure.data.xml.pu-map :as pu]
             [clojure.java.io :as io]
             [clojure.walk :refer [postwalk]]
             [stencil.ooxml :as ooxml]
@@ -15,21 +16,6 @@
             [stencil.util :refer :all]
             [stencil.cleanup :as cleanup]))
 
-#_ (def tag-style :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/style)
-
-#_ (def tag-based-on :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/basedOn)
-
-#_ (def default-extensions {"jpeg" "image/jpeg", "png" "image/png"})
-
-#_ (def main-content-type
-     "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml")
-
-#_ (def rels-content-type
-     "application/vnd.openxmlformats-package.relationships+xml")
-
-#_ (def relationship-style
-     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles")
-
 (def rel-type-main
   "Relationship type of main document in _rels/.rels file."
   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument")
@@ -37,6 +23,10 @@
 (def rel-type-style
   "Relationship type of style definitions in _rels/.rels file."
   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles")
+
+(def rel-type-image
+  "Relationship type of image files in .rels files."
+  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image")
 
 (def tag-relationships
   :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fpackage%2F2006%2Frelationships/Relationships)
@@ -52,6 +42,8 @@
 
 ;; set of already inserted fragment ids.
 (def ^:private ^:dynamic *inserted-fragments* nil)
+
+(def ^:private ^:dynamic *extra-files* nil)
 
 ;; throws error when not invoked from inside fragment context
 (defmacro expect-fragment-context! [& bodies] `(do (assert *current-styles*) ~@bodies))
@@ -134,10 +126,7 @@
                      :executable  (->exec (file dir main-document))
                      :style {:path        main-style-path
                              :source-file (file dir main-style-path)
-                             :parsed      (parse-style (file dir main-style-path))
-                             ;; TODO: xml es tartsai?
-                             :xml :TODO/xml
-                             }
+                             :parsed      (parse-style (file dir main-style-path))}
                      :relations main-document-rels
                      :headers+footers (doall
                                        (for [[id m] (:parsed main-document-rels)
@@ -156,18 +145,25 @@
       ;; TODO: also remove them from relations maybe.
       (update :main dissoc :headers+footers)))
 
+(defn ->xml-writer [tree]
+  (fn [output-stream]
+    (let [writer (io/writer output-stream)]
+      (xml/emit tree writer)
+      (.flush writer))))
+
 (defn- eval-model-part [part data functions]
   (assert (:executable part))
   ;; TODO: itt el kell agazni attol fuggoen h dinamikus v sem.
-  (let [result (;; TODO:
-                (eval 'stencil.tree-postprocess/postprocess)
-                (tokenizer/tokens-seq->document
-                 (eval/normal-control-ast->evaled-seq data functions (:executable part))))]
+  (let [[result fragments] (binding [*inserted-fragments* (atom #{})]
+                             [(;; TODO:
+                               (eval 'stencil.tree-postprocess/postprocess)
+                               (tokenizer/tokens-seq->document
+                                (eval/normal-control-ast->evaled-seq data functions (:executable part))))
+                              @*inserted-fragments*])]
+    (swap! *inserted-fragments* into fragments)
     {:xml    result
-     :writer (fn [output-stream]
-               (let [writer (io/writer output-stream)]
-                 (xml/emit result writer)
-                 (.flush writer)))}))
+     :fragment-names fragments
+     :writer (->xml-writer result)}))
 
 (defn- style-file-writer [template]
   (expect-fragment-context!
@@ -177,19 +173,42 @@
                          (let [tree (xml/parse r)
                                all-ids (set (keep (comp ooxml/style-id :attrs) (:content tree)))
                                insertable (vals (apply dissoc @*current-styles* all-ids))]
-                           (update tree :content (comp doall concat) insertable)))]
-     {:writer (fn [output-stream]
-                (let [writer (io/writer output-stream)]
-                  (xml/emit extended-tree writer)
-                  (.flush writer)))})))
+                           (update tree :content concatv insertable)))]
+     {:writer (->xml-writer extended-tree)})))
 
 (defn eval-template-model [template-model data functions fragments]
   (assert (:main template-model) "Should be a result of load-template-model call!")
   (assert (some? fragments))
-  (binding [*current-styles* (atom (:parsed (:style (:main template-model))))
+  (binding [*current-styles*     (atom (:parsed (:style (:main template-model))))
             *inserted-fragments* (atom #{})
-            *all-fragments* (into {} fragments)]
-    (let [evaluate (fn [m] (assoc m :result (eval-model-part (:executable m) data functions)))]
+            *extra-files*        (atom #{})
+            *all-fragments*      (into {} fragments)]
+    (let [evaluate (fn [m]
+                     (let [result (eval-model-part (:executable m) data functions)
+                           fragment-names          (set (:fragment-names result))]
+                       ;; ha a fragment-names nem ures, akkor a fragmentet megfuzzoljuk
+                       ;; tehat hozzaadjuk a fragmentbol a kapcsolodo relaciokat valahogy!!!!!
+
+                       (cond-> m
+
+                         (and (seq @*extra-files*) (nil? (:path (:relations m))))
+                         (assoc-in [:relations :path]
+                                   ;; itt ki kell talalni h a relacio utvonala mi legyen...
+                                   (str (file (.getParentFile (file (:path m)))
+                                              "_rels"
+                                              (str (.getName (file (:path m))) ".rels"))))
+
+                           ;; Az adott reszdokumentumon vegigmegyunk es beletoljuk azokat a resz doksi reszeket amik relevansak.
+                         (seq @*extra-files*)
+                         (update-in [:relations :parsed] (fnil into {})
+                                    (for [relation @*extra-files*
+                                          ;; TODO: itt a path erteket ki neke tolteni valami jora.
+                                          :when (contains? fragment-names (:fragment-name relation))]
+                                      [(:new-id relation) relation]))
+
+                         ;; Az extra-files reszen vegigmegyunk es szepen a sajat relaciok ala betoljuk
+                         ;; azokat a relaciokat ahol a fragment-names stimmel.
+                         :finally (assoc :result result))))]
       (->
        template-model
 
@@ -207,29 +226,52 @@
       (Files/copy (.toPath (io/file (:source-file x))) stream)
       (.flush stream))))
 
+(defn- relation-writer [relation-map]
+  (assert (map? relation-map))
+  (assert (every? string? (keys relation-map)) (str "Not all str: " (keys relation-map)))
+  (->
+   {:tag tag-relationships
+    :content (for [[k v] relation-map]
+               {:tag tag-relationship
+                :attrs (cond-> {:Type (::type v), :Target (::target v), :Id k}
+                         (::mode v) (assoc :TargetMode (::mode v)))})}
+   ;; LibreOffice opens the generated document only when default namespace in the following.
+   (with-meta {:clojure.data.xml/nss (pu/assoc pu/EMPTY "" "http://schemas.openxmlformats.org/package/2006/relationships")})
+   (->xml-writer)))
+
 (defn evaled-template-model->writers-map [evaled-template-model]
 
 
   (as-> (sorted-map) result
 
+    ;; relations files that are created on-the-fly
+    (into result
+          (for [m (tree-seq coll? seq evaled-template-model)
+                :when (and (map? m) (not (sorted? m)) (:path m))
+                :when (:parsed (:relations m))
+                :when (not (:source-file (:relations m)))]
+            [(:path (:relations m)) (relation-writer (:parsed (:relations m)))]))
+
     ;; create writer for every item where :path is specified
     (into result
           (for [m (tree-seq coll? seq evaled-template-model)
-                :when (and (map? m) (not (sorted? m)) (:path m))]
+                :when (and (map? m) (not (sorted? m)) (:path m))
+                :when (not (contains? result (:path m)))]
             [(:path m) (or (:writer (:result m)) (resource-copier m))]))
 
     ;; find all items in all relations
     (into result
           (for [m (tree-seq coll? seq evaled-template-model)
                 :when (and (map? m) (not (sorted? m)) (:relations m))
-                :let [src-parent  (file (or (:source-folder m)
-                                            (.getParentFile (file (:source-file m)))))
+                :let [src-parent  (delay (file (or (:source-folder m)
+                                                  (.getParentFile (file (:source-file m))))))
                       path-parent (some-> m :path file .getParentFile)]
                 relation (vals (:parsed (:relations m)))
                 :let [path (str (file path-parent (::target relation)))]
-                :when (not (contains? result path))
-                :let [src (file src-parent (::target relation))]]
-            [path (resource-copier {:path path :source-file src})]))))
+                :when (or (:writer relation) (not (contains? result path)))
+                :let [src (or (:source-file relation) (file @src-parent (::target relation)))]]
+            [path (or (:writer relation)
+                      (resource-copier {:path path :source-file src}))]))))
 
 
 (defn- extract-body-parts [xml-tree]
@@ -287,6 +329,29 @@
              (update-some item [:attrs ooxml/val] style-id-renames)
              item))))
 
+(defn- executable-rename-relation-ids [executable id-rename]
+  (assert (sequential? executable))
+  (assert (map? id-rename))
+  (assert (every? string? (keys id-rename)))
+  (assert (every? string? (vals id-rename)))
+  (doall (for [item executable]
+           ;; images are being renamed
+           (update-some item [:attrs ooxml/embed] id-rename))))
+
+(defn- relation-ids-rename [model]
+  (doall
+   (for [[old-rel-id m] (-> model :main :relations :parsed (doto assert))
+         :when (= rel-type-image (::type m))
+         :let [new-id       (str (java.util.UUID/randomUUID))
+               extension    (last (.split (str (::target m)) "\\."))
+               new-path     (str new-id "." extension)]]
+     {::type       (::type m)
+      ::target     new-path
+      ::mode       (::mode m)
+      :new-id      new-id
+      :old-id      old-rel-id
+      :source-file (file (-> model :main :source-file .getParentFile) (::target m))
+      :path        new-path})))
 
 (defn insert-fragment! [frag-name local-data-map]
   (assert (string? frag-name))
@@ -299,44 +364,22 @@
                fragment-model   (update-in fragment-model [:main :executable :executable]
                                            executable-rename-style-ids style-ids-rename)
 
+               relation-ids-rename (map #(assoc % :fragment-name frag-name)
+                                        (relation-ids-rename fragment-model))
+               fragment-model   (update-in fragment-model [:main :executable :executable]
+                                           executable-rename-relation-ids (into {} (map (juxt :old-id :new-id) relation-ids-rename)))
+
                ;; evaluate
                evaled (eval-template-model fragment-model local-data-map {} {})
 
                ;; write back
                evaled-parts (-> evaled :main :result :xml (doto assert) extract-body-parts)]
            (swap! *inserted-fragments* conj frag-name)
+           (swap! *extra-files* into relation-ids-rename)
            {:frag-evaled-parts evaled-parts}))
      (assert false "Did not find fragment for name!"))))
 
-;; TODO: will need to use!
-(defn- write-relation [relation-map]
-  (assert (map? relation-map))
-  (assert (every? string? (keys relation-map)))
-  (assert (every? (comp #{#{::type ::mode ::target}} set keys) (vals relation-map)))
-  (fn [output-stream]
-    (let [writer (io/writer output-stream)]
-      (-> {:tag tag-relationships
-           :content (for [[k v] relation-map]
-                      {:tag tag-relationship
-                       :attrs {:Type (::type v)
-                               :Target (::target v)
-                               :TargetMode (::mode v)
-                               :Id k}})}
-          (xml/emit writer))
-      (.flush writer))))
 
-;; TODO: a relaciokat mar fragment generalaskor atnevezzuk es fuzzoljuk
-;; es igy nem kell az utkozesekkel foglalkkozni
-;; csak amikor osszerakjuk a dokumentumot a vegen
-;; akkor bele kell tenni a kapcsolodo fajlokat is es a plusz relaciokat!
-;; meg esetleg a content-type ertekeket, amik lehet h hianyoznak.
-
-
-#_
-(defn- update-child-tag-attr [xml tag attr update-fn]
-  (->> (fn [child] (if (= tag (:tag child)) (update-in child [:attrs attr] update-fn) child))
-       (partial mapv)
-       (update xml :content)))
 
 (comment
 
@@ -345,6 +388,8 @@
       (evaled-template-model->writers-map)
       keys sort
       time)
+
+
 
   (->
    (load-template-model (file "/home/erdos/example-with-image-in-footer"))

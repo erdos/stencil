@@ -4,6 +4,8 @@
             [clojure.data.xml :as xml]
             [stencil.process :refer :all]))
 
+(declare do-eval-stream)
+
 (defn- test-eval [xml-str data-map]
   (let [prepared (->> xml-str
                       str

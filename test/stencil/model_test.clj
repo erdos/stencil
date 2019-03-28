@@ -9,6 +9,7 @@
     (eval `(defn ~(symbol (str "-" k)) [~'& args#] (apply (deref ~v) args#)))))
 
 
+#_
 (deftest test-add-styles
   (testing "The 'A' elems should be merged, second 'B' elem should be renamed."
     (->

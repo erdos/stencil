@@ -34,7 +34,6 @@
 (comment
   (time (fragment "/home/erdos/Work/moby-aegon/templates/stencil/DIJELSZAMOLAS.docx"))
 
-
   (render! "/home/erdos/stencil/test-resources/multipart/main.docx"
            {:name "John Doe"}
            :overwrite? true
