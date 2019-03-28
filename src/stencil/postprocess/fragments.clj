@@ -21,14 +21,15 @@
 ;; returns nil iff it is not a styling element
 (defn- tag-style [node] (#{ooxml/pPr ooxml/rPr} (:tag node)))
 
-;; removes all left neighbors except for rPr, pPr nodes. stays at original loc.
-(defn- remove-all-lefts [loc']
+(defn- remove-all-lefts
+  "Removes all left siblings. Stays at original location."
+  [loc']
   (loop [loc loc']
     (if (zip/left loc)
       (recur (zip/next (zip/remove (zip/left loc))))
       (reduce zip/insert-left loc (filter tag-style (zip/lefts loc'))))))
 
-(defn remove-all-rights
+(defn- remove-all-rights
   "Removes all right siblings. Stays at original location."
   [loc]
   (let [parent-loc (zip/up loc)
@@ -107,10 +108,3 @@
   "Walks the tree (Depth First) and evaluates FragmentInvoke objects."
   [xml-tree]
   (dfs-walk-xml-node xml-tree (partial instance? FragmentInvoke) unpack-fragment))
-
-;; Hatra van:
-;;
-;; - stilus definicio nevek legyenek egyediek es ertelmezhetok.
-;; - relaciok legyenek mergelve + a hivatkozott fajlok bemasolva a dokumentumba: kepek, fontok
-;; - egy pelda doksi + dokumentacio bovebb leirassal
-;; - fontosabb metodusokhoz egysegtesztek

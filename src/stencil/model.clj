@@ -63,6 +63,7 @@
                                ::target (doto (:Target (:attrs d)) assert)
                                ::mode   (:TargetMode :attrs)}]))))
 
+
 (defn- parse-style
   "Returns a map where key is style id and value is style definition."
   [style-file]
@@ -73,6 +74,7 @@
                 :when (map? d)
                 :when (= ooxml/style (:tag d))]
             [(ooxml/style-id (:attrs d)) d]))))
+
 
 (defn- parse-content-types [^File cts]
   (assert (.exists cts))
@@ -92,10 +94,12 @@
                               :when (= "Override" (name (:tag d)))]
                           [(file (str (:PartName (:attrs d)))), (:ContentType (:attrs d))]))})))
 
+
 (defn ->exec [xml-streamable]
   (with-open [stream (io/input-stream xml-streamable)]
     (select-keys (cleanup/process (tokenizer/parse-to-tokens-seq stream))
                  [:variables :dynamic? :executable])))
+
 
 (defn load-template-model [^File dir]
   (assert (.exists dir))
@@ -139,11 +143,13 @@
                                           :executable  (->exec (file dir f))
                                           :relations   (->rels f)}))}}))
 
+
 (defn load-fragment-model [dir]
   (-> (load-template-model dir)
       ;; headers and footers are not used for fragments
       ;; TODO: also remove them from relations maybe.
       (update :main dissoc :headers+footers)))
+
 
 (defn ->xml-writer [tree]
   (fn [output-stream]
@@ -151,12 +157,14 @@
       (xml/emit tree writer)
       (.flush writer))))
 
+
 (defn eval-executable [part data functions]
   (assert (:executable part))
   (;; TODO:
    (eval 'stencil.tree-postprocess/postprocess)
    (tokenizer/tokens-seq->document
     (eval/normal-control-ast->evaled-seq data functions (:executable part)))))
+
 
 (defn- eval-model-part [part data functions]
   (assert (:executable part))
@@ -170,6 +178,7 @@
       :fragment-names fragments
       :writer (->xml-writer result)})))
 
+
 (defn- style-file-writer [template]
   (expect-fragment-context!
    (let [original-style-file (:source-file (:style (:main template)))
@@ -180,6 +189,7 @@
                                insertable (vals (apply dissoc @*current-styles* all-ids))]
                            (update tree :content concatv insertable)))]
      {:writer (->xml-writer extended-tree)})))
+
 
 (defn eval-template-model [template-model data functions fragments]
   (assert (:main template-model) "Should be a result of load-template-model call!")
@@ -214,14 +224,11 @@
                          ;; Az extra-files reszen vegigmegyunk es szepen a sajat relaciok ala betoljuk
                          ;; azokat a relaciokat ahol a fragment-names stimmel.
                          :finally (assoc :result result))))]
-      (->
-       template-model
+      (-> template-model
+          (update :main evaluate)
+          (update-in [:main :headers+footers] (partial mapv evaluate))
+          (assoc-in [:main :style :result] (style-file-writer template-model))))))
 
-       (update :main evaluate)
-
-       (update-in [:main :headers+footers] (partial mapv evaluate))
-
-       (assoc-in [:main :style :result] (style-file-writer template-model))))))
 
 (defn- resource-copier [x]
   (assert (:path x))
@@ -230,6 +237,7 @@
     (let [stream (io/output-stream writer)]
       (Files/copy (.toPath (io/file (:source-file x))) stream)
       (.flush stream))))
+
 
 (defn- relation-writer [relation-map]
   (assert (map? relation-map))
@@ -240,9 +248,11 @@
                {:tag tag-relationship
                 :attrs (cond-> {:Type (::type v), :Target (::target v), :Id k}
                          (::mode v) (assoc :TargetMode (::mode v)))})}
-   ;; LibreOffice opens the generated document only when default namespace in the following.
-   (with-meta {:clojure.data.xml/nss (pu/assoc pu/EMPTY "" "http://schemas.openxmlformats.org/package/2006/relationships")})
+   ;; LibreOffice opens the generated document only when default xml namespace is the following:
+   (with-meta {:clojure.data.xml/nss
+               (pu/assoc pu/EMPTY "" "http://schemas.openxmlformats.org/package/2006/relationships")})
    (->xml-writer)))
+
 
 (defn evaled-template-model->writers-map [evaled-template-model]
   (as-> (sorted-map) result
@@ -334,6 +344,7 @@
              (update-some item [:attrs ooxml/val] style-id-renames)
              item))))
 
+
 (defn- executable-rename-relation-ids [executable id-rename]
   (assert (sequential? executable))
   (assert (map? id-rename))
@@ -342,6 +353,7 @@
   (doall (for [item executable]
            ;; images are being renamed
            (update-some item [:attrs ooxml/embed] id-rename))))
+
 
 (defn- relation-ids-rename [model]
   (doall
@@ -357,6 +369,7 @@
       :old-id      old-rel-id
       :source-file (file (-> model :main :source-file .getParentFile) (::target m))
       :path        new-path})))
+
 
 (defn insert-fragment! [frag-name local-data-map]
   (assert (string? frag-name))
@@ -382,31 +395,7 @@
            (swap! *inserted-fragments* conj frag-name)
            (swap! *extra-files* into relation-ids-rename)
            {:frag-evaled-parts evaled-parts}))
-     (assert false "Did not find fragment for name!"))))
 
-
-
-(comment
-
-  (-> (load-template-model (file "/home/erdos/example-with-image-in-footer"))
-      (eval-template-model {} {} {})
-      (evaled-template-model->writers-map)
-      keys sort
-      time)
-
-
-
-  (->
-   (load-template-model (file "/home/erdos/example-with-image-in-footer"))
-                                        ; (load-template-model (file "/home/erdos/stencil/test-resources/multipart/main.docx"))
-   (assoc-in [:content-types] :CT)
-   (assoc-in [:rels] :RELS)
-   (assoc-in [:main :relations :parsed] :RELS)
-   (assoc-in [:main :executable :executable] :EXEC)
-   (assoc-in [:main :executable :variables] :EXEC/vars)
-   (update-in [:main :headers+footers] (partial mapv #(assoc-in % [:executable :executable] :EXEC)))
-   ;; (update-in [:main :headers+footers] (partial mapv #(assoc-in % [:relations :parsed] :PARSED/RELS)))
-   (clojure.pprint/pprint)
-   time)
-
-  comment)
+     (throw (ex-info "Did not find fragment for name!"
+                     {:fragment-name frag-name
+                      :all-fragment-names (keys *all-fragments*)})))))
