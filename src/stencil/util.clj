@@ -103,6 +103,5 @@
   (assert (fn? edit-fn))
   (dfs-walk-xml-node xml-tree predicate #(clojure.zip/edit % edit-fn)))
 
-(defn file? [x] (instance? java.io.File x))
 
 :OK
