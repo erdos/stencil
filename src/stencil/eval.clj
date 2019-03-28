@@ -1,6 +1,5 @@
 (ns stencil.eval
   "converts Normalized Control AST -> Evaled token seq"
-  (:import [stencil.types FragmentInvoke])
   (:require [stencil.infix :refer [eval-rpn]]
             [stencil.types :refer [control? ->FragmentInvoke]]
             [stencil.util :refer [trace]]))
