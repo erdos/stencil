@@ -6,8 +6,10 @@
   (:require [clojure.walk :refer [stringify-keys]]
             [clojure.java.io :as io]))
 
+
 (set! *warn-on-reflection* true)
 (set! *unchecked-math* :warn-on-boxed)
+
 
 (defn ^PreparedTemplate prepare
   "Creates a prepared template instance from an input document."
@@ -17,11 +19,13 @@
     (nil? input)  (throw (ex-info "Template is missing!" {}))
     :otherwise    (API/prepare (io/file input))))
 
+
 (defn- ^TemplateData make-template-data [x]
   (if (map? x)
     (TemplateData/fromMap ^Map (stringify-keys x))
     (throw (ex-info (str "Unsupported template data type " (type x) "!")
                     {:template-data x}))))
+
 
 (defn ^PreparedFragment fragment
   "Converts input to a fragment instance"
@@ -30,22 +34,6 @@
     (instance? PreparedFragment f) f
     (nil? f)   (throw (ex-info "Fragment can not be null!" {}))
     :otherwise (API/fragment (io/file f))))
-
-(comment
-  (time (fragment "/home/erdos/Work/moby-aegon/templates/stencil/DIJELSZAMOLAS.docx"))
-
-  (render! "/home/erdos/stencil/test-resources/multipart/main.docx"
-           {:name "John Doe"}
-           :overwrite? true
-           :output "/home/erdos/stencil-fragments-out.docx"
-           :fragments {"header" "/home/erdos/stencil/test-resources/multipart/header.docx"
-                       "footer" "/home/erdos/stencil/test-resources/multipart/footer.docx"
-                       "body" "/home/erdos/stencil/test-resources/multipart/body.docx"})
-
-
-
-
-  comment)
 
 
 (defn render!
