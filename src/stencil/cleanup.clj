@@ -112,8 +112,10 @@
 (defmethod control-ast-normalize-step :echo [echo-command] echo-command)
 
 (defmethod control-ast-normalize-step :cmd/include [include-command]
-  (assert (string? (:name include-command)) (pr-str include-command))
-  include-command)
+  (if-not (string? (:name include-command))
+    (throw (parsing-exception (pr-str (:name include-command))
+                              "Parameter of include call must be a single string literal!"))
+    include-command))
 
 ;; A feltételes elágazásoknál mindig generálunk egy javított THEN ágat
 (defmethod control-ast-normalize-step :if [control-ast]

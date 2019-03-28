@@ -34,6 +34,10 @@
   (testing "Unexpected elseif tag in loop"
     (throw-ex-parsing? "<a>{%for x in xs%}a{%elseif y%}2{%end%}</a>")))
 
+(deftest test-wrong-include
+  (testing "Unexpected else tag"
+    (throw-ex-parsing? "<a>{% include header %}</a>")
+    (throw-ex-parsing? "<a>{% include a+1 %}</a>")))
 
 (deftest test-not-closed
   (testing "Expressions are not closed properly"

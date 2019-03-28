@@ -7,6 +7,7 @@
             [stencil.model :as model]
             [stencil.util :refer :all]))
 
+
 (defn- remove+up
   "Removes current node and moves pointer to parent node."
   [loc]
@@ -18,8 +19,10 @@
                                 (drop (inc |lefts|) (zip/children parent-loc))))
          (zip/replace parent-loc))))
 
+
 ;; returns nil iff it is not a styling element
 (defn- tag-style [node] (#{ooxml/pPr ooxml/rPr} (:tag node)))
+
 
 (defn- remove-all-lefts
   "Removes all left siblings. Stays at original location."
@@ -28,6 +31,7 @@
     (if (zip/left loc)
       (recur (zip/next (zip/remove (zip/left loc))))
       (reduce zip/insert-left loc (filter tag-style (zip/lefts loc'))))))
+
 
 (defn- remove-all-rights
   "Removes all right siblings. Stays at original location."
@@ -38,6 +42,7 @@
          (zip/replace parent-loc)
          (zip/down)
          (zip/rightmost))))
+
 
 (defn- has-texts? [tree]
   (assert (= ooxml/p (:tag tree)))
@@ -52,9 +57,11 @@
               :when (string? c)
               :when (not-empty c)] c))))
 
-(defn node-p?! [x] (assert (= ooxml/p (:tag (zip/node x)))) x)
-(defn node-t?! [x] (assert (= ooxml/t (:tag (zip/node x)))) x)
-(defn node-r?! [x] (assert (= ooxml/r (:tag (zip/node x)))) x)
+
+(defn- node-p?! [x] (assert (= ooxml/p (:tag (zip/node x)))) x)
+(defn- node-t?! [x] (assert (= ooxml/t (:tag (zip/node x)))) x)
+(defn- node-r?! [x] (assert (= ooxml/r (:tag (zip/node x)))) x)
+
 
 (defn- split-paragraphs [chunk-loc & insertable-paragraphs]
   (let [p-left (-> chunk-loc
@@ -93,16 +100,18 @@
 
         (zip/remove))))
 
+
 (defn- unpack-fragment [chunk-loc]
   (assert (instance? FragmentInvoke (zip/node chunk-loc)))
   (let [chunk-name (-> chunk-loc zip/node :name (doto (assert "name is missing")))
         local-data (-> chunk-loc zip/node :data (doto (assert "data is missing")))
         chunk      (model/insert-fragment! chunk-name local-data)
-        tree-parts (:frag-evaled-parts chunk)]
+        tree-parts (-> chunk :frag-evaled-parts (doto (assert "Evaled parts is missing")))]
     (assert chunk "Chunk not found!")
-    (assert (sequential? tree-parts) "Tree pasrts must be a sequence!")
+    (assert (sequential? tree-parts) "Tree parts must be a sequence!")
 
     (apply split-paragraphs chunk-loc tree-parts)))
+
 
 (defn unpack-fragments
   "Walks the tree (Depth First) and evaluates FragmentInvoke objects."
