@@ -21,6 +21,9 @@
 (defn ->close [t] (->CloseTag t))
 (def ->open ->OpenTag)
 
+;; Invocation of a fragment by name
+(defrecord FragmentInvoke [name data])
+
 ;; egyedi parancs objektumok
 
 ;; ez a marker jeloli, hogy egy oszlopot el kell rejteni.
@@ -49,3 +52,4 @@
 (defmethod control? :default [_] false)
 (defmethod control? HideTableColumnMarker [_] true)
 (defmethod control? HideTableRowMarker [_] true)
+(defmethod control? FragmentInvoke [_] true)

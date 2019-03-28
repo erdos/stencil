@@ -2,26 +2,27 @@
   (:import [io.github.erdos.stencil.exceptions ParsingException])
   (:require [stencil.types :refer :all]
             [clojure.test :refer [deftest is are testing]]
-            [stencil.process :refer :all]))
+            [stencil.model :as model]))
 
-(defn- test-prepare [xml-str data-map]
-  (->> xml-str
-       str
-       .getBytes
-       (new java.io.ByteArrayInputStream)
-       (prepare-template :xml)))
+
+(defn- test-prepare [xml-str]
+  (->> xml-str (str) (.getBytes) (new java.io.ByteArrayInputStream) (model/->exec)))
+
 
 (defmacro ^:private throw-ex-info? [expr]
-  `(is (~'thrown? clojure.lang.ExceptionInfo (test-prepare ~expr {}))))
+  `(is (~'thrown? clojure.lang.ExceptionInfo (test-prepare ~expr))))
+
 
 (defmacro ^:private throw-ex-parsing? [expr]
-  `(is (~'thrown? ParsingException (test-prepare ~expr {}))))
+  `(is (~'thrown? ParsingException (test-prepare ~expr))))
+
 
 (deftest test-arithmetic-errors
   (testing "Arithmetic errors"
     (throw-ex-parsing? "<a>{%=%}</a>")
     (throw-ex-parsing? "<a>{%=a++%}</a>")
     (throw-ex-parsing? "<a>{%====%}</a>")))
+
 
 (deftest test-unexpected-else
   (testing "Unexpected else tag"
@@ -32,6 +33,11 @@
     (throw-ex-parsing? "<a>{%for x in xs%}a{%else%}2{%end%}</a>"))
   (testing "Unexpected elseif tag in loop"
     (throw-ex-parsing? "<a>{%for x in xs%}a{%elseif y%}2{%end%}</a>")))
+
+(deftest test-wrong-include
+  (testing "Unexpected else tag"
+    (throw-ex-parsing? "<a>{% include header %}</a>")
+    (throw-ex-parsing? "<a>{% include a+1 %}</a>")))
 
 (deftest test-not-closed
   (testing "Expressions are not closed properly"

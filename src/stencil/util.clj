@@ -38,11 +38,21 @@
   (assert (ifn? f))
   (conj (pop xs) (apply f (peek xs) args)))
 
+(defn update-some [m path f]
+  (if-some [x (get-in m path)]
+    (if-some [fx (f x)]
+      (assoc-in m path fx)
+      m)
+    m))
+
 (defn fixpt [f x] (let [fx (f x)] (if (= fx x) x (recur f fx))))
 (defn zipper? [loc] (-> loc meta (contains? :zip/branch?)))
 (defn iterations [f xs] (take-while some? (iterate f xs)))
 (defn find-first [pred xs] (first (filter pred xs)))
 (defn find-last [pred xs] (last (filter pred xs)))
+
+(defn keepv [f xs] (vec (keep f xs)))
+(defn concatv [& xs] (vec (apply concat xs))) ;; TODO: optimize here!
 
 (def xml-zip
   "Like clojure.zip/xml-zip but more flexible."
@@ -89,5 +99,6 @@
 (defn dfs-walk-xml [xml-tree predicate edit-fn]
   (assert (fn? edit-fn))
   (dfs-walk-xml-node xml-tree predicate #(clojure.zip/edit % edit-fn)))
+
 
 :OK

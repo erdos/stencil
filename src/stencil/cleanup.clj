@@ -42,7 +42,7 @@
             (recur (mod-stack-top-last  new-stack dissoc :r))
             new-stack))))
 
-    (:echo nil)        (mod-stack-top-conj stack token)))
+    (:echo nil :cmd/include) (mod-stack-top-conj stack token)))
 
 (defn tokens->ast
   "Flat token listabol nested AST-t csinal (listak listai)"
@@ -110,25 +110,30 @@
 
 ;; Itt nincsen blokk, amit normalizálni kellene
 (defmethod control-ast-normalize-step :echo [echo-command] echo-command)
-(defmethod control-ast-normalize-step :include [echo-command] echo-command)
+
+(defmethod control-ast-normalize-step :cmd/include [include-command]
+  (if-not (string? (:name include-command))
+    (throw (parsing-exception (pr-str (:name include-command))
+                              "Parameter of include call must be a single string literal!"))
+    include-command))
 
 ;; A feltételes elágazásoknál mindig generálunk egy javított THEN ágat
 (defmethod control-ast-normalize-step :if [control-ast]
   (case (count (:blocks control-ast))
     2 (let [[then else] (:blocks control-ast)
-            then2 (concat (map control-ast-normalize (:children then))
+            then2 (concat (keepv control-ast-normalize (:children then))
                           (stack-revert-close (:before else))
                           (:after else))
             else2 (concat (stack-revert-close (:before then))
                           (:after then)
-                          (map control-ast-normalize (:children else)))]
+                          (keepv control-ast-normalize (:children else)))]
         (-> (dissoc control-ast :blocks)
-            (assoc :then then2, :else else2)))
+            (assoc :then (vec then2) :else (vec else2))))
 
     1 (let [[then] (:blocks control-ast)
             else   (:after then)]
         (-> (dissoc control-ast :blocks)
-            (assoc :then (map control-ast-normalize (:children then)), :else else)))
+            (assoc :then (keepv control-ast-normalize (:children then)), :else else)))
     ;; default
     (throw (parsing-exception (str open-tag "else" close-tag)
                               "Too many {%else%} tags in one condition!"))))
@@ -143,7 +148,7 @@
     (throw (parsing-exception (str open-tag "else" close-tag)
                               "Unexpected {%else%} in a loop!")))
   (let [[{:keys [children before after]}] (:blocks control-ast)
-        children (mapv control-ast-normalize children)]
+        children (keepv control-ast-normalize children)]
     (-> control-ast
         (dissoc :blocks)
         (assoc :body-run-none (vec (concat (stack-revert-close before) after))
@@ -154,7 +159,7 @@
   "Mélységi bejárással rekurzívan normalizálja az XML fát."
   [control-ast]
   (cond
-    (vector? control-ast) (mapv control-ast-normalize control-ast)
+    (vector? control-ast) (vec (flatten (keepv control-ast-normalize control-ast)))
     (:text control-ast)   control-ast
     (:open control-ast)   control-ast
     (:close control-ast)  control-ast

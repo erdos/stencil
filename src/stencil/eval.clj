@@ -1,12 +1,15 @@
 (ns stencil.eval
   "converts Normalized Control AST -> Evaled token seq"
   (:require [stencil.infix :refer [eval-rpn]]
-            [stencil.types :refer [control?]]
+            [stencil.types :refer [control? ->FragmentInvoke]]
             [stencil.util :refer [trace]]))
 
 (set! *warn-on-reflection* true)
 
-(defmulti ^:private eval-step (fn [function data item] (or (:cmd item) [:tag (:tag item)])))
+(defmulti ^:private eval-step (fn [function data item]
+                                (or (:cmd item)
+                                    (when (map? item) [:tag (:tag item)])
+                                    (type item))))
 
 (defmethod eval-step :default [_ _ item] [item])
 
@@ -30,6 +33,9 @@
             bodies (cons (:body-run-once item) (repeat (:body-run-next item)))]
         (mapcat (fn [data body] (mapcat (partial eval-step function data) body)) datas bodies))
       (:body-run-none item))))
+
+(defmethod eval-step :cmd/include [f data item]
+  [(->FragmentInvoke (:name item) data)])
 
 (defn normal-control-ast->evaled-seq [data function items]
   (assert (map? data))

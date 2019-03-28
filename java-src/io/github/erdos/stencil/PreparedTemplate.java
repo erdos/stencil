@@ -9,8 +9,7 @@ import java.time.LocalDateTime;
  * These files may be serialized or cached for later use.
  */
 @SuppressWarnings("unused")
-public interface
-PreparedTemplate {
+public interface PreparedTemplate {
 
     /**
      * Original template file that was preprocessed.
@@ -55,4 +54,11 @@ PreparedTemplate {
      * effects. Rendering the template after this method call will throw an IllegalStateException.
      */
     void cleanup();
+
+    /**
+     * Renders the current prepared template file with the given template data.
+     */
+    default EvaluatedDocument render(TemplateData templateData) {
+        return API.render(this, templateData);
+    }
 }

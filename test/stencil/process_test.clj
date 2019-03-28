@@ -2,22 +2,33 @@
   (:require [stencil.types :refer :all]
             [clojure.test :refer [deftest is are testing]]
             [clojure.data.xml :as xml]
-            [stencil.process :refer :all]))
+            [stencil.model :as model]))
+
+
+(defn- test-prepare [xml-str]
+  (->> xml-str (str) (.getBytes) (new java.io.ByteArrayInputStream) (model/->exec)))
+
 
 (defn- test-eval [xml-str data-map]
-  (let [prepared (->> xml-str
-                      str
-                      .getBytes
-                      (new java.io.ByteArrayInputStream)
-                      (prepare-template :xml))]
-    (-> {:template prepared
-         :data data-map
-         :function (fn [& _] (assert false "ERROR"))}
-        do-eval-stream :stream slurp str)))
+  (xml/emit-str (model/eval-executable (test-prepare xml-str)  data-map {})))
+
 
 (defmacro ^:private test-equals [expected input data]
   `(is (= (str "<?xml version=\"1.0\" encoding=\"UTF-8\"?>" ~expected)
           (test-eval ~input ~data))))
 
+
 (deftest simple-substitution
   (test-equals "<a>3</a>" "<a>{%=x%}</a>" {"x" 3}))
+
+
+(deftest test-preparing-template-fragment-invocation
+  (testing "Snippet contains a fragment invocation"
+    (is (= {:dynamic? true,
+            :executable [{:open :a}
+                         {:open :b}
+                         {:blocks [], :cmd :cmd/include, :name "elefant"}
+                         {:close :b}
+                         {:close :a}],
+            :variables ()}
+           (test-prepare "<a><b>{%include \"elefant\"%}</b></a>")))))
