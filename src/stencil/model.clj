@@ -24,6 +24,12 @@
   "Relationship type of style definitions in _rels/.rels file."
   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles")
 
+(def rel-type-footer
+  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer")
+
+(def rel-type-header
+  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/header")
+
 (def rel-type-image
   "Relationship type of image files in .rels files."
   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image")
@@ -105,10 +111,7 @@
   (assert (.exists dir))
   (assert (.isDirectory dir))
   (let [package-rels (parse-relation (file dir "_rels" ".rels"))
-        main-document (some #(when (= rel-type-main (::type %))
-                               (::target %))
-                            (vals package-rels))
-
+        main-document (some #(when (= rel-type-main (::type %)) (::target %)) (vals package-rels))
         ->rels (fn [f]
                  (let [rels-path (str (file (.getParentFile (file f)) "_rels" (str (.getName (file f)) ".rels")))
                        rels-file (file dir rels-path)]
@@ -134,8 +137,8 @@
                      :relations main-document-rels
                      :headers+footers (doall
                                        (for [[id m] (:parsed main-document-rels)
-                                             :when (#{"http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer"
-                                                      "http://schemas.openxmlformats.org/officeDocument/2006/relationships/header"}
+                                             :when (#{rel-type-footer
+                                                      rel-type-header}
                                                     (::type m))
                                              :let [f (file (.getParentFile (file main-document)) (::target m))]]
                                          {:path        (str f)
