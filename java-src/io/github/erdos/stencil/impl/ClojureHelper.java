@@ -12,7 +12,7 @@ import clojure.lang.Symbol;
 public class ClojureHelper {
 
     enum Keywords {
-        DATA, FORMAT, FUNCTION, FRAGMENTS, STREAM, TEMPLATE, VARIABLES, ZIP_DIR, CONTENT;
+        DATA, FORMAT, FUNCTION, FRAGMENTS, STREAM, TEMPLATE, VARIABLES, ZIP_DIR, CONTENT, SOURCE_FOLDER;
 
         public final Keyword kw = Keyword.intern(name().toLowerCase().replace('_', '-'));
     }

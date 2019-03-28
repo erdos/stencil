@@ -48,9 +48,8 @@ public final class NativeEvaluator {
         final Consumer<Supplier<String>> stopwatch = debugStopWatch(LOGGER);
         stopwatch.accept(() -> "Starting document rendering for template " + template.getTemplateFile());
 
-        final IFn fn = ClojureHelper.findFunction("do-eval-stream");
-
-        Map argsMap = makeArgsMap(template.getSecretObject(), fragments, data.getData());
+        final IFn fn = ClojureHelper.findFunction("eval-template");
+        final Map argsMap = makeArgsMap(template.getSecretObject(), fragments, data.getData());
 
         final Object result;
         try {
@@ -101,7 +100,6 @@ public final class NativeEvaluator {
         result.put(ClojureHelper.Keywords.TEMPLATE.kw, template);
         result.put(ClojureHelper.Keywords.DATA.kw, data);
         result.put(ClojureHelper.Keywords.FUNCTION.kw, new FunctionCaller());
-
 
         // string to clojure map
         final Map<String, Object> kvs = fragments.entrySet().stream()

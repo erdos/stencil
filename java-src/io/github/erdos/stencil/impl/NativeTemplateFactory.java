@@ -58,14 +58,12 @@ public final class NativeTemplateFactory implements TemplateFactory {
             }
         }
 
-        final File zipDirResource = (File) prepared.get(ClojureHelper.Keywords.ZIP_DIR.kw);
+        final File zipDirResource = (File) prepared.get(ClojureHelper.Keywords.SOURCE_FOLDER.kw);
         if (zipDirResource != null) {
             forceDeleteOnExit(zipDirResource);
         }
 
-        final Object content = prepared.get(ClojureHelper.Keywords.CONTENT.kw);
-
-        return new PreparedFragment(content);
+        return new PreparedFragment(prepared);
     }
 
     /**
@@ -73,6 +71,7 @@ public final class NativeTemplateFactory implements TemplateFactory {
      */
     @SuppressWarnings("unchecked")
     private Set variableNames(Map prepared) {
+        // TODO: ez mindig null lesz ugyhogy csinaljunk vele valamit!!!!!
         return prepared.containsKey(ClojureHelper.Keywords.VARIABLES)
                 ? unmodifiableSet(new HashSet<Set>((Collection) prepared.get(ClojureHelper.Keywords.VARIABLES)))
                 : emptySet();
@@ -86,7 +85,7 @@ public final class NativeTemplateFactory implements TemplateFactory {
         final Map<Keyword, Object> prepared;
 
         try {
-            prepared = (Map<Keyword, Object>) prepareFunction.invoke(format, input);
+            prepared = (Map<Keyword, Object>) prepareFunction.invoke(input);
         } catch (ParsingException e) {
             throw e;
         } catch (Exception e) {
@@ -95,7 +94,7 @@ public final class NativeTemplateFactory implements TemplateFactory {
 
         final TemplateVariables vars = TemplateVariables.fromPaths(variableNames(prepared));
 
-        final File zipDirResource = (File) prepared.get(ClojureHelper.Keywords.ZIP_DIR.kw);
+        final File zipDirResource = (File) prepared.get(ClojureHelper.Keywords.SOURCE_FOLDER.kw);
         if (zipDirResource != null) {
             forceDeleteOnExit(zipDirResource);
         }
