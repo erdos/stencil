@@ -5,10 +5,9 @@
   (:import [java.io File]
            [java.nio.file Files]
            [io.github.erdos.stencil.impl FileHelper])
-  (:require [clojure.java.io :refer [file]]
-            [clojure.data.xml :as xml]
+  (:require [clojure.data.xml :as xml]
             [clojure.data.xml.pu-map :as pu]
-            [clojure.java.io :as io]
+            [clojure.java.io :as io :refer [file]]
             [clojure.walk :refer [postwalk]]
             [stencil.ooxml :as ooxml]
             [stencil.eval :as eval]
@@ -163,6 +162,15 @@
       (.flush writer))))
 
 
+(defn- resource-copier [x]
+  (assert (:path x))
+  (assert (:source-file x))
+  (fn [writer]
+    (let [stream (io/output-stream writer)]
+      (Files/copy (.toPath (io/file (:source-file x))) stream)
+      (.flush stream))))
+
+
 (defn eval-executable [part data functions]
   (assert (:executable part))
   (;; TODO:
@@ -173,15 +181,18 @@
 
 (defn- eval-model-part [part data functions]
   (assert (:executable part))
+  (assert (contains? part :dynamic?))
   ;; TODO: itt el kell agazni attol fuggoen h dinamikus v sem.
   (expect-fragment-context!
-   (let [[result fragments] (binding [*inserted-fragments* (atom #{})]
-                              [(eval-executable part data functions)
-                               @*inserted-fragments*])]
-     (swap! *inserted-fragments* into fragments)
-     {:xml    result
-      :fragment-names fragments
-      :writer (->xml-writer result)})))
+   (if (:dynamic? part)
+     (let [[result fragments] (binding [*inserted-fragments* (atom #{})]
+                                [(eval-executable part data functions)
+                                 @*inserted-fragments*])]
+       (swap! *inserted-fragments* into fragments)
+       {:xml    result
+        :fragment-names fragments
+        :writer (->xml-writer result)})
+     {:writer (resource-copier part)})))
 
 
 (defn- style-file-writer [template]
@@ -233,15 +244,6 @@
           (update :main evaluate)
           (update-in [:main :headers+footers] (partial mapv evaluate))
           (assoc-in [:main :style :result] (style-file-writer template-model))))))
-
-
-(defn- resource-copier [x]
-  (assert (:path x))
-  (assert (:source-file x))
-  (fn [writer]
-    (let [stream (io/output-stream writer)]
-      (Files/copy (.toPath (io/file (:source-file x))) stream)
-      (.flush stream))))
 
 
 (defn- relation-writer [relation-map]
@@ -360,16 +362,20 @@
            (update-some item [:attrs ooxml/embed] id-rename))))
 
 
+;; generates a random relation id
+(defn- ->relation-id [] (str (gensym "stencilRelId")))
+
+
 (defn- relation-ids-rename [model]
   (doall
    (for [[old-rel-id m] (-> model :main :relations :parsed (doto assert))
          :when (= rel-type-image (::type m))
-         :let [new-id       (str (java.util.UUID/randomUUID))
+         :let [new-id       (->relation-id)
                extension    (last (.split (str (::target m)) "\\."))
                new-path     (str new-id "." extension)]]
      {::type       (::type m)
-      ::target     new-path
       ::mode       (::mode m)
+      ::target     new-path
       :new-id      new-id
       :old-id      old-rel-id
       :source-file (file (-> model :main :source-file file .getParentFile) (::target m))
