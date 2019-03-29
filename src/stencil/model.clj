@@ -157,18 +157,20 @@
 
 (defn ->xml-writer [tree]
   (fn [output-stream]
-    (let [writer (io/writer output-stream)]
-      (xml/emit tree writer)
-      (.flush writer))))
+    (io!
+     (let [writer (io/writer output-stream)]
+       (xml/emit tree writer)
+       (.flush writer)))))
 
 
 (defn- resource-copier [x]
   (assert (:path x))
   (assert (:source-file x))
   (fn [writer]
-    (let [stream (io/output-stream writer)]
-      (Files/copy (.toPath (io/file (:source-file x))) stream)
-      (.flush stream))))
+    (io!
+     (let [stream (io/output-stream writer)]
+       (Files/copy (.toPath (io/file (:source-file x))) stream)
+       (.flush stream)))))
 
 
 (defn eval-executable [part data functions]
