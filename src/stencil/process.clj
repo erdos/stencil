@@ -4,16 +4,10 @@
   (:import [java.io File PipedInputStream PipedOutputStream InputStream]
            [java.util.zip ZipEntry ZipOutputStream]
            [io.github.erdos.stencil.impl FileHelper ZipHelper])
-  (:require [clojure.data.xml :as xml]
-            [clojure.java.io :as io]
-            [stencil.postprocess.ignored-tag :as ignored-tag]
-            [stencil
-             [util :refer :all]
-             [model :as model]
-             [tokenizer :as tokenizer]
-             [cleanup :as cleanup]
-             [eval :as eval]
-             [tree-postprocess :as tree-postprocess]]))
+  (:require [clojure.java.io :as io]
+            [stencil.util :refer [trace]]
+            [stencil.tree-postprocess] ;; TODO: called from model but causes cyclic dependency error
+            [stencil.model :as model]))
 
 (set! *warn-on-reflection* true)
 
@@ -25,7 +19,7 @@
     (model/load-template-model zip-dir)))
 
 (defn prepare-fragment [input]
-  (assert (some? input))
+  (assert (instance? InputStream input))
   (let [zip-dir (FileHelper/createNonexistentTempFile
                  "stencil-fragment-" ".zip.contents")]
     (with-open [zip-stream (io/input-stream input)]
@@ -47,6 +41,7 @@
           (doseq [[k writer] writers-map
                   :let  [rel-path (FileHelper/toUnixSeparatedString (.toPath (io/file k)))
                          ze       (new ZipEntry rel-path)]]
+            (trace "ZIP: writing %s" rel-path)
             (.putNextEntry zipstream ze)
             (writer zipstream)
             (.closeEntry zipstream)))
