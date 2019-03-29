@@ -1,5 +1,6 @@
 (ns stencil.util-test
   (:require [clojure.test :refer [deftest testing is]]
+            [clojure.zip :as zip]
             [stencil.util :refer :all]))
 
 (deftest stacks-difference-test
@@ -39,3 +40,39 @@
   (testing "simple cases"
     (is (thrown? IllegalStateException (update-peek [] inc)))
     (is (= [1 1 1 2] (update-peek [1 1 1 1] inc)))))
+
+(deftest xml-zip-test
+  (testing "XML nodes are always branches"
+    (testing "Clojure Core xml-zip"
+      (is (zip/branch? (zip/xml-zip {:tag "A"})))
+      (is (not (zip/branch? (zip/xml-zip "child"))))
+      (is (zip/branch? (zip/xml-zip 42))))
+    (testing "Stencil's xml-zip"
+      (is (zip/branch? (xml-zip {:tag "A"})))
+      (is (not (zip/branch? (xml-zip "child"))))
+      (testing "Difference clojure core"
+        (is (not (zip/branch? (xml-zip 42))))))))
+
+(deftest test-suffixes
+  (is (= [] (suffixes nil)))
+  (is (= [] (suffixes [])))
+  (is (= [[1]] (suffixes [1])))
+  (is (= [[1 2 3] [2 3] [3]] (suffixes [1 2 3]))))
+
+(deftest test-prefixes
+  (is (= [] (prefixes nil)))
+  (is (= [] (prefixes [])))
+  (is (= [[1]] (prefixes [1])))
+  (is (= [[1 2 3] [1 2] [1]] (prefixes [1 2 3]))))
+
+(deftest test-->int
+  (is (= nil (->int nil)))
+  (is (= 23 (->int 23)))
+  (is (= 23 (->int "23")))
+  (is (= 23 (->int 23.2))))
+
+(deftest update-some-test
+  (is (= nil (update-some nil [:a] inc)))
+  (is (= {:a 1} (update-some {:a 1} [:b] inc)))
+  (is (= {:a 2 :x 1} (update-some {:a 1 :x 1} [:a] inc)))
+  (is (= {:a 1 :x 1} (update-some {:a 1 :x 1} [:a] #{}))))

@@ -52,12 +52,10 @@
 (defn find-last [pred xs] (last (filter pred xs)))
 
 (defn keepv [f xs] (vec (keep f xs)))
-(defn concatv [& xs] (vec (apply concat xs))) ;; TODO: optimize here!
+(defn concatv [& xs] (vec (apply concat xs)))
 
 (def xml-zip
-  "Like clojure.zip/xml-zip but more flexible."
-  ;; TODO: milyen modon jobb???
-  ;; ha a content tomb ures akkor sem leaf node.
+  "Like clojure.zip/xml-zip but more flexible. Only maps are considered branches."
   (partial clojure.zip/zipper
            map?
            (comp seq :content)
