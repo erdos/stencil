@@ -50,13 +50,13 @@
 ;; set of already inserted fragment ids.
 (def ^:private ^:dynamic *inserted-fragments* nil)
 
+;; list of extra relations to be added after evaluating document
 (def ^:private ^:dynamic *extra-files* nil)
 
 ;; throws error when not invoked from inside fragment context
-(defmacro expect-fragment-context! [& bodies] `(do (assert *current-styles*) ~@bodies))
+(defmacro ^:private expect-fragment-context! [& bodies] `(do (assert *current-styles*) ~@bodies))
 
 
-;; returns a {String {:type String, :target String}} structure where outer key is id.
 (defn- parse-relation [rel-file]
   (let [parsed (with-open [r (io/input-stream (file rel-file))]
                  (xml/parse r))]
@@ -85,27 +85,17 @@
 
 (defn- parse-content-types [^File cts]
   (assert (.exists cts))
-  (if (.isDirectory cts)
-    (recur (file cts "[Content_Types].xml"))
-    (let [parsed (with-open [r (io/input-stream cts)] (xml/parse r))]
-      {:source-file cts
-       :path "[Content_Types].xml"
-       :extensions (into (sorted-map)
-                         (for [d (:content parsed)
-                               :when (map? d)
-                               :when (= "Default" (name (:tag d)))]
-                           [(:Extension (:attrs d)), (:ContentType (:attrs d))]))
-       :overrides (into (sorted-map)
-                        (for [d (:content parsed)
-                              :when (map? d)
-                              :when (= "Override" (name (:tag d)))]
-                          [(file (str (:PartName (:attrs d)))), (:ContentType (:attrs d))]))})))
+  (assert (.isFile cts))
+  (let [parsed (with-open [r (io/input-stream cts)] (xml/parse r))]
+    {:source-file cts
+     :path        (.getName cts)}))
 
 
 (defn ->exec [xml-streamable]
   (with-open [stream (io/input-stream xml-streamable)]
-    (select-keys (cleanup/process (tokenizer/parse-to-tokens-seq stream))
-                 [:variables :dynamic? :executable])))
+    (-> (tokenizer/parse-to-tokens-seq stream)
+        (cleanup/process)
+        (select-keys [:variables :dynamic? :executable]))))
 
 
 (defn load-template-model [^File dir]
@@ -124,7 +114,7 @@
         main-style-path (some #(when (= rel-type-style (::type %))
                                  (str (file (.getParentFile (file main-document)) (::target %))))
                               (vals (:parsed main-document-rels)))]
-    {:content-types (parse-content-types dir)
+    {:content-types (parse-content-types (file dir "[Content_Types].xml"))
      :source-folder dir
      :relations     {:path (str (file "_rels" ".rels"))
                      :source-file (file dir "_rels" ".rels")
@@ -150,8 +140,7 @@
 
 (defn load-fragment-model [dir]
   (-> (load-template-model dir)
-      ;; headers and footers are not used for fragments
-      ;; TODO: also remove them from relations maybe.
+      ;; Headers and footers are not used in fragments.
       (update :main dissoc :headers+footers)))
 
 
@@ -184,7 +173,6 @@
 (defn- eval-model-part [part data functions]
   (assert (:executable part))
   (assert (contains? part :dynamic?))
-  ;; TODO: itt el kell agazni attol fuggoen h dinamikus v sem.
   (expect-fragment-context!
    (if (:dynamic? part)
      (let [[result fragments] (binding [*inserted-fragments* (atom #{})]
@@ -219,19 +207,16 @@
     (let [evaluate (fn [m]
                      (let [result (eval-model-part (:executable m) data functions)
                            fragment-names          (set (:fragment-names result))]
-                       ;; ha a fragment-names nem ures, akkor a fragmentet megfuzzoljuk
-                       ;; tehat hozzaadjuk a fragmentbol a kapcsolodo relaciokat valahogy!!!!!
-
                        (cond-> m
 
+                         ;; create a rels file for the current xml
                          (and (seq @*extra-files*) (nil? (:path (:relations m))))
                          (assoc-in [:relations :path]
-                                   ;; itt ki kell talalni h a relacio utvonala mi legyen...
                                    (str (file (.getParentFile (file (:path m)))
                                               "_rels"
                                               (str (.getName (file (:path m))) ".rels"))))
 
-                           ;; Az adott reszdokumentumon vegigmegyunk es beletoljuk azokat a resz doksi reszeket amik relevansak.
+                         ;; add relations if any
                          (seq @*extra-files*)
                          (update-in [:relations :parsed] (fnil into {})
                                     (for [relation @*extra-files*
@@ -239,8 +224,6 @@
                                           :when (contains? fragment-names (:fragment-name relation))]
                                       [(:new-id relation) relation]))
 
-                         ;; Az extra-files reszen vegigmegyunk es szepen a sajat relaciok ala betoljuk
-                         ;; azokat a relaciokat ahol a fragment-names stimmel.
                          :finally (assoc :result result))))]
       (-> template-model
           (update :main evaluate)
@@ -330,12 +313,11 @@
            id)))))
 
 
-(defn insert-styles!
-  ;; visszaadja az osszes stilus definiciot.
+(defn- insert-styles!
+  "Returns a map of all style definitions where key is style id and value is style xml."
   [style-defs]
   (assert (map? style-defs) (str "Not map: " (pr-str style-defs) (type style-defs)))
   (assert (every? string? (keys style-defs)))
-
   (reduce (fn [m [id style]]
             (let [id2 (-insert-style! style)]
               (if (= id id2) m (assoc m id id2))))
@@ -360,7 +342,7 @@
   (assert (every? string? (keys id-rename)))
   (assert (every? string? (vals id-rename)))
   (doall (for [item executable]
-           ;; images are being renamed
+           ;; Image relation ids are being renamed here.
            (update-some item [:attrs ooxml/embed] id-rename))))
 
 
@@ -368,7 +350,7 @@
 (defn- ->relation-id [] (str (gensym "stencilRelId")))
 
 
-(defn- relation-ids-rename [model]
+(defn- relation-ids-rename [model fragment-name]
   (doall
    (for [[old-rel-id m] (-> model :main :relations :parsed (doto assert))
          :when (= rel-type-image (::type m))
@@ -378,6 +360,7 @@
      {::type       (::type m)
       ::mode       (::mode m)
       ::target     new-path
+      :fragment-name fragment-name
       :new-id      new-id
       :old-id      old-rel-id
       :source-file (file (-> model :main :source-file file .getParentFile) (::target m))
@@ -395,8 +378,8 @@
                fragment-model   (update-in fragment-model [:main :executable :executable]
                                            executable-rename-style-ids style-ids-rename)
 
-               relation-ids-rename (map #(assoc % :fragment-name frag-name)
-                                        (relation-ids-rename fragment-model))
+               relation-ids-rename (relation-ids-rename fragment-model frag-name)
+
                fragment-model   (update-in fragment-model [:main :executable :executable]
                                            executable-rename-relation-ids (into {} (map (juxt :old-id :new-id) relation-ids-rename)))
 
