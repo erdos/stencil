@@ -19,7 +19,7 @@
     (model/load-template-model zip-dir)))
 
 (defn prepare-fragment [input]
-  (assert (instance? InputStream input))
+  (assert (some? input))
   (let [zip-dir (FileHelper/createNonexistentTempFile
                  "stencil-fragment-" ".zip.contents")]
     (with-open [zip-stream (io/input-stream input)]

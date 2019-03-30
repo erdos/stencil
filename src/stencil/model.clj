@@ -394,4 +394,4 @@
 
      (throw (ex-info "Did not find fragment for name!"
                      {:fragment-name frag-name
-                      :all-fragment-names (keys *all-fragments*)})))))
+                      :all-fragment-names (set (keys *all-fragments*))})))))

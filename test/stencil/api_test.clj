@@ -19,3 +19,23 @@
 
   (render-template-2 "/tmp/output-7.pptx"
                      {"customerName" "John Doe" "x" "XXX" "y" "yyyy"}))
+
+(comment
+
+
+  (let [template (prepare "test-resources/multipart/main.docx")
+        body     (fragment "test-resources/multipart/body.docx")
+        header   (fragment "test-resources/multipart/header.docx")
+        footer   (fragment "test-resources/multipart/footer.docx")
+        data     {:name "John Doe"}]
+    ;; ~51ms on the author's machine
+    (time
+     (render! template data
+              :fragments {"body"   body
+                          "header" header
+                          "footer" footer}
+              :output "/tmp/out1.docx"
+              :overwrite? true)))
+
+
+  )
