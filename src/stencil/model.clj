@@ -224,6 +224,10 @@
                                           :when (contains? fragment-names (:fragment-name relation))]
                                       [(:new-id relation) relation]))
 
+                         ;; relation file will be rendered instead of copied
+                         (seq @*extra-files*)
+                         (update-in [:relations] dissoc :source-file)
+
                          :finally (assoc :result result))))]
       (-> template-model
           (update :main evaluate)
