@@ -142,12 +142,6 @@ public final class NativeTemplateFactory implements TemplateFactory {
                 }
             }
 
-            // in case we forgot to call it by hand.
-            @Override
-            public void finalize() {
-                cleanup();
-            }
-
             @Override
             public String toString() {
                 return "<Template from file " + originalFile + ">";
