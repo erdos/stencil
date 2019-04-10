@@ -12,6 +12,8 @@
             [stencil.ooxml :as ooxml]
             [stencil.eval :as eval]
             [stencil.tokenizer :as tokenizer]
+            [stencil.tree-postprocess :as tree-postprocess]
+            [stencil.types :refer [->FragmentInvoke]]
             [stencil.util :refer :all]
             [stencil.cleanup :as cleanup]))
 
@@ -159,15 +161,8 @@
     (io!
      (let [stream (io/output-stream writer)]
        (Files/copy (.toPath (io/file (:source-file x))) stream)
-       (.flush stream)))))
-
-
-(defn eval-executable [part data functions]
-  (assert (:executable part))
-  (;; TODO:
-   (eval 'stencil.tree-postprocess/postprocess)
-   (tokenizer/tokens-seq->document
-    (eval/normal-control-ast->evaled-seq data functions (:executable part)))))
+       (.flush stream)
+       nil))))
 
 
 (defn- eval-model-part [part data functions]
@@ -176,7 +171,7 @@
   (expect-fragment-context!
    (if (:dynamic? part)
      (let [[result fragments] (binding [*inserted-fragments* (atom #{})]
-                                [(eval-executable part data functions)
+                                [(eval/eval-executable part data functions)
                                  @*inserted-fragments*])]
        (swap! *inserted-fragments* into fragments)
        {:xml    result
@@ -293,8 +288,9 @@
      elem)))
 
 
-(defn- -insert-style! [style-definition]
+(defn- -insert-style!
   "Returns possibly new style id."
+  [style-definition]
   (assert (= "style" (name (:tag style-definition))))
   (assert (contains? (:attrs style-definition) ooxml/style-id))
   (expect-fragment-context!
@@ -399,3 +395,9 @@
      (throw (ex-info "Did not find fragment for name!"
                      {:fragment-name frag-name
                       :all-fragment-names (set (keys *all-fragments*))})))))
+
+
+(defmethod eval/eval-step :cmd/include [f local-data item]
+  (let [chunk-name (:name item)
+        invoked (insert-fragment! chunk-name local-data)]
+    (->FragmentInvoke invoked)))

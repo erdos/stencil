@@ -2,6 +2,7 @@
   (:require [stencil.types :refer :all]
             [clojure.test :refer [deftest is are testing]]
             [clojure.data.xml :as xml]
+            [stencil.eval :as eval]
             [stencil.model :as model]))
 
 
@@ -10,7 +11,7 @@
 
 
 (defn- test-eval [xml-str data-map]
-  (xml/emit-str (model/eval-executable (test-prepare xml-str)  data-map {})))
+  (xml/emit-str (eval/eval-executable (test-prepare xml-str)  data-map {})))
 
 
 (defmacro ^:private test-equals [expected input data]

@@ -76,7 +76,7 @@
    "<mc:Choice Requires=\"x\"></mc:Choice>"
    "</aa:document>"))
 
-(deftest test-ignored-tag-1
+(deftest test-ignored-tag-3
   (-> test-data-3
       (java.io.StringReader.)
 

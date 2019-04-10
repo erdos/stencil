@@ -2,6 +2,7 @@
   (:require [stencil.types :refer :all]
             [clojure.test :refer [deftest is are testing]]
             [clojure.data.xml :as xml]
+            [stencil.eval :as eval]
             [stencil.process :refer :all]
             [stencil.model :as model]))
 
@@ -12,7 +13,7 @@
                    .getBytes
                    (new java.io.ByteArrayInputStream))
         part (model/->exec input)
-        evaled-xml (model/eval-executable part data-map {})]
+        evaled-xml (eval/eval-executable part data-map {})]
     (xml/emit-str evaled-xml)))
 
 (defmacro ^:private test-equals [expected input data]

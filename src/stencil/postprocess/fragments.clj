@@ -4,7 +4,6 @@
   (:require [clojure.zip :as zip]
             [stencil.types :refer :all]
             [stencil.ooxml :as ooxml]
-            [stencil.model :as model]
             [stencil.util :refer :all]))
 
 
@@ -103,13 +102,9 @@
 
 (defn- unpack-fragment [chunk-loc]
   (assert (instance? FragmentInvoke (zip/node chunk-loc)))
-  (let [chunk-name (-> chunk-loc zip/node :name (doto (assert "name is missing")))
-        local-data (-> chunk-loc zip/node :data (doto (assert "data is missing")))
-        chunk      (model/insert-fragment! chunk-name local-data)
+  (let [chunk      (-> chunk-loc zip/node :result (doto (assert "result is missing")))
         tree-parts (-> chunk :frag-evaled-parts (doto (assert "Evaled parts is missing")))]
-    (assert chunk "Chunk not found!")
     (assert (sequential? tree-parts) "Tree parts must be a sequence!")
-
     (apply split-paragraphs chunk-loc tree-parts)))
 
 

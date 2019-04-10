@@ -5,8 +5,9 @@
 (set! *warn-on-reflection* true)
 
 (defn stacks-difference-key
-  "Mindkey listanak levagja azt a kozos prefixet, amire a kulcsfuggveny ua az erteket adja."
+  "Removes prefixes of two lists where key-fn gives the same result."
   [key-fn stack1 stack2]
+  (assert (ifn? key-fn))
   (let [cnt (count (take-while true?
                                (map (fn [a b] (= (key-fn a) (key-fn b)))
                                     (reverse stack1) (reverse stack2))))]
@@ -14,7 +15,7 @@
      (take (- (count stack2) cnt) stack2)]))
 
 (def stacks-difference
-  "mindket listanak levagja a kozos szuffixet"
+  "Removes comomn prefix of two lists."
   (partial stacks-difference-key identity))
 
 (defn mod-stack-top-last

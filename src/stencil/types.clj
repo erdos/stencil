@@ -22,7 +22,7 @@
 (def ->open ->OpenTag)
 
 ;; Invocation of a fragment by name
-(defrecord FragmentInvoke [name data])
+(defrecord FragmentInvoke [result])
 
 ;; egyedi parancs objektumok
 

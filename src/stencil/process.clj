@@ -6,7 +6,6 @@
            [io.github.erdos.stencil.impl FileHelper ZipHelper])
   (:require [clojure.java.io :as io]
             [stencil.util :refer [trace]]
-            [stencil.tree-postprocess] ;; TODO: called from model but causes cyclic dependency error
             [stencil.model :as model]))
 
 (set! *warn-on-reflection* true)

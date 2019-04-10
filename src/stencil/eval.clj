@@ -1,15 +1,17 @@
 (ns stencil.eval
   "converts Normalized Control AST -> Evaled token seq"
   (:require [stencil.infix :refer [eval-rpn]]
-            [stencil.types :refer [control? ->FragmentInvoke]]
-            [stencil.util :refer [trace]]))
+            [stencil.types :refer [control?]]
+            [stencil.util :refer [trace]]
+            [stencil.tokenizer :as tokenizer]
+            [stencil.tree-postprocess :as tree-postprocess]))
 
 (set! *warn-on-reflection* true)
 
-(defmulti ^:private eval-step (fn [function data item]
-                                (or (:cmd item)
-                                    (when (map? item) [:tag (:tag item)])
-                                    (type item))))
+(defmulti eval-step (fn [function data item]
+                      (or (:cmd item)
+                          (when (map? item) [:tag (:tag item)])
+                          (type item))))
 
 (defmethod eval-step :default [_ _ item] [item])
 
@@ -34,9 +36,6 @@
         (mapcat (fn [data body] (mapcat (partial eval-step function data) body)) datas bodies))
       (:body-run-none item))))
 
-(defmethod eval-step :cmd/include [f data item]
-  [(->FragmentInvoke (:name item) data)])
-
 (defn normal-control-ast->evaled-seq [data function items]
   (assert (map? data))
   (assert (ifn? function))
@@ -44,3 +43,9 @@
   (mapcat (partial eval-step function data) items))
 
 ;; TODO: creating image files for qr code or barcode should take place here
+
+(defn eval-executable [part data functions]
+  (assert (:executable part))
+  (tree-postprocess/postprocess
+   (tokenizer/tokens-seq->document
+    (normal-control-ast->evaled-seq data functions (:executable part)))))

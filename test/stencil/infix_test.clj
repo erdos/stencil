@@ -90,7 +90,7 @@
       (is (false? (run "4 < 2")))
       (is (true? (run "3 <= 3")))
       (is (true? (run "34 >= 2"))))
-    :ok))
+    ))
 
 (deftest logical-operators
   (testing "Mixed"
@@ -126,8 +126,7 @@
       (is (= 1 (run "a || b" {"a" 1 "b" 2})))
       (is (= 1 (run "a || b" {"a" 1 "b" nil})))
       (is (= 2 (run "a || b" {"b" 2})))
-      (is (nil? (run "a || b" {"a" false})))))
-  :ok)
+      (is (nil? (run "a || b" {"a" false}))))))
 
 (deftest operator-precedeces
   (testing "Operator precedencia"
@@ -141,9 +140,7 @@
 
   (testing "Advanced operator precedences"
     ;; https://gist.github.com/PetrGlad/1175640#gistcomment-876889
-    (is (= 21 (run "1+((2+3)*4)"))))
-
-  :ok)
+    (is (= 21 (run "1+((2+3)*4)")))))
 
 (deftest negativ-szamok
   (is (= -123 (run " -123")))
@@ -194,5 +191,3 @@
   (testing "syntax errors should be thrown"
     (are [x] (thrown? ExceptionInfo (infix/parse x))
       "* 3 4" "- 1 a" "+ x 2" "/ x y")))
-
-:ok

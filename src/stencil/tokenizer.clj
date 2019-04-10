@@ -5,7 +5,7 @@
             [stencil.postprocess.ignored-tag :as ignored-tag]
             [stencil.infix :as infix]
             [stencil.types :refer :all]
-            [stencil.merger :refer [map-actions-in-token-list]]
+            [stencil.merger :as merger]
             [stencil.util :refer :all]))
 
 (set! *warn-on-reflection* true)
@@ -77,7 +77,7 @@
     (->> parsed
          (ignored-tag/map-ignored-attr)
          (structure->seq)
-         (map-actions-in-token-list)
+         (merger/map-actions-in-token-list)
          (map map-token))))
 
 (defn- tokens-seq-reducer [stack token]
