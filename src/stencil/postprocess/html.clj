@@ -3,12 +3,12 @@
   (:require [clojure.zip :as zip]
             [clojure.data.xml :as xml]
             [stencil.functions :refer [call-fn]]
-            [stencil.types :refer [control?]]
+            [stencil.types :refer [ControlMarker]]
             [stencil.util :refer :all]
             [stencil.ooxml :as ooxml]))
 
-(defrecord HtmlChunk [content])
-(defmethod control? HtmlChunk [x] true)
+(defrecord HtmlChunk [content] ControlMarker)
+
 (defmethod call-fn "html" [_ content] (->HtmlChunk content))
 
 (def legal-tags

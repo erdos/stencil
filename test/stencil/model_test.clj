@@ -7,7 +7,7 @@
 
 (let [target (the-ns 'stencil.model)]
   (doseq [[k v] (ns-map target)
-          :when (and (var? v) (= target (.ns v)))]
+          :when (and (var? v) (= target (.ns ^clojure.lang.Var v)))]
     (eval `(defn ~(symbol (str "-" k)) [~'& args#] (apply (deref ~v) args#)))))
 
 

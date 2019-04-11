@@ -21,13 +21,15 @@
 (defn ->close [t] (->CloseTag t))
 (def ->open ->OpenTag)
 
+(defprotocol ControlMarker)
+
 ;; Invocation of a fragment by name
-(defrecord FragmentInvoke [result])
+(defrecord FragmentInvoke [result] ControlMarker)
 
 ;; egyedi parancs objektumok
 
 ;; ez a marker jeloli, hogy egy oszlopot el kell rejteni.
-(defrecord HideTableColumnMarker [columns-resize])
+(defrecord HideTableColumnMarker [columns-resize] ControlMarker)
 
 (def column-resize-modes #{:resize-first :resize-last :rational :cut})
 
@@ -37,7 +39,7 @@
        (HideTableColumnMarker. x)))
 
 ;; ez a marker jeloli, hogy egy egesz sort el kell rejteni.
-(defrecord HideTableRowMarker [])
+(defrecord HideTableRowMarker [] ControlMarker)
 
 (defn hide-table-column-marker? [x] (instance? HideTableColumnMarker x))
 (defn hide-table-row-marker? [x] (instance? HideTableRowMarker x))
@@ -48,8 +50,4 @@
   IDeref
   (deref [_] @delay-object))
 
-(defmulti control? type)
-(defmethod control? :default [_] false)
-(defmethod control? HideTableColumnMarker [_] true)
-(defmethod control? HideTableRowMarker [_] true)
-(defmethod control? FragmentInvoke [_] true)
+(defn control? [x] (satisfies? ControlMarker x))

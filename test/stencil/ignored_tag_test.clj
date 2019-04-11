@@ -9,7 +9,7 @@
 ;; make all private maps public!
 (let [target (the-ns 'stencil.postprocess.ignored-tag)]
   (doseq [[k v] (ns-map target)
-          :when (and (var? v) (= target (.ns v)))]
+          :when (and (var? v) (= target (.ns ^clojure.lang.Var v)))]
     (eval `(defn ~(symbol (str "-" k)) [~'& args#] (apply (deref ~v) args#)))))
 
 (deftest with-pu-test
