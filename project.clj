@@ -1,4 +1,6 @@
-(defproject io.github.erdos/stencil-core "0.3.0-SNAPSHOT"
+(defproject io.github.erdos/stencil-core
+  #=(clojure.string/trim #=(slurp "src/STENCIL_VERSION.txt"))
+
   :url "https://github.com/erdos/stencil"
   :description       "Templating engine for office documents."
   :license {:name "Eclipse Public License - v 2.0"

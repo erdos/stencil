@@ -49,14 +49,16 @@ public class StandaloneApplication {
 
         final Iterator<String> rest = jobsIterator();
 
-        try {
-            if (!rest.hasNext() || parsed.getParamValue(StencilArgsParser.SHOW_HELP).orElse(false)) {
-                displayHelpInfo();
-            } else {
+        if (parsed.getParamValue(StencilArgsParser.SHOW_VERSION).orElse(false)) {
+            displayVersionInfo();
+        } else if (!rest.hasNext() || parsed.getParamValue(StencilArgsParser.SHOW_HELP).orElse(false)) {
+            displayHelpInfo();
+        } else {
+            try {
                 processJobs(rest);
+            } catch (EndOfFilesException ignored) {
+                // processed all files
             }
-        } catch (EndOfFilesException ignored) {
-            // processed all files
         }
     }
 
@@ -76,6 +78,7 @@ public class StandaloneApplication {
                 if (!(data instanceof Map)) {
                     throw new IllegalArgumentException("Template data is not a map in file: " + dataFile + " of " + data.getClass());
                 } else {
+                    //noinspection unchecked
                     final TemplateData templateData = TemplateData.fromMap((Map) data);
                     final EvaluatedDocument document = render(template, templateData);
 
@@ -138,6 +141,21 @@ public class StandaloneApplication {
             throw new IllegalStateException("Missing help.txt file!");
         }
 
+        try (final BufferedReader in = new BufferedReader(new InputStreamReader(url.openStream()))) {
+            for (String inputLine; (inputLine = in.readLine()) != null; ) {
+                System.out.println(inputLine);
+            }
+        }
+    }
+
+    private void displayVersionInfo() throws IOException {
+        final URL url = getClass().getResource("/STENCIL_VERSION.txt");
+        if (url == null) {
+            throw new IllegalStateException("Missing STENCIL_VERSION.txt file!");
+        }
+
+        System.out.println("Stencil standalone runner");
+        System.out.println("Version:");
         try (final BufferedReader in = new BufferedReader(new InputStreamReader(url.openStream()))) {
             for (String inputLine; (inputLine = in.readLine()) != null; ) {
                 System.out.println(inputLine);
