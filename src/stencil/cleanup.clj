@@ -48,8 +48,10 @@
   "Flat token listabol nested AST-t csinal (listak listai)"
   [tokens]
   (let [result (reduce tokens->ast-step '([]) tokens)]
-    (assert (= 1 (count result)))
-    (peek result)))
+    (if (not= 1 (count result))
+      (throw (parsing-exception (str open-tag "end" close-tag)
+                                "Missing {%end%} tag from document!"))
+      (first result))))
 
 (defn nested-tokens-fmap-postwalk
   "Melysegi bejaras egy XML fan.
