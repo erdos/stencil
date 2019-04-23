@@ -135,7 +135,7 @@
                                                     (::type m))
                                              :let [f (file (.getParentFile (file main-document)) (::target m))]]
                                          {:path        (str f)
-                                          :source-files (file dir f)
+                                          :source-file (file dir f)
                                           :executable  (->exec (file dir f))
                                           :relations   (->rels f)}))}}))
 
@@ -165,19 +165,25 @@
        nil))))
 
 
+(defn- eval-model-part-exec [part data functions]
+  (assert (:executable part))
+  (assert (:dynamic? part))
+  (expect-fragment-context!
+   (let [[result fragments] (binding [*inserted-fragments* (atom #{})]
+                              [(eval/eval-executable part data functions)
+                               @*inserted-fragments*])]
+     (swap! *inserted-fragments* into fragments)
+     {:xml    result
+      :fragment-names fragments
+      :writer (->xml-writer result)})))
+
+
 (defn- eval-model-part [part data functions]
   (assert (:executable part))
-  (assert (contains? part :dynamic?))
-  (expect-fragment-context!
-   (if (:dynamic? part)
-     (let [[result fragments] (binding [*inserted-fragments* (atom #{})]
-                                [(eval/eval-executable part data functions)
-                                 @*inserted-fragments*])]
-       (swap! *inserted-fragments* into fragments)
-       {:xml    result
-        :fragment-names fragments
-        :writer (->xml-writer result)})
-     {:writer (resource-copier part)})))
+  (assert (:path part))
+  (if (:dynamic? (:executable part))
+    (eval-model-part-exec (:executable part) data functions)
+    {:writer (resource-copier part)}))
 
 
 (defn- style-file-writer [template]
@@ -200,7 +206,7 @@
             *extra-files*        (atom #{})
             *all-fragments*      (into {} fragments)]
     (let [evaluate (fn [m]
-                     (let [result (eval-model-part (:executable m) data functions)
+                     (let [result                  (eval-model-part m data functions)
                            fragment-names          (set (:fragment-names result))]
                        (cond-> m
 
