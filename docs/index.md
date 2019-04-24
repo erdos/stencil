@@ -22,6 +22,7 @@ You can find the project on [Stencil's GitHub](https://github.com/erdos/stencil)
 - First of all, read the [Getting Started](GettingStarted.md) manual
 - Try out the [Dockerized Stencil](https://github.com/erdos/stencil/blob/master/service/README.md) example application.
 - Source code is available on [Stencil's GitHub](https://github.com/erdos/stencil)
+- Read about [common problems](DeveloperTroubleshooting.md) when dealing with OOXML.
 - If you wish to contribute, read the [Contributing](Contribution.md) page
 
 ## Companies using Stencil
