@@ -40,6 +40,7 @@
           (doseq [[k writer] writers-map
                   :let  [rel-path (FileHelper/toUnixSeparatedString (.toPath (io/file k)))
                          ze       (new ZipEntry rel-path)]]
+            (assert (not (.contains rel-path "../")))
             (trace "ZIP: writing %s" rel-path)
             (.putNextEntry zipstream ze)
             (writer zipstream)

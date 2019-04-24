@@ -250,7 +250,7 @@
                (pu/assoc pu/EMPTY "" "http://schemas.openxmlformats.org/package/2006/relationships")})
    (->xml-writer)))
 
-
+;; returns a map where key is path and value is writer fn.
 (defn evaled-template-model->writers-map [evaled-template-model]
   (as-> (sorted-map) result
 
@@ -277,7 +277,7 @@
                                                   (.getParentFile (file (:source-file m))))))
                       path-parent (some-> m :path file .getParentFile)]
                 relation (vals (:parsed (:relations m)))
-                :let [path (str (file path-parent (::target relation)))]
+                :let [path (str (.normalize (.toPath (file path-parent (::target relation)))))]
                 :when (or (:writer relation) (not (contains? result path)))
                 :let [src (or (:source-file relation) (file @src-parent (::target relation)))]]
             [path (or (:writer relation)
