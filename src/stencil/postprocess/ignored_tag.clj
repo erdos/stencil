@@ -15,7 +15,7 @@
 
 (defn- map-str [f s] (s/join " " (keep f (s/split s #"\s+"))))
 
-(defn- gen-alias [] (name (gensym "xml")))
+(defn- gen-alias [] (name (gensym "ign")))
 
 (defn- update-if-present [m path f] (if (get-in m path) (update-in m path f) m))
 
