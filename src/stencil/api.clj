@@ -53,10 +53,10 @@
         result (API/render template fragments template-data)]
     (cond
       (#{:stream :input-stream} (:output opts))
-      (.getInputStream result)
+      (.toInputStream result clojure.lang.Agent/soloExecutor)
 
       (instance? java.io.OutputStream (:output opts))
-      (.writeToStream result)
+      (.writeToStream result (:output opts))
 
       (:output opts)
       (let [f (io/file (:output opts))]
