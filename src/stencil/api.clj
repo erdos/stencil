@@ -44,8 +44,8 @@
   - {:fragments {\"fragmentName\" fragment-object}} map of document fragments to embed in template.
   - {:output FNAME} renders output to file FNAME (string or File object). Throws exception
     if file already exists and :overwrite? option is not set.
-  - {:output :input-stream} returns an input stream of the result document.
-  - {:output :reader} returns the input stream reader of the result document."
+  - {:output STREAM} writes output to an OutputStream object.
+  - {:output :input-stream} returns an input stream of the result document."
   [template template-data & {:as opts}]
   (let [template      (prepare template)
         fragments     (into {} (for [[k v] (:fragments opts)] [(name k) (fragment v)]))
@@ -55,8 +55,8 @@
       (#{:stream :input-stream} (:output opts))
       (.getInputStream result)
 
-      (#{:reader} (:output opts))
-      (new InputStreamReader (.getInputStream result))
+      (instance? java.io.OutputStream (:output opts))
+      (.writeToStream result)
 
       (:output opts)
       (let [f (io/file (:output opts))]

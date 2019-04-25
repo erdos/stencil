@@ -5,6 +5,8 @@ import clojure.lang.Keyword;
 import clojure.lang.RT;
 import clojure.lang.Symbol;
 
+import java.util.Map;
+
 /**
  * Clojure utilities.
  */
@@ -12,9 +14,17 @@ import clojure.lang.Symbol;
 public class ClojureHelper {
 
     enum Keywords {
-        DATA, FORMAT, FUNCTION, FRAGMENTS, STREAM, TEMPLATE, VARIABLES, ZIP_DIR, CONTENT, SOURCE_FOLDER;
+        DATA, FUNCTION, FRAGMENTS, TEMPLATE, VARIABLES, SOURCE_FOLDER, WRITER;
 
         public final Keyword kw = Keyword.intern(name().toLowerCase().replace('_', '-'));
+
+        public final <V> V getOrThrow(Map<?, V> m) {
+            if (!m.containsKey(kw)) {
+                throw new IllegalArgumentException("Map does not contain keyword " + kw);
+            } else {
+                return m.get(kw);
+            }
+        }
     }
 
     // requires stencil.process namespace so stencil is loaded.

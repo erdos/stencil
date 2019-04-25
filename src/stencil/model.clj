@@ -284,6 +284,14 @@
                       (resource-copier {:path path :source-file src}))]))))
 
 
+(defn template-model->writers-map
+  [template data function fragments]
+  (assert (map? data))
+  (-> template
+      (eval-template-model data function fragments)
+      (evaled-template-model->writers-map)))
+
+
 (defn- extract-body-parts [xml-tree]
   (assert (:tag xml-tree))
   (doall
