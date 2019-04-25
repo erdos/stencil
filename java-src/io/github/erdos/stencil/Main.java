@@ -10,8 +10,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileAlreadyExistsException;
 
-import static io.github.erdos.stencil.impl.ClojureHelper.callShutdownAgents;
-
 public class Main {
 
     public static void main(String... args) throws IOException {
@@ -39,9 +37,6 @@ public class Main {
                 System.out.println("File: " + new File(e.getFile()).getCanonicalPath());
             }
             System.exit(5);
-        } finally {
-            // stop Clojure thread pools
-            callShutdownAgents();
         }
     }
 
