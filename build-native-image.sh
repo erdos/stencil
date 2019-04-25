@@ -28,6 +28,7 @@ OUTPUT=stencil-native
 native-image \
     -jar $TARGET_JAR \
     -H:ReflectionConfigurationFiles=./reflectconfig \
+    -H:-MultiThreaded \
     -H:IncludeResources='.*.txt$' \
     --report-unsupported-elements-at-runtime \
     $OUTPUT

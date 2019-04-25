@@ -8,7 +8,7 @@ import io.github.erdos.stencil.functions.FunctionEvaluator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -51,14 +51,14 @@ public final class NativeEvaluator {
         final IFn fn = ClojureHelper.findFunction("eval-template");
         final Map argsMap = makeArgsMap(template.getSecretObject(), fragments, data.getData());
 
-        final Object result;
+        final Map result;
         try {
-            result = fn.invoke(argsMap);
+            result = (Map) fn.invoke(argsMap);
         } catch (Exception e) {
             throw EvalException.wrapping(e);
         }
 
-        final InputStream stream = resultInputStream((Map) result);
+        final Consumer<OutputStream> stream = resultWriter(result);
 
         return build(stream, template.getTemplateFormat());
     }
@@ -72,26 +72,25 @@ public final class NativeEvaluator {
         return functions;
     }
 
-    private static EvaluatedDocument build(InputStream stream, TemplateDocumentFormats format) {
+    private static EvaluatedDocument build(Consumer<OutputStream> writer, TemplateDocumentFormats format) {
         return new EvaluatedDocument() {
-            @Override
-            public InputStream getInputStream() {
-                return stream;
-            }
 
             @Override
             public TemplateDocumentFormats getFormat() {
                 return format;
             }
+
+            @Override
+            public Consumer<OutputStream> getWriter() {
+                return writer;
+            }
         };
     }
 
-    private static InputStream resultInputStream(Map result) {
-        if (!result.containsKey(ClojureHelper.Keywords.STREAM.kw)) {
-            throw new IllegalArgumentException("Input map does not contains :stream key!");
-        } else {
-            return (InputStream) result.get(ClojureHelper.Keywords.STREAM.kw);
-        }
+    @SuppressWarnings("unchecked")
+    private static Consumer<OutputStream> resultWriter(Map result) {
+        IFn writer = (IFn) ClojureHelper.Keywords.WRITER.getOrThrow(result);
+        return writer::invoke;
     }
 
     @SuppressWarnings("unchecked")
