@@ -26,18 +26,6 @@ public interface EvaluatedDocument {
         }
     }
 
-    default void writeToChannel(WritableByteChannel channel) throws IOException {
-        try (OutputStream stream = Channels.newOutputStream(channel)) {
-            writeToStream(stream);
-        }
-    }
-
-    default void writeToChannel(AsynchronousByteChannel channel) throws IOException {
-        try (OutputStream stream = Channels.newOutputStream(channel)) {
-            writeToStream(stream);
-        }
-    }
-
     default void writeToStream(OutputStream outputStream) {
         getWriter().accept(outputStream);
     }
