@@ -1,9 +1,6 @@
 package io.github.erdos.stencil;
 
 import java.io.*;
-import java.nio.channels.AsynchronousByteChannel;
-import java.nio.channels.Channels;
-import java.nio.channels.WritableByteChannel;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
 
