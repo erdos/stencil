@@ -18,6 +18,9 @@ public interface EvaluatedDocument {
      * Writes output of this document to a file
      */
     default void writeToFile(File output) throws IOException {
+        if (output.exists()) {
+            throw new IllegalArgumentException("Output file already exists: " + output);
+        }
         try (FileOutputStream fos = new FileOutputStream(output)) {
             writeToStream(fos);
         }
