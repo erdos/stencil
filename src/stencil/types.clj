@@ -1,7 +1,5 @@
 (ns stencil.types
-  (:import [clojure.lang IDeref])
-  (:require [clojure.pprint])
-  (:gen-class))
+  (:import [clojure.lang IDeref]))
 
 (set! *warn-on-reflection* true)
 
@@ -9,13 +7,8 @@
 (def close-tag "%}")
 
 (defrecord OpenTag [open])
-(defmethod clojure.pprint/simple-dispatch OpenTag [t] (print (str "<" (:open t) ">")))
-
 (defrecord CloseTag [close])
-(defmethod clojure.pprint/simple-dispatch CloseTag [t] (print (str "</" (:close t) ">")))
-
 (defrecord TextTag [text])
-(defmethod clojure.pprint/simple-dispatch TextTag [t] (print (str "'" (:text t) "'")))
 
 (defn ->text [t] (->TextTag t))
 (defn ->close [t] (->CloseTag t))

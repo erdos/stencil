@@ -8,7 +8,6 @@
   :min-lein-version  "2.0.0"
   :java-source-paths ["java-src"]
   :javac-options     ["-target" "8" "-source" "8"]
-  :aot               :all
   :dependencies [[org.clojure/clojure "1.8.0"]
                  [org.clojure/data.xml "0.2.0-alpha5"]
                  [org.slf4j/slf4j-api "1.8.0-beta2"]]
@@ -23,7 +22,10 @@
                                    "-top" "<style>kbd{background:#ddd}; a[title~=class], a[title~=interface], a[title~=enum]{text-decoration: underline; font-weight: bold} dd>code{background:#eee}</style>"]}
   :repl-options {:init-ns stencil.api}
   :jar-exclusions [#".*\.xml"]
-  :profiles {:test {:dependencies [[junit/junit "4.12"]
+  :profiles {:uberjar {:aot :all}
+             :dev {:aot :all}
+             :test {:aot :all
+                    :dependencies [[junit/junit "4.12"]
                                    [org.xmlunit/xmlunit-core "2.5.1"]
                                    [hiccup "1.0.5"]]
                     :resource-paths    ["test-resources"]

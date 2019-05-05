@@ -1,15 +1,21 @@
 (ns stencil.api
   "A simple public API for document generation from templates."
-  (:import [io.github.erdos.stencil API PreparedFragment PreparedTemplate TemplateData]
-           [java.io InputStreamReader]
-           [java.util Map])
   (:require [clojure.walk :refer [stringify-keys]]
-            [clojure.java.io :as io]))
+            [clojure.java.io :as io]
+            [clojure.pprint :refer [simple-dispatch]]
+            [stencil.types])
+  (:import [io.github.erdos.stencil API PreparedFragment PreparedTemplate TemplateData]
+           [stencil.types OpenTag CloseTag TextTag]
+           [java.io InputStreamReader]
+           [java.util Map]))
 
 
 (set! *warn-on-reflection* true)
 (set! *unchecked-math* :warn-on-boxed)
 
+(defmethod simple-dispatch OpenTag [t] (print (str "<" (:open t) ">")))
+(defmethod simple-dispatch CloseTag [t] (print (str "</" (:close t) ">")))
+(defmethod simple-dispatch TextTag [t] (print (str "'" (:text t) "'")))
 
 (defn ^PreparedTemplate prepare
   "Creates a prepared template instance from an input document."
