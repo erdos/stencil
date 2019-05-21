@@ -4,7 +4,7 @@
             [clojure.data.xml :as xml]
             [stencil.functions :refer [call-fn]]
             [stencil.types :refer [ControlMarker]]
-            [stencil.tree-postprocess.fragments :as fragments]
+            [stencil.postprocess.fragments :as fragments]
             [stencil.util :refer :all]
             [stencil.ooxml :as ooxml]))
 
@@ -67,17 +67,13 @@
                             {:tag ooxml/br :content []}
                             {:tag ooxml/t :content [(str text)]})))}))))
 
+(defn- current-run-style [chunk-loc]
+  (let [r (zip/node (zip/up (zip/up chunk-loc)))]
+    (some #(when (= ooxml/rPr (:tag %)) %) (:content r))))
+
 (defn- fix-html-chunk [chunk-loc]
   (assert (instance? HtmlChunk (zip/node chunk-loc)))
-  (let [
-
-        ;; current run
-        r    (zip/node (zip/up (zip/up chunk-loc)))
-
-        ;; style of current run
-        style (some #(when (= ooxml/rPr (:tag %)) %) (:content r))
-
-        ;; insertable runs
+  (let [style      (current-run-style chunk-loc)
         ooxml-runs (html->ooxml-runs (:content (zip/node chunk-loc)) (:content style))]
     (if (empty? ooxml-runs)
       (zip/remove chunk-loc)

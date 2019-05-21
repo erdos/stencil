@@ -103,9 +103,10 @@
         (zip/remove))))
 
 
-(defn unpack-items [node-to-replace & insertable-nods]
+(defn unpack-items [node-to-replace & insertable-nodes]
   (assert (zipper? node-to-replace))
   (assert (sequential? insertable-nodes))
+  ;; XXX: split here!
   ;; TODO: split here: decide if paragraph or run or text shall be split!
   (apply split-paragraphs node-to-replace insertable-nodes))
 
