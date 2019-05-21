@@ -109,14 +109,7 @@ Write the following to embed the content of `x` as HTML in the document:
 
 ### XML
 
-You can embed custom xml fragments in the document with the `xml()` function. The parameter is a
-_list of XML nodes_ to insert.
-
-An XML node is either a string literal or an element represented as a map with the following keys:
-
-- `tag`: a namespace-qualified XML node tag name as a string.
-- `attrs`: map of attributes for the XML node. Keys are the namespace-qualified attribut names and values are strings.
-- `content`: A list of XML nodes.
+You can embed custom xml fragments in the document with the `xml()` function. The parameter is a string containing the XML nodes to insert.
 
 ### Format
 
