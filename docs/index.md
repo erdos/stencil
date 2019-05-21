@@ -4,6 +4,8 @@ Stencil is a templating engine to produce Office Open XML (mostly Microsoft Offi
 from within Java programs. It has a simple syntax so you will not need programmers to write or modify
 document templates.
 
+<p align="center"><img src="https://raw.githubusercontent.com/erdos/stencil/master/docs/graphics.svg?sanitize=true" alt="stencil flow"/></p>
+
 You can find the project on [Stencil's GitHub](https://github.com/erdos/stencil) page.
 
 ## For Users
