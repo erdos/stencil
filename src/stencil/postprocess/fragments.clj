@@ -2,6 +2,7 @@
   "Inserts contents of fragments."
   (:import [stencil.types FragmentInvoke])
   (:require [clojure.zip :as zip]
+            [clojure.data.xml :as xml]
             [stencil.types :refer :all]
             [stencil.ooxml :as ooxml]
             [stencil.functions :refer [call-fn]]
@@ -167,7 +168,7 @@
   (dfs-walk-xml-node xml-tree (partial instance? FragmentInvoke) unpack-fragment))
 
 ;; custom XML content
-(defmethod call-fn "xml" [_ contents]
-  (assert (sequential? contents))
-  ;; TODO: keywordize keys here.
-  (->FragmentInvoke {:frag-evaled-parts contents}))
+(defmethod call-fn "xml" [_ content]
+  (assert (string? content))
+  (let [content (:content (xml/parse-str (str "<a>" content "</a>")))]
+    (->FragmentInvoke {:frag-evaled-parts content})))

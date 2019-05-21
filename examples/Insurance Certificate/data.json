@@ -1,0 +1,4 @@
+{"insured": {"name": "John Doe", "phone": "+2344324234", "address": "-", "email": "asdfsadf"},
+ "insurance": [{"name": "Fleet 1 Mini"}],
+ "name": "Fleet1"
+}

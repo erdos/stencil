@@ -1,4 +1,4 @@
-<w:tbl xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2016/main">
+<w:tbl xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">
   <w:tblPr>
     <w:tblStyle w:val="TableGrid"/>
     <w:tblW w:w="5000" w:type="pct"/>
