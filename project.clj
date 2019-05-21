@@ -1,5 +1,5 @@
 (defproject io.github.erdos/stencil-core
-  #=(clojure.string/trim #=(slurp "src/STENCIL_VERSION.txt"))
+  #=(eval (-> "src/STENCIL_VERSION.txt" slurp .trim))
 
   :url "https://github.com/erdos/stencil"
   :description       "Templating engine for office documents."

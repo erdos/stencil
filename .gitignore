@@ -15,3 +15,5 @@ pom.xml
 junit.xml
 .~lock.*
 .idea/
+/stencil-native
+/*.docx
