@@ -3,6 +3,7 @@
   (:require [clojure.zip :as zip]
             [clojure.data.xml :as xml]
             [stencil.functions :refer [call-fn]]
+            [stencil.postprocess.fragments :as fragments]
             [stencil.types :refer [ControlMarker]]
             [stencil.util :refer :all]
             [stencil.ooxml :as ooxml]))
@@ -66,38 +67,15 @@
                             {:tag ooxml/br :content []}
                             {:tag ooxml/t :content [(str text)]})))}))))
 
+(defn- current-run-style [chunk-loc]
+  (let [r (zip/node (zip/up (zip/up chunk-loc)))]
+    (some #(when (= ooxml/rPr (:tag %)) %) (:content r))))
+
 (defn- fix-html-chunk [chunk-loc]
   (assert (instance? HtmlChunk (zip/node chunk-loc)))
-  (let [lefts (zip/lefts chunk-loc)
-        rights (zip/rights chunk-loc)
-
-        t    (zip/node (zip/up chunk-loc))
-        r    (zip/node (zip/up (zip/up chunk-loc)))
-
-        ;;  t elems
-        lefts1 (remove (comp #{ooxml/rPr} :tag) (zip/lefts (zip/up chunk-loc)))
-        rights1 (zip/rights (zip/up chunk-loc))
-
-        style (some #(when (= ooxml/rPr (:tag %)) %) (:content r))
-        ooxml-runs (html->ooxml-runs (:content (zip/node chunk-loc)) (:content style))
-
-        ->t (fn [xs] {:tag ooxml/t :content (vec xs)})
-        ->run (fn [cts] (assoc r :content (vec (cons style cts))))]
-    (assert (= ooxml/t (:tag t)))
-    (assert (= ooxml/r (:tag r)))
-    (-> chunk-loc
-        (zip/up) ;; t
-        (zip/up) ;; r
-
-        (cond-> (seq lefts1) (zip/insert-left (->run lefts1)))
-        (cond-> (seq lefts) (zip/insert-left (->run [(->t lefts)])))
-
-        (cond-> (seq rights1) (zip/insert-right (->run rights1)))
-        (cond-> (seq rights) (zip/insert-right (->run [(->t rights)])))
-
-        (as-> * (reduce zip/insert-right * (reverse ooxml-runs)))
-
-        (zip/remove))))
+  (let [style      (current-run-style chunk-loc)
+        ooxml-runs (html->ooxml-runs (:content (zip/node chunk-loc)) (:content style))]
+    (apply fragments/unpack-items chunk-loc ooxml-runs)))
 
 (defn fix-html-chunks [xml-tree]
   (dfs-walk-xml-node xml-tree #(instance? HtmlChunk %) fix-html-chunk))

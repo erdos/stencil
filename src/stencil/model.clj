@@ -381,37 +381,29 @@
       :path        new-path})))
 
 
-(defn insert-fragment! [frag-name local-data-map]
-  (assert (string? frag-name))
+(defmethod eval/eval-step :cmd/include [f local-data-map {frag-name :name}]
   (assert (map? local-data-map))
+  (assert (string? frag-name))
   (expect-fragment-context!
    (if-let [fragment-model (get *all-fragments* frag-name)]
-     (do (assert (map? local-data-map))
-         (let [;; merge style definitions from fragment
-               style-ids-rename (-> fragment-model :main :style :parsed (doto assert) (insert-styles!))
-               fragment-model   (update-in fragment-model [:main :executable :executable]
-                                           executable-rename-style-ids style-ids-rename)
+     (let [;; merge style definitions from fragment
+           style-ids-rename (-> fragment-model :main :style :parsed (doto assert) (insert-styles!))
+           fragment-model   (update-in fragment-model [:main :executable :executable]
+                                       executable-rename-style-ids style-ids-rename)
 
-               relation-ids-rename (relation-ids-rename fragment-model frag-name)
+           relation-ids-rename (relation-ids-rename fragment-model frag-name)
 
-               fragment-model   (update-in fragment-model [:main :executable :executable]
-                                           executable-rename-relation-ids (into {} (map (juxt :old-id :new-id) relation-ids-rename)))
+           fragment-model   (update-in fragment-model [:main :executable :executable]
+                                       executable-rename-relation-ids (into {} (map (juxt :old-id :new-id) relation-ids-rename)))
 
-               ;; evaluate
-               evaled (eval-template-model fragment-model local-data-map {} {})
+           ;; evaluate
+           evaled (eval-template-model fragment-model local-data-map {} {})
 
-               ;; write back
-               evaled-parts (-> evaled :main :result :xml (doto assert) extract-body-parts)]
-           (swap! *inserted-fragments* conj frag-name)
-           (swap! *extra-files* into relation-ids-rename)
-           {:frag-evaled-parts evaled-parts}))
-
+           ;; write back
+           evaled-parts (-> evaled :main :result :xml (doto assert) extract-body-parts)]
+       (swap! *inserted-fragments* conj frag-name)
+       (swap! *extra-files* into relation-ids-rename)
+       (->FragmentInvoke {:frag-evaled-parts evaled-parts}))
      (throw (ex-info "Did not find fragment for name!"
                      {:fragment-name frag-name
                       :all-fragment-names (set (keys *all-fragments*))})))))
-
-
-(defmethod eval/eval-step :cmd/include [f local-data item]
-  (let [chunk-name (:name item)
-        invoked (insert-fragment! chunk-name local-data)]
-    (->FragmentInvoke invoked)))

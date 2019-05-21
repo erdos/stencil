@@ -25,6 +25,7 @@ This is a short description of the functions implemented in Stencil:
 - `switch`
 - `titlecase`
 - `uppercase`
+- [xml](#xml)
 
 ## Basic Functions
 
@@ -106,8 +107,11 @@ The rendering throws an exception on invalid HTML input or unexpected HTML tags.
 Write the following to embed the content of `x` as HTML in the document:
 - <code>{<i>%=html(x) %</i>}</code>.
 
-### Format
+### XML
 
+You can embed custom xml fragments in the document with the `xml()` function. The parameter is a string containing the XML nodes to insert.
+
+### Format
 
 Calls [String.format](https://docs.oracle.com/javase/7/docs/api/java/util/Formatter.html) function.
 

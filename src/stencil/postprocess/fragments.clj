@@ -2,8 +2,10 @@
   "Inserts contents of fragments."
   (:import [stencil.types FragmentInvoke])
   (:require [clojure.zip :as zip]
+            [clojure.data.xml :as xml]
             [stencil.types :refer :all]
             [stencil.ooxml :as ooxml]
+            [stencil.functions :refer [call-fn]]
             [stencil.util :refer :all]))
 
 
@@ -62,6 +64,45 @@
 (defn- node-r?! [x] (assert (= ooxml/r (:tag (zip/node x)))) x)
 
 
+(defn- split-texts [chunk-loc & insertable-runs]
+  (assert false "Not implemented!"))
+
+
+(defn- split-runs [chunk-loc & insertable-runs]
+  (assert (seq insertable-runs))
+  (node-t?! (zip/up chunk-loc))
+  (let [lefts (zip/lefts chunk-loc)
+        rights (zip/rights chunk-loc)
+
+        t    (zip/node (zip/up chunk-loc))
+        r    (zip/node (zip/up (zip/up chunk-loc)))
+
+        ;;  t elems
+        lefts1 (remove (comp #{ooxml/rPr} :tag) (zip/lefts (zip/up chunk-loc)))
+        rights1 (zip/rights (zip/up chunk-loc))
+
+        ;; style of run that is split
+        style (some #(when (= ooxml/rPr (:tag %)) %) (:content r))
+
+        ->t (fn [xs] {:tag ooxml/t :content (vec xs)})
+        ->run (fn [cts] (assoc r :content (vec (cons style cts))))]
+    (assert (= ooxml/t (:tag t)))
+    (assert (= ooxml/r (:tag r)))
+    (-> chunk-loc
+        (zip/up) ;; t
+        (zip/up) ;; r
+
+        (cond-> (seq lefts1) (zip/insert-left (->run lefts1)))
+        (cond-> (seq lefts) (zip/insert-left (->run [(->t lefts)])))
+
+        (cond-> (seq rights1) (zip/insert-right (->run rights1)))
+        (cond-> (seq rights) (zip/insert-right (->run [(->t rights)])))
+
+        (as-> * (reduce zip/insert-right * (reverse insertable-runs)))
+
+        (zip/remove))))
+
+
 (defn- split-paragraphs [chunk-loc & insertable-paragraphs]
   (let [p-left (-> chunk-loc
                    (remove-all-rights)
@@ -100,11 +141,24 @@
         (zip/remove))))
 
 
+(defn unpack-items [node-to-replace & insertable-nodes]
+  (assert (zipper? node-to-replace))
+  (assert (sequential? insertable-nodes))
+  (cond
+    (= ooxml/r (:tag (first insertable-nodes)))
+    (apply split-runs node-to-replace insertable-nodes)
+
+    (= ooxml/t (:tag (first insertable-nodes)))
+    (apply split-texts node-to-replace insertable-nodes)
+
+    :default
+    (apply split-paragraphs node-to-replace insertable-nodes)))
+
+
 (defn- unpack-fragment [chunk-loc]
   (assert (instance? FragmentInvoke (zip/node chunk-loc)))
   (let [chunk      (-> chunk-loc zip/node :result (doto (assert "result is missing")))
         tree-parts (-> chunk :frag-evaled-parts (doto (assert "Evaled parts is missing")))]
-    (assert (sequential? tree-parts) "Tree parts must be a sequence!")
     (apply split-paragraphs chunk-loc tree-parts)))
 
 
@@ -112,3 +166,9 @@
   "Walks the tree (Depth First) and evaluates FragmentInvoke objects."
   [xml-tree]
   (dfs-walk-xml-node xml-tree (partial instance? FragmentInvoke) unpack-fragment))
+
+;; custom XML content
+(defmethod call-fn "xml" [_ content]
+  (assert (string? content))
+  (let [content (:content (xml/parse-str (str "<a>" content "</a>")))]
+    (->FragmentInvoke {:frag-evaled-parts content})))
