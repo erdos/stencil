@@ -167,4 +167,7 @@
   (dfs-walk-xml-node xml-tree (partial instance? FragmentInvoke) unpack-fragment))
 
 ;; custom XML content
-(defmethod call-fn "xml" [_ contents] (->FragmentInvoke {:frag-evaled-parts contents}))
+(defmethod call-fn "xml" [_ contents]
+  (assert (sequential? contents))
+  ;; TODO: keywordize keys here.
+  (->FragmentInvoke {:frag-evaled-parts contents}))
