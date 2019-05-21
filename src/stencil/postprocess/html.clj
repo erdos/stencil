@@ -4,6 +4,7 @@
             [clojure.data.xml :as xml]
             [stencil.functions :refer [call-fn]]
             [stencil.types :refer [ControlMarker]]
+            [stencil.tree-postprocess.fragments :as fragments]
             [stencil.util :refer :all]
             [stencil.ooxml :as ooxml]))
 
@@ -68,36 +69,19 @@
 
 (defn- fix-html-chunk [chunk-loc]
   (assert (instance? HtmlChunk (zip/node chunk-loc)))
-  (let [lefts (zip/lefts chunk-loc)
-        rights (zip/rights chunk-loc)
+  (let [
 
-        t    (zip/node (zip/up chunk-loc))
+        ;; current run
         r    (zip/node (zip/up (zip/up chunk-loc)))
 
-        ;;  t elems
-        lefts1 (remove (comp #{ooxml/rPr} :tag) (zip/lefts (zip/up chunk-loc)))
-        rights1 (zip/rights (zip/up chunk-loc))
-
+        ;; style of current run
         style (some #(when (= ooxml/rPr (:tag %)) %) (:content r))
-        ooxml-runs (html->ooxml-runs (:content (zip/node chunk-loc)) (:content style))
 
-        ->t (fn [xs] {:tag ooxml/t :content (vec xs)})
-        ->run (fn [cts] (assoc r :content (vec (cons style cts))))]
-    (assert (= ooxml/t (:tag t)))
-    (assert (= ooxml/r (:tag r)))
-    (-> chunk-loc
-        (zip/up) ;; t
-        (zip/up) ;; r
-
-        (cond-> (seq lefts1) (zip/insert-left (->run lefts1)))
-        (cond-> (seq lefts) (zip/insert-left (->run [(->t lefts)])))
-
-        (cond-> (seq rights1) (zip/insert-right (->run rights1)))
-        (cond-> (seq rights) (zip/insert-right (->run [(->t rights)])))
-
-        (as-> * (reduce zip/insert-right * (reverse ooxml-runs)))
-
-        (zip/remove))))
+        ;; insertable runs
+        ooxml-runs (html->ooxml-runs (:content (zip/node chunk-loc)) (:content style))]
+    (if (empty? ooxml-runs)
+      (zip/remove chunk-loc)
+      (apply fragments/unpack-items chunk-loc ooxml-runs))))
 
 (defn fix-html-chunks [xml-tree]
   (dfs-walk-xml-node xml-tree #(instance? HtmlChunk %) fix-html-chunk))

@@ -61,6 +61,9 @@
 (defn- node-t?! [x] (assert (= ooxml/t (:tag (zip/node x)))) x)
 (defn- node-r?! [x] (assert (= ooxml/r (:tag (zip/node x)))) x)
 
+(defn- split-texts [chunk-loc & insertable-texts])
+
+(defn- split-runs [chunk-loc & insertable-runs])
 
 (defn- split-paragraphs [chunk-loc & insertable-paragraphs]
   (let [p-left (-> chunk-loc
@@ -100,12 +103,18 @@
         (zip/remove))))
 
 
+(defn unpack-items [node-to-replace & insertable-nods]
+  (assert (zipper? node-to-replace))
+  (assert (sequential? insertable-nodes))
+  ;; TODO: split here: decide if paragraph or run or text shall be split!
+  (apply split-paragraphs node-to-replace insertable-nodes))
+
+
 (defn- unpack-fragment [chunk-loc]
   (assert (instance? FragmentInvoke (zip/node chunk-loc)))
   (let [chunk      (-> chunk-loc zip/node :result (doto (assert "result is missing")))
         tree-parts (-> chunk :frag-evaled-parts (doto (assert "Evaled parts is missing")))]
-    (assert (sequential? tree-parts) "Tree parts must be a sequence!")
-    (apply split-paragraphs chunk-loc tree-parts)))
+    (apply unpack-items chunk-loc tree-parts)))
 
 
 (defn unpack-fragments
