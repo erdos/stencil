@@ -403,7 +403,7 @@
            evaled-parts (-> evaled :main :result :xml (doto assert) extract-body-parts)]
        (swap! *inserted-fragments* conj frag-name)
        (swap! *extra-files* into relation-ids-rename)
-       (->FragmentInvoke {:frag-evaled-parts evaled-parts}))
+       [{:text (->FragmentInvoke {:frag-evaled-parts evaled-parts})}])
      (throw (ex-info "Did not find fragment for name!"
                      {:fragment-name frag-name
                       :all-fragment-names (set (keys *all-fragments*))})))))

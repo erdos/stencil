@@ -143,6 +143,7 @@
 
 (defn unpack-items [node-to-replace & insertable-nodes]
   (assert (zipper? node-to-replace))
+  (assert (control? (zip/node node-to-replace)))
   (assert (sequential? insertable-nodes))
   (cond
     (= ooxml/r (:tag (first insertable-nodes)))
