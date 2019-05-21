@@ -33,6 +33,9 @@
 (def rel-type-header
   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/header")
 
+(def rel-type-slide
+  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide")
+
 (def rel-type-image
   "Relationship type of image files in .rels files."
   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image")
@@ -124,14 +127,16 @@
      :main          {:path        main-document
                      :source-file (file dir main-document)
                      :executable  (->exec (file dir main-document))
-                     :style {:path        main-style-path
-                             :source-file (file dir main-style-path)
-                             :parsed      (parse-style (file dir main-style-path))}
+                     :style (when main-style-path
+                              {:path        main-style-path
+                               :source-file (file dir main-style-path)
+                               :parsed      (parse-style (file dir main-style-path))})
                      :relations main-document-rels
                      :headers+footers (doall
                                        (for [[id m] (:parsed main-document-rels)
                                              :when (#{rel-type-footer
-                                                      rel-type-header}
+                                                      rel-type-header
+                                                      rel-type-slide}
                                                     (::type m))
                                              :let [f (file (.getParentFile (file main-document)) (::target m))]]
                                          {:path        (str f)
@@ -233,7 +238,9 @@
       (-> template-model
           (update :main evaluate)
           (update-in [:main :headers+footers] (partial mapv evaluate))
-          (assoc-in [:main :style :result] (style-file-writer template-model))))))
+
+          (cond-> (-> template-model :main :style)
+            (assoc-in [:main :style :result] (style-file-writer template-model)))))))
 
 
 (defn- relation-writer [relation-map]
