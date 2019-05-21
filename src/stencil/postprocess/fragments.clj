@@ -1,9 +1,10 @@
 (ns stencil.postprocess.fragments
   "Inserts contents of fragments."
-  (:import [stencil.types FragmentInvoke])
+  (:import [stencil.types FragmentInvoke OOXMLChunk])
   (:require [clojure.zip :as zip]
             [stencil.types :refer :all]
             [stencil.ooxml :as ooxml]
+            [stencil.functions :refer [call-fn]]
             [stencil.util :refer :all]))
 
 
@@ -164,3 +165,6 @@
   "Walks the tree (Depth First) and evaluates FragmentInvoke objects."
   [xml-tree]
   (dfs-walk-xml-node xml-tree (partial instance? FragmentInvoke) unpack-fragment))
+
+;; custom XML content
+(defmethod call-fn "xml" [_ contents] (->FragmentInvoke {:frag-evaled-parts contents}))

@@ -3,8 +3,8 @@
   (:require [clojure.zip :as zip]
             [clojure.data.xml :as xml]
             [stencil.functions :refer [call-fn]]
-            [stencil.types :refer [ControlMarker]]
             [stencil.postprocess.fragments :as fragments]
+            [stencil.types :refer [ControlMarker]]
             [stencil.util :refer :all]
             [stencil.ooxml :as ooxml]))
 
@@ -75,9 +75,7 @@
   (assert (instance? HtmlChunk (zip/node chunk-loc)))
   (let [style      (current-run-style chunk-loc)
         ooxml-runs (html->ooxml-runs (:content (zip/node chunk-loc)) (:content style))]
-    (if (empty? ooxml-runs)
-      (zip/remove chunk-loc)
-      (apply fragments/unpack-items chunk-loc ooxml-runs))))
+    (apply fragments/unpack-items chunk-loc ooxml-runs)))
 
 (defn fix-html-chunks [xml-tree]
   (dfs-walk-xml-node xml-tree #(instance? HtmlChunk %) fix-html-chunk))
