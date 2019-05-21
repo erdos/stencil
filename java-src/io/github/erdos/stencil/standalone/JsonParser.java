@@ -10,7 +10,7 @@ import java.util.*;
 /**
  * A naive implementation based on recursive descent parsing.
  */
-final class JsonParser {
+public final class JsonParser {
 
     /**
      * Parses string and returns read object if any.
