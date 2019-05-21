@@ -1,6 +1,6 @@
 (ns stencil.postprocess.fragments
   "Inserts contents of fragments."
-  (:import [stencil.types FragmentInvoke OOXMLChunk])
+  (:import [stencil.types FragmentInvoke])
   (:require [clojure.zip :as zip]
             [stencil.types :refer :all]
             [stencil.ooxml :as ooxml]
