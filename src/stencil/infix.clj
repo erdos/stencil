@@ -17,6 +17,7 @@
    \* :times
    \/ :divide
    \% :mod
+   \^ :power
    \( :open
    \) :close
    \! :not
@@ -153,7 +154,7 @@
                      tokens (next tokens)))
     (throw (ex-info "Could not parse!" {}))
 
-    :default
+    :else
     tokens))
 
 (defn tokens->rpn
@@ -261,8 +262,8 @@
                       {:fn fn :expected args :got (count ops) :ops (vec ops)})))))
 
 (defmacro def-reduce-step [cmd args body]
-  (assert (keyword? cmd))
-  (assert (every? symbol? args))
+  {:pre [(keyword? cmd)
+         (every? symbol? args)]}
   `(do (defmethod action-arity ~cmd [_#] ~(count args))
        (defmethod reduce-step ~cmd [[~@args ~'& stack#] action#]
          (let [~'+action+ action#] (conj stack# ~body)))))
@@ -281,20 +282,20 @@
 (def-reduce-step :not [b] (not b))
 (def-reduce-step :and [a b] (and b a))
 (def-reduce-step :neq [a b] (not= a b))
-(def-reduce-step :mod [s0 s1] (mod s0 s1))
+(def-reduce-step :mod [s0 s1] (mod s1 s0))
 (def-reduce-step :lt [s0 s1] (< s1 s0))
 (def-reduce-step :lte [s0 s1] (<= s1 s0))
 (def-reduce-step :gt [s0 s1] (> s1 s0))
 (def-reduce-step :gte [s0 s1] (>= s1 s0))
-(def-reduce-step :power [s0 s1] (Math/pow s0 s1))
+(def-reduce-step :power [s0 s1] (Math/pow s1 s0))
 
 (defn eval-rpn
   ([bindings default-function tokens]
-   (assert (ifn? default-function))
+   {:pre [(ifn? default-function)]}
    (eval-rpn (assoc bindings ::functions default-function) tokens))
   ([bindings tokens]
-   (assert (map? bindings))
-   (assert (seq tokens))
+   {:pre [(map? bindings)
+          (seq tokens)]}
    (binding [*calc-vars* bindings]
      (let [result (reduce reduce-step () tokens)]
        (assert (= 1 (count result)))

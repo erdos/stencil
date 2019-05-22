@@ -15,7 +15,8 @@
   :pom-plugins [[org.apache.maven.plugins/maven-surefire-plugin "2.20"]]
   :main io.github.erdos.stencil.Main
   :plugins [[lein-javadoc "0.3.0"]
-            [lein-test-out "0.3.1"]]
+            [lein-test-out "0.3.1"]
+            [lein-cloverage "1.1.1"]]
   :aliases      {"junit" ["with-profile" "test" "do" "test-out" "junit" "junit.xml"]}
   :javadoc-opts {:package-names ["stencil"]
                  :additional-args ["-overview" "java-src/overview.html"

@@ -71,7 +71,9 @@
       (is (= 5 (run "2 +3")))
       (is (= 3 (run "5 - 2")))
       (is (= 6 (run "2 * 3")))
-      (is (= 3 (run "6/2"))))
+      (is (= 3 (run "6 / 2")))
+      (is (= 36.0 (run "6 ^ 2")))
+      (is (= 2 (run "12 % 5"))))
 
     (testing "Simple op precedence"
       (is (= 7 (run "1+2*3")))
@@ -88,6 +90,7 @@
     (testing "Osszehasonlito muveletek - 2"
       (is (true? (run "3 < 4")))
       (is (false? (run "4 < 2")))
+      (is (true? (run "4 > 3")))
       (is (true? (run "3 <= 3")))
       (is (true? (run "34 >= 2"))))
     ))
@@ -144,6 +147,7 @@
 
 (deftest negativ-szamok
   (is (= -123 (run " -123")))
+  (is (= 4.123 (run " 4.123")))
   (is (= -6 (run "-3*2")))
   (is (= -6 (run "2*-3")))
   (is (= -6 (run "2*(-3)")))

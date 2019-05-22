@@ -15,13 +15,13 @@
 (defn- loc-table? [loc] (some-> loc zip/node :tag name #{"tbl" "table"}))
 
 (defn- find-first-in-tree [pred tree]
-  (assert (zipper? tree))
-  (assert (fn? pred))
+  {:pre [(zipper? tree)
+         (fn? pred)]}
   (find-first (comp pred zip/node) (take-while (complement zip/end?) (iterate zip/next tree))))
 
 (defn- find-last-child [pred tree]
-  (assert (zipper? tree))
-  (assert (fn? pred))
+  {:pre [(zipper? tree)
+         (fn? pred)]}
   (last (filter (comp pred zip/node) (take-while some? (iterate zip/right (zip/down tree))))))
 
 (defn- first-right-sibling
@@ -33,8 +33,8 @@
 (defn- first-parent
   "Finds closest parent element that matches the predicate."
   [pred loc]
-  (assert (ifn? pred))
-  (assert (zipper? loc))
+  {:pre [(ifn? pred)
+         (zipper? loc)]}
   (find-first pred (iterations zip/up loc)))
 
 (defn- find-enclosing-cell  [loc] (first-parent loc-cell? loc))
@@ -47,22 +47,22 @@
 (defn- find-closest-cell-left  [loc] (first-left-sibling loc-cell? loc))
 
 (defn- goto-nth-sibling-cell [n loc]
-  (assert (integer? n))
-  (assert (zipper? loc))
+  {:pre [(integer? n)
+         (zipper? loc)]}
   (nth (filter loc-cell? (iterations zip/right (zip/leftmost loc))) n))
 
 (defn- find-first-child
   "Returns zipper of first child where predicate holds for the node or nil when not found."
   [pred loc]
-  (assert (ifn? pred))
-  (assert (zipper? loc))
+  {:pre [(ifn? pred)
+         (zipper? loc)]}
   (find-first (comp pred zip/node) (take-while some? (iterations zip/right (zip/down loc)))))
 
 (defn- tag-matches? [tag elem] (and (map? elem) (some-> elem :tag name #{tag})))
 
 (defn- ensure-child [loc tag-name]
-  (assert string? tag-name)
-  (assert (zipper? loc))
+  {:pre [(string? tag-name)
+         (zipper? loc)]}
   (or (find-first-child (partial tag-matches? tag-name) loc)
       (zip/next (zip/insert-child loc {:tag (keyword tag-name) :content []}))))
 
@@ -71,15 +71,15 @@
 (defn- child-of-tag
   "Finds first child node with a given tag name. Returns zipper of the child or nil when not found."
   [tag-name loc]
-  (assert (zipper? loc))
-  (assert (string? tag-name))
+  {:pre [(zipper? loc)
+         (string? tag-name)]}
   (find-first-child (partial tag-matches? tag-name) loc))
 
 (defn- cell-width
   "Az aktualis table cella logikai szelesseget adja vissza. Alapertelmezetten 1."
   [loc]
-  (assert (zipper? loc))
-  (assert (loc-cell? loc))
+  {:pre [(zipper? loc)
+         (loc-cell? loc)]}
   (let [cell-loc      (find-enclosing-cell loc)
         cell          (zip/node cell-loc)]
     (case (name (:tag cell))
@@ -92,10 +92,10 @@
 (defn shrink-column
   "Decreases logical width of current TD cell."
   [col-loc shrink-amount]
-  (assert (zipper? col-loc))
-  (assert (loc-cell? col-loc))
-  (assert (pos? shrink-amount))
-  (assert (integer? shrink-amount))
+  {:pre [(zipper? col-loc)
+         (loc-cell? col-loc)
+         (integer? shrink-amount)
+         (pos? shrink-amount)]}
   (let [old-width (cell-width col-loc)]
     (assert (< shrink-amount old-width))
     (case (name (:tag (zip/node col-loc)))
@@ -106,7 +106,7 @@
 (defn- current-column-indices
   "Visszaadja egy halmazban, hogy hanyadik oszlop(ok)ban vagyunk benne eppen."
   [loc]
-  (assert (zipper? loc))
+  {:pre [(zipper? loc)]}
   (let [cell         (find-enclosing-cell loc)
         current-cell-width (cell-width cell)
         cells-before (filter loc-cell? (next (iterations zip/left cell)))
@@ -121,9 +121,9 @@
 
    Visszater a row lokatorral."
   [row-loc removable-columns column-resize-strategy]
-  (assert (zipper? row-loc) "Elso parameter zipper legyen!")
-  (assert (seq removable-columns))
-  (assert (contains? column-resize-modes column-resize-strategy))
+  {:pre [(zipper? row-loc)
+         (seq removable-columns)
+         (contains? column-resize-modes column-resize-strategy)]}
   (let [row-loc           (find-enclosing-row row-loc)
         removable-columns (set removable-columns)]
     (assert (some? row-loc)         "Nem cell-ben vagyunk!")
@@ -151,8 +151,8 @@
                    (int (+ current-idx column-width)))))))))
 
 (defn map-each-rows [f table & colls]
-  (assert (fn? f))
-  (assert (loc-table? table))
+  {:pre [(fn? f)
+         (loc-table? table)]}
   (if-let [first-row   (find-closest-row-right (zip/down table))]
     (loop [current-row first-row
            colls       colls]
@@ -165,8 +165,8 @@
 (defn map-each-cells
   "Maps f over every cell in a row. Returns the zipper on the row."
   [f row & colls]
-  (assert (fn? f))
-  (assert (loc-row? row))
+  {:pre [(fn? f)
+         (loc-row? row)]}
   (if-let [first-cell (find-closest-cell-right (zip/down row))]
     (loop [current-cell first-cell
            colls        colls]
@@ -177,14 +177,14 @@
     row))
 
 (defn remove-children-at-indices [loc indices]
-  (assert (zipper? loc))
-  (assert (set? indices))
+  {:pre [(zipper? loc)
+         (set? indices)]}
   (zip/edit loc update :content
             (partial keep-indexed (fn [idx child] (when-not (contains? indices idx) child)))))
 
 (defn calc-column-widths [original-widths expected-total strategy]
-  (assert (every? number? original-widths))
-  (assert (number? expected-total))
+  {:pre [(every? number? original-widths)
+         (number? expected-total)]}
   (case strategy
     :cut
     (do ; (assert (= expected-total (reduce + original-widths)))
@@ -205,12 +205,12 @@
 (defn table-resize-widths
   "Elavolitja a table grid-bol anem haznalatos oszlopokat."
   [table-loc column-resize-strategy removed-column-indices]
-  (assert (loc-table? table-loc))
-  (assert (keyword? column-resize-strategy))
-  (assert (set? removed-column-indices))
+  {:pre [(loc-table? table-loc)
+         (keyword? column-resize-strategy)
+         (set? removed-column-indices)]}
   (let [find-grid-loc (fn [loc] (find-first-in-tree (partial tag-matches? "tblGrid") loc))
         total-width (fn [table-loc]
-                      (assert (zipper? table-loc))
+                      {:pre [(zipper? table-loc)]}
                       (some->> table-loc
                                find-grid-loc
                                (zip/children)
@@ -219,8 +219,8 @@
 
         ;; egy sor cellainak az egyedi szelesseget is beleirja magatol
         fix-row-widths (fn [grid-widths row]
-                         (assert (zipper? row))
-                         (assert (every? number? grid-widths))
+                         {:pre [(zipper? row)
+                                   (every? number? grid-widths)]}
                          (loop [cell (some-> row zip/down find-closest-cell-right)
                                 parent row
                                 grid-widths grid-widths]
@@ -233,13 +233,12 @@
                                                 (zip/up *) (drop (cell-width cell) grid-widths)))))))
 
         fix-table-cells-widths (fn [table-loc grid-widths]
-                                 (assert (sequential? grid-widths))
-                                 (assert (loc-table? table-loc))
+                                 {:pre [(sequential? grid-widths)
+                                        (loc-table? table-loc)]}
                                  (map-each-rows (partial fix-row-widths grid-widths) table-loc))
 
         ;; a tablazat teljes szelesseget beleirja a grid szelessegek szummajakent
         fix-table-width (fn [table-loc]
-                          (assert (zipper? table-loc))
                           (-> (some->> table-loc (child-of-tag "tblPr") (child-of-tag "tblW"))
                               (some-> (zip/edit assoc-in [:attrs ooxml/w] (str (total-width table-loc)))
                                       (find-enclosing-table))
@@ -280,7 +279,7 @@
   "Ha egy tablazat utolso oszlopat tavolitottuk el, akkor az utolso elotti oszlop cellaibol a border-right ertekeket
    at kell masolni az utolso oszlop cellaiba"
   [table-loc direction borders]
-  (assert (sequential? borders))
+  {:pre [(sequential? borders)]}
   (case direction
     ("left" "right")
     (map-each-rows
@@ -329,7 +328,7 @@
 
 ;; TODO: handle rowspan property!
 (defn- remove-current-row [start]
-  (assert (zipper? start))
+  {:pre [(zipper? start)]}
   (let [last-row?  (nil? (find-closest-row-right (zip/right (find-enclosing-row start))))
         first-row? (nil? (find-closest-row-left (zip/left (find-enclosing-row start))))
         bottom-borders (get-borders "bottom" (find-enclosing-table start))

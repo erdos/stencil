@@ -7,7 +7,7 @@
 (defn stacks-difference-key
   "Removes prefixes of two lists where key-fn gives the same result."
   [key-fn stack1 stack2]
-  (assert (ifn? key-fn))
+  {:pre [(ifn? key-fn)]}
   (let [cnt (count (take-while true?
                                (map (fn [a b] (= (key-fn a) (key-fn b)))
                                     (reverse stack1) (reverse stack2))))]
@@ -22,8 +22,8 @@
   "Egy stack legfelso elemenek legutolso elemet modositja.
    Ha nincs elem, IllegalStateException kivetelt dob."
   [stack f & args]
-  (assert (list? stack) (str "Stack is not a list: " (pr-str stack)))
-  (assert (ifn? f))
+  {:pre [(ifn? f)
+         (list? stack)]}
   (conj (rest stack)
         (conj (pop (first stack))
               (apply f (peek (first stack)) args))))
@@ -36,7 +36,7 @@
 (defn update-peek
   "Egy stack legfelso elemet modositja."
   [xs f & args]
-  (assert (ifn? f))
+  {:pre [(ifn? f)]}
   (conj (pop xs) (apply f (peek xs) args)))
 
 (defn update-some [m path f]
@@ -74,7 +74,7 @@
 (def print-trace? false)
 
 (defmacro trace [msg & details]
-  (assert (string? msg) "Log message must be a string")
+  {:pre [(string? msg)]}
   `(when print-trace?
      (println (format ~msg ~@(for [d details] `(pr-str ~d))))))
 
@@ -85,9 +85,9 @@
   (EvalException/fromMissingValue (str expression)))
 
 (defn dfs-walk-xml-node [xml-tree predicate edit-fn]
-  (assert (map? xml-tree))
-  (assert (fn? predicate))
-  (assert (fn? edit-fn))
+  {:pre [(map? xml-tree)
+         (fn? predicate)
+         (fn? edit-fn)]}
   (loop [loc (xml-zip xml-tree)]
     (if (clojure.zip/end? loc)
       (clojure.zip/root loc)
@@ -96,7 +96,7 @@
         (recur (clojure.zip/next loc))))))
 
 (defn dfs-walk-xml [xml-tree predicate edit-fn]
-  (assert (fn? edit-fn))
+  {:pre [(fn? edit-fn)]}
   (dfs-walk-xml-node xml-tree predicate #(clojure.zip/edit % edit-fn)))
 
 
