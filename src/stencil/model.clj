@@ -79,7 +79,7 @@
 (defn- parse-style
   "Returns a map where key is style id and value is style definition."
   [style-file]
-  (assert style-file)
+  {:pre [style-file]}
   (with-open [r (io/input-stream (file style-file))]
     (into (sorted-map)
           (for [d (:content (xml/parse r))
@@ -89,8 +89,8 @@
 
 
 (defn- parse-content-types [^File cts]
-  (assert (.exists cts))
-  (assert (.isFile cts))
+  {:pre [(.exists cts)
+         (.isFile cts)]}
   (let [parsed (with-open [r (io/input-stream cts)] (xml/parse r))]
     {:source-file cts
      :path        (.getName cts)}))
@@ -104,8 +104,8 @@
 
 
 (defn load-template-model [^File dir]
-  (assert (.exists dir))
-  (assert (.isDirectory dir))
+  {:pre [(.exists dir)
+         (.isDirectory dir)]}
   (let [package-rels (parse-relation (file dir "_rels" ".rels"))
         main-document (some #(when (= rel-type-main (::type %)) (::target %)) (vals package-rels))
         ->rels (fn [f]
@@ -160,8 +160,7 @@
 
 
 (defn- resource-copier [x]
-  (assert (:path x))
-  (assert (:source-file x))
+  {:pre [(:path x) (:source-file x)]}
   (fn [writer]
     (io!
      (let [stream (io/output-stream writer)]
@@ -171,8 +170,8 @@
 
 
 (defn- eval-model-part-exec [part data functions]
-  (assert (:executable part))
-  (assert (:dynamic? part))
+  {:pre [(:executable part)
+         (:dynamic? part)]}
   (expect-fragment-context!
    (let [[result fragments] (binding [*inserted-fragments* (atom #{})]
                               [(eval/eval-executable part data functions)
@@ -184,8 +183,8 @@
 
 
 (defn- eval-model-part [part data functions]
-  (assert (:executable part))
-  (assert (:path part))
+  {:pre [(:executable part)
+         (:path part)]}
   (if (:dynamic? (:executable part))
     (eval-model-part-exec (:executable part) data functions)
     {:writer (resource-copier part)}))
@@ -204,8 +203,8 @@
 
 
 (defn eval-template-model [template-model data functions fragments]
-  (assert (:main template-model) "Should be a result of load-template-model call!")
-  (assert (some? fragments))
+  {:pre [(:main template-model)
+         (some? fragments)]}
   (binding [*current-styles*     (atom (:parsed (:style (:main template-model))))
             *inserted-fragments* (atom #{})
             *extra-files*        (atom #{})
@@ -244,8 +243,8 @@
 
 
 (defn- relation-writer [relation-map]
-  (assert (map? relation-map))
-  (assert (every? string? (keys relation-map)) (str "Not all str: " (keys relation-map)))
+  {:pre [(map? relation-map)
+         (every? string? (keys relation-map))]}
   (->
    {:tag tag-relationships
     :content (for [[k v] relation-map]
@@ -291,16 +290,15 @@
                       (resource-copier {:path path :source-file src}))]))))
 
 
-(defn template-model->writers-map
-  [template data function fragments]
-  (assert (map? data))
+(defn template-model->writers-map [template data function fragments]
+  {:pre [(map? data)]}
   (-> template
       (eval-template-model data function fragments)
       (evaled-template-model->writers-map)))
 
 
 (defn- extract-body-parts [xml-tree]
-  (assert (:tag xml-tree))
+  {:pre [(:tag xml-tree)]}
   (doall
    (for [body (:content xml-tree)
          :when (= "body" (name (:tag body)))
