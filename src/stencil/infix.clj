@@ -17,6 +17,7 @@
    \* :times
    \/ :divide
    \% :mod
+   \^ :power
    \( :open
    \) :close
    \! :not
@@ -65,9 +66,6 @@
 
 (defn- precedence [token]
   (get operation-tokens token))
-
-;; operator is left or right associative? returns :left or :right keyword.
-(defn associativity [token] (if (#{:neg :power :not} token) :right :left))
 
 (defn read-string-literal
   "Reads a string literal from a sequence.
@@ -153,7 +151,7 @@
                      tokens (next tokens)))
     (throw (ex-info "Could not parse!" {}))
 
-    :default
+    :else
     tokens))
 
 (defn tokens->rpn
@@ -281,12 +279,12 @@
 (def-reduce-step :not [b] (not b))
 (def-reduce-step :and [a b] (and b a))
 (def-reduce-step :neq [a b] (not= a b))
-(def-reduce-step :mod [s0 s1] (mod s0 s1))
+(def-reduce-step :mod [s0 s1] (mod s1 s0))
 (def-reduce-step :lt [s0 s1] (< s1 s0))
 (def-reduce-step :lte [s0 s1] (<= s1 s0))
 (def-reduce-step :gt [s0 s1] (> s1 s0))
 (def-reduce-step :gte [s0 s1] (>= s1 s0))
-(def-reduce-step :power [s0 s1] (Math/pow s0 s1))
+(def-reduce-step :power [s0 s1] (Math/pow s1 s0))
 
 (defn eval-rpn
   ([bindings default-function tokens]

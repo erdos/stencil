@@ -139,6 +139,19 @@
          :resize-last
          #{2 3})))))
 
+(deftest resize-first
+  (is (=
+       (table
+        {:tag :tblGrid,
+         :content [{:tag :gridCol, :attrs {ooxml/w "4000"}}
+                   {:tag :gridCol, :attrs {ooxml/w "2000"}}]}
+        (row) (row) (row))
+       (zip/node
+        (table-resize-widths
+         (xml-zip (table (tbl-grid 1000 2000 2500 500) (row) (row) (row)))
+         :resize-first
+         #{2 3})))))
+
 (deftest resize-rational
   (is (=
        (into-hiccup (table {:tag :tblPr :content [{:tag :tblW, :attrs {ooxml/w "6000"}}]}
