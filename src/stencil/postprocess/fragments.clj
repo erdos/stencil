@@ -46,7 +46,7 @@
 
 
 (defn- has-texts? [tree]
-  (assert (= ooxml/p (:tag tree)))
+  {:pre [(= ooxml/p (:tag tree))]}
   (not (empty?
         (for [run (:content tree)
               :when (map? run)
@@ -69,7 +69,7 @@
 
 
 (defn- split-runs [chunk-loc & insertable-runs]
-  (assert (seq insertable-runs))
+  {:pre [(seq insertable-runs)]}
   (node-t?! (zip/up chunk-loc))
   (let [lefts (zip/lefts chunk-loc)
         rights (zip/rights chunk-loc)
@@ -142,9 +142,8 @@
 
 
 (defn unpack-items [node-to-replace & insertable-nodes]
-  (assert (zipper? node-to-replace))
-  (assert (control? (zip/node node-to-replace)))
-  (assert (sequential? insertable-nodes))
+  {:pre [(zipper? node-to-replace)
+         (control? (zip/node node-to-replace))]}
   (cond
     (= ooxml/r (:tag (first insertable-nodes)))
     (apply split-runs node-to-replace insertable-nodes)
@@ -157,7 +156,7 @@
 
 
 (defn- unpack-fragment [chunk-loc]
-  (assert (instance? FragmentInvoke (zip/node chunk-loc)))
+  {:pre [(instance? FragmentInvoke (zip/node chunk-loc))]}
   (let [chunk      (-> chunk-loc zip/node :result (doto (assert "result is missing")))
         tree-parts (-> chunk :frag-evaled-parts (doto (assert "Evaled parts is missing")))]
     (apply split-paragraphs chunk-loc tree-parts)))
@@ -170,6 +169,6 @@
 
 ;; custom XML content
 (defmethod call-fn "xml" [_ content]
-  (assert (string? content))
+  {:pre [(string? content)]}
   (let [content (:content (xml/parse-str (str "<a>" content "</a>")))]
     (->FragmentInvoke {:frag-evaled-parts content})))
