@@ -67,9 +67,6 @@
 (defn- precedence [token]
   (get operation-tokens token))
 
-;; operator is left or right associative? returns :left or :right keyword.
-(defn associativity [token] (if (#{:neg :power :not} token) :right :left))
-
 (defn read-string-literal
   "Reads a string literal from a sequence.
    Returns a tuple.

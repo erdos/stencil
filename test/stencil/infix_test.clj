@@ -19,6 +19,12 @@
   (testing "spaces are kept"
     (is (= [" "] (infix/tokenize " \" \" ")))
     (is (= [" x "] (infix/tokenize " \" x \" "))))
+  (testing "special string literals"
+    (is (= ["x" (infix/tokenize "'x'")]))
+           (is (= ["x" (infix/tokenize "'x'")]))
+           (is (= ["x" (infix/tokenize "‘x’")]))
+           (is (= ["x" (infix/tokenize "’x’")]))
+           (is (= ["x" (infix/tokenize "„x”")])))
   (testing "escape characters are supported"
     (is (= ["aaa\"bbb"] (infix/tokenize "\"aaa\\\"bbb\"")))))
 
@@ -165,6 +171,9 @@
     (is (= [0 1 2 3 4] (run "range(5)")))
     (is (= [1 2 3 4] (run "range (1,5)")))
     (is (= [1 3 5] (run "range( 1, 6, 2)")))))
+
+(deftest unknown-function
+  (is (thrown? IllegalArgumentException (run "nosuchfunction(1)"))))
 
 (deftest length-function
   (testing "Simple cases"
