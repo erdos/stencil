@@ -63,7 +63,7 @@ Call the function to render file.
 
 This renders the template to `/tmp/output-1.docx` with the supplied data.
 
-Call the `(cleanup!) function on the prepared template instance when not used anymore to clean
+Call the `(cleanup!)` function on the prepared template instance when not used anymore to clean
 up associated resources.
 
 ## Converting to other formats

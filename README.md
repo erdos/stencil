@@ -30,9 +30,9 @@ them to make the template more readable.
 
 ## Getting Started
 
-- Read the [Documentation](docs/index.md)
-- Read the [Technical Documentation](https://cljdoc.org/d/io.github.erdos/stencil-core/)
 - See the [Example templates](examples)
+- Read the [Documentation](docs/index.md)
+- Read about the [Java API](docs/GettingStarted.md#java-api) and the [Clojure API](docs/GettingStarted.md#clojure-api) or see the [Technical Documentation](https://cljdoc.org/d/io.github.erdos/stencil-core/)
 
 
 ## Version
