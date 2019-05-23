@@ -50,7 +50,7 @@ public interface PreparedTemplate {
     TemplateVariables getVariables();
 
     /**
-     * Makes the templace clean up any resources allocated for it. Subsequential invocations of this method have no
+     * Makes the template clean up any resources allocated for it. Subsequential invocations of this method have no
      * effects. Rendering the template after this method call will throw an IllegalStateException.
      */
     void cleanup();

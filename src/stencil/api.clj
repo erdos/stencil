@@ -73,11 +73,12 @@
         (do (.writeToFile result f)
             (str "Written to " f)))
 
-      :otherwise
+      :else
       result)))
 
 
 (defn cleanup! [template]
-  (assert (instance? PreparedTemplate template))
-  (doto ^PreparedTemplate template
-    (.cleanup)))
+  (cond (instance? PreparedTemplate template) (.cleanup ^PreparedTemplate template)
+        (instance? PreparedFragment template) (.cleanup ^PreparedFragment template)
+        :else (throw (ex-info "Unexpected object to clean up!" {:template template})))
+  template)

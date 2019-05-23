@@ -1,5 +1,54 @@
 (ns stencil.api-test
-  (:require [stencil.api :refer :all]))
+  (:require [clojure.test :refer [deftest testing is are]]
+            [stencil.api :refer :all]))
+
+(deftest test-prepare+render+cleanup
+  (let [template (prepare "./examples/Purchase Reminder/template.docx")
+        data {:customerName "John Doe",
+              :shopName "Example Shop",
+              :items [{:name "Dog food",
+                         :description "Tastes good.",
+                         :price "$ 123"},
+                        {:name "Duct tape",
+                         :description "To fix things.",
+                         :price "$ 12"},
+                        {:name "WD-40",
+                         :description "To fix other things.",
+                         :price "$ 12"}],
+              :total "$ 147"}]
+    (testing "template data can not be produced"
+      (is (thrown? clojure.lang.ExceptionInfo (render! template "{}"))))
+    (render! template data)
+    (cleanup! template)
+    (testing "Subsequent cleanup call has no effect"
+      (cleanup! template))
+    (testing "Rendering fails on cleaned template"
+      (is (thrown? IllegalStateException (render! template data))))))
+
+(deftest test-fragment
+  (is (thrown? clojure.lang.ExceptionInfo (fragment nil)))
+  (let [f (fragment "./examples/Multipart Template/footer.docx")]
+    (is (some? f))
+    (is (identical? f (fragment f)))
+    (cleanup! f)
+    (testing "Subsequent invocations have no effect"
+      (cleanup! f))))
+
+(deftest test-render-with-fragments
+  (let [footer (fragment "./examples/Multipart Template/footer.docx")
+        header (fragment "./examples/Multipart Template/header.docx")
+        template (prepare "./examples/Multipart Template/template.docx")
+        data {:companyName "ACME" :companyAddress "Moon"}
+        fs-map {:footer footer :header header}]
+    (testing "Rendering multipart template"
+      (render! template data :fragments fs-map))
+    (testing "Can not render when a fragment is cleared"
+      (cleanup! header)
+      (is (thrown? IllegalStateException (render! template data :fragments fs-map))))))
+
+(deftest test-cleanup-fails
+  (is (thrown? clojure.lang.ExceptionInfo (cleanup! nil)))
+  (is (thrown? clojure.lang.ExceptionInfo (cleanup! "asdasdad"))))
 
 (comment ;; try to prepare then render a DOCX file
 

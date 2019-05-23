@@ -63,7 +63,7 @@ public final class NativeTemplateFactory implements TemplateFactory {
             forceDeleteOnExit(zipDirResource);
         }
 
-        return new PreparedFragment(prepared);
+        return new PreparedFragment(prepared, zipDirResource);
     }
 
     /**

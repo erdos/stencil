@@ -152,7 +152,7 @@
     (= ooxml/t (:tag (first insertable-nodes)))
     (apply split-texts node-to-replace insertable-nodes)
 
-    :default
+    :else
     (apply split-paragraphs node-to-replace insertable-nodes)))
 
 
