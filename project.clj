@@ -15,8 +15,10 @@
   :pom-plugins [[org.apache.maven.plugins/maven-surefire-plugin "2.20"]]
   :main io.github.erdos.stencil.Main
   :plugins [[lein-javadoc "0.3.0"]
+            [lein-cloverage "1.1.1"]
             [lein-test-out "0.3.1"]]
-  :aliases      {"junit" ["with-profile" "test" "do" "test-out" "junit" "junit.xml"]}
+  :aliases      {"junit" ["with-profile" "test" "do" "test-out" "junit" "junit.xml"]
+                 "coverage" ["cloverage" "--exclude-call" "clojure.core/assert"]}
   :javadoc-opts {:package-names ["stencil"]
                  :additional-args ["-overview" "java-src/overview.html"
                                    "-top" "<style>kbd{background:#ddd}; a[title~=class], a[title~=interface], a[title~=enum]{text-decoration: underline; font-weight: bold} dd>code{background:#eee}</style>"]}
