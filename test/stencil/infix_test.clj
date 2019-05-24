@@ -83,9 +83,13 @@
 
     (testing "Simple op precedence"
       (is (= 7 (run "1+2*3")))
+      (is (= 4 (run "24/3/2")))
       (is (= 7 (run "2*3+1")))
       (is (= 9 (run "(1+2)*3")))
       (is (= 9 (run "3*(1+2)"))))
+
+    (testing "Power is right-associative"
+      (is (= 262144.0 (run "4^3^2"))))
 
     (testing "Osszehasonlito muveletek"
       (is (true? (run "3 = 3")))
@@ -181,6 +185,10 @@
   (testing "Simple cases"
     (is (= true (run "length(\"\")==0")))
     (is (= true (run "1 = length(\" \")")))))
+
+(deftest coalesce-function
+  (is (= nil (run "coalesce(\"\", \"\")")))
+  (is (= "a" (run "coalesce(\"\", \"\", \"a\", \"b\")"))))
 
 (deftest test-colhide-expr
   (is (hide-table-column-marker? (run "hideColumn()"))))

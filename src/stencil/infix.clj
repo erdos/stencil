@@ -67,6 +67,9 @@
 (defn- precedence [token]
   (get operation-tokens token))
 
+(defn- associativity [token]
+  (if (#{:power :not :neg} token) :right :left))
+
 (defn read-string-literal
   "Reads a string literal from a sequence.
    Returns a tuple.
@@ -210,7 +213,7 @@
 
       :otherwise ;; operator
       (let [[popped-ops keep-ops]
-            (split-with #(if (= :left (precedence e0))
+            (split-with #(if (= :left (associativity e0))
                            (<= (precedence e0) (precedence %))
                            (< (precedence e0) (precedence %))) opstack)]
         (recur next-expr
