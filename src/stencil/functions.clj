@@ -17,7 +17,7 @@
 
 ;; finds first nonempy argument
 (defmethod call-fn "coalesce" [_ & args-seq]
-  (some #(when-not (empty? %) %) args-seq))
+  (some not-empty args-seq))
 
 (defmethod call-fn "length" [_ items] (count items))
 
