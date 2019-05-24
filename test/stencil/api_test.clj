@@ -1,4 +1,5 @@
 (ns stencil.api-test
+  (:import [io.github.erdos.stencil.exceptions EvalException])
   (:require [clojure.test :refer [deftest testing is are]]
             [stencil.api :refer :all]))
 
@@ -42,6 +43,8 @@
         fs-map {:footer footer :header header}]
     (testing "Rendering multipart template"
       (render! template data :fragments fs-map))
+    (testing "Can not render when fragments can not be found."
+      (is (thrown? EvalException (render! template data :fragments {}))))
     (testing "Can not render when a fragment is cleared"
       (cleanup! header)
       (is (thrown? IllegalStateException (render! template data :fragments fs-map))))))
