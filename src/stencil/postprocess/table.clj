@@ -61,7 +61,7 @@
 (defn- tag-matches? [tag elem] (and (map? elem) (some-> elem :tag name #{tag})))
 
 (defn- ensure-child [loc tag-name]
-  (assert string? tag-name)
+  (assert (string? tag-name))
   (assert (zipper? loc))
   (or (find-first-child (partial tag-matches? tag-name) loc)
       (zip/next (zip/insert-child loc {:tag (keyword tag-name) :content []}))))
