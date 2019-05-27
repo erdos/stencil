@@ -27,6 +27,22 @@
         (render! template data :output f)
         (is (.exists f))))
 
+    (testing "Writing to existing file fails"
+      (let [f (java.io.File/createTempFile "stencil" ".docx")]
+        (is (thrown? clojure.lang.ExceptionInfo
+                     (render! template data :output f)))))
+
+    (testing "Writing to existing file with overwrite flag enabled"
+      (let [f (java.io.File/createTempFile "stencil" ".docx")]
+        (render! template data :output f :overwrite? true)
+        (is (.exists f))))
+
+    (testing "Throws on nil"
+      (is (thrown? clojure.lang.ExceptionInfo (prepare nil))))
+
+    (testing "Preparing twice returns same object"
+      (is (identical? template (prepare template))))
+
     (cleanup! template)
     (testing "Subsequent cleanup call has no effect"
       (cleanup! template))

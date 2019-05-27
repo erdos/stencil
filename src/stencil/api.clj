@@ -23,7 +23,7 @@
   (cond
     (instance? PreparedTemplate input) input
     (nil? input)  (throw (ex-info "Template is missing!" {}))
-    :otherwise    (API/prepare (io/file input))))
+    :else         (API/prepare (io/file input))))
 
 
 (defn- ^TemplateData make-template-data [x]
@@ -39,7 +39,7 @@
   (cond
     (instance? PreparedFragment f) f
     (nil? f)   (throw (ex-info "Fragment can not be null!" {}))
-    :otherwise (API/fragment (io/file f))))
+    :else      (API/fragment (io/file f))))
 
 
 (defn render!
