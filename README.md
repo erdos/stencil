@@ -10,7 +10,7 @@ for generating office documents.
 <p align="center"><img src="https://raw.githubusercontent.com/erdos/stencil/master/docs/graphics.svg?sanitize=true" alt="stencil flow"/></p>
 
 You can use either Microsoft Word or LibreOffice to edit the document templates.
-The template expressions are just simple texts, and you can event colour-code
+The template expressions are just simple texts, and you can even colour-code
 them to make the template more readable.
 
 [![Clojars Project](https://img.shields.io/clojars/v/io.github.erdos/stencil-core.svg)](https://clojars.org/io.github.erdos/stencil-core)

@@ -19,7 +19,14 @@
               :total "$ 147"}]
     (testing "template data can not be produced"
       (is (thrown? clojure.lang.ExceptionInfo (render! template "{}"))))
-    (render! template data)
+    (testing "Rendering without writing file"
+      (render! template data))
+    (testing "Writing output file"
+      (let [f (java.io.File/createTempFile "stencil" ".docx")]
+        (.delete f)
+        (render! template data :output f)
+        (is (.exists f))))
+
     (cleanup! template)
     (testing "Subsequent cleanup call has no effect"
       (cleanup! template))
