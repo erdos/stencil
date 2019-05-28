@@ -42,6 +42,12 @@ public interface EvaluatedDocument {
         final PipedOutputStream outputStream = new PipedOutputStream();
         final PipedInputStream inputStream = new PipedInputStream();
 
+        try {
+            inputStream.connect(outputStream);
+        } catch (IOException e) {
+            throw new IllegalStateException(e);
+        }
+
         final long parentId = Thread.currentThread().getId();
 
         executorService.submit(() -> {

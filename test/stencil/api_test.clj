@@ -37,17 +37,33 @@
         (render! template data :output f :overwrite? true)
         (is (.exists f))))
 
-    (testing "Throws on nil"
-      (is (thrown? clojure.lang.ExceptionInfo (prepare nil))))
+    (testing "Can render output to output-stream"
+      (let [f (java.io.File/createTempFile "stencil" ".docx")]
+        (is (= 0 (.length f)))
+        (with-open [out (clojure.java.io/output-stream f)]
+          (render! template data :output out))
+        (is (not= 0 (.length f)))))
 
-    (testing "Preparing twice returns same object"
-      (is (identical? template (prepare template))))
+    (testing "Can create an input stream"
+      (let [f (java.io.File/createTempFile "stencil" ".docx")]
+        (.delete f)
+        (let [istream (render! template data :output :input-stream)]
+          (java.nio.file.Files/copy istream (.toPath f) (into-array java.nio.file.CopyOption [])))
+        (is (not= 0 (.length f)))))
 
-    (cleanup! template)
-    (testing "Subsequent cleanup call has no effect"
-      (cleanup! template))
-    (testing "Rendering fails on cleaned template"
-      (is (thrown? IllegalStateException (render! template data))))))
+    (testing "After cleanup"
+      (testing "Preparing twice returns same object"
+        (is (identical? template (prepare template))))
+
+      (cleanup! template)
+      (testing "Subsequent cleanup call has no effect"
+        (cleanup! template))
+      (testing "Rendering fails on cleaned template"
+        (is (thrown? IllegalStateException (render! template data)))))))
+
+(deftest test-prepare-nil
+  (testing "Throws on nil"
+    (is (thrown? clojure.lang.ExceptionInfo (prepare nil)))))
 
 (deftest test-fragment
   (is (thrown? clojure.lang.ExceptionInfo (fragment nil)))
