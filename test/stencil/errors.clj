@@ -60,3 +60,6 @@
     (throw-ex-info? "<a>{%=x}</a>"))
   (testing "Middle expr is not closed"
     (throw-ex-parsing? "<a><b>{%=1%}</b>{%=3<c>{%=4%}</c></a>")))
+
+(deftest test-unexpected-cmd
+  (throw-ex-parsing? "<a>{% echo 3 %}</a>"))

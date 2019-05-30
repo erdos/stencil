@@ -8,10 +8,7 @@
 
 (set! *warn-on-reflection* true)
 
-(defmulti eval-step (fn [function data item]
-                      (or (:cmd item)
-                          (when (map? item) [:tag (:tag item)])
-                          (type item))))
+(defmulti eval-step (fn [function data item] (:cmd item)))
 
 (defmethod eval-step :default [_ _ item] [item])
 

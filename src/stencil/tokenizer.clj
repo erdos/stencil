@@ -47,7 +47,7 @@
         {:cmd :else-if
          :condition (infix/parse (.substring text prefix-len))})
 
-      :otherwise (throw (ex-info "Unexpected command" {:command text})))))
+      :else (throw (ex-info "Unexpected command" {:command text})))))
 
 (defn text->cmd [text]
   (try (text->cmd-impl text)
@@ -65,7 +65,7 @@
                                [{:close (:tag parsed)}])
                        [(cond-> {:open+close (:tag parsed)}
                           (seq (:attrs parsed)) (assoc :attrs (:attrs parsed)))])
-    :otherwise       (throw (ex-info "Unexpected node: " {:node parsed}))))
+    :else       (throw (ex-info "Unexpected node: " {:node parsed}))))
 
 (defn- map-token [token] (if (:action token) (text->cmd (:action token)) token))
 
@@ -85,9 +85,6 @@
     (:text token)
     (mod-stack-top-conj stack (:text token))
 
-    (:name token) ;; TODO: replace by instanceof call for fragmentinvoke
-    (mod-stack-top-conj stack token)
-
     (:open+close token)
     (let [elem (xml/element (:open+close token) (:attrs token))]
       (mod-stack-top-conj stack elem))
@@ -103,7 +100,7 @@
         (mod-stack-top-last stack assoc :content s)
         stack))
 
-    :default
+    :else
     (throw (ex-info (str "Unexpected token: " token " of " (type token)) {:token token}))))
 
 (defn tokens-seq->document

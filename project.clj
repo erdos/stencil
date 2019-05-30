@@ -18,7 +18,7 @@
             [lein-cloverage "1.1.1"]
             [lein-test-out "0.3.1"]]
   :aliases      {"junit" ["with-profile" "test" "do" "test-out" "junit" "junit.xml"]
-                 "coverage" ["cloverage" "--codecov" "--exclude-call" "clojure.core/assert"]}
+                 "coverage" ["cloverage" "--codecov" "--exclude-call" "clojure.core/assert" "--exclude-call" "stencil.util/trace"]}
   :javadoc-opts {:package-names ["stencil"]
                  :additional-args ["-overview" "java-src/overview.html"
                                    "-top" "<style>kbd{background:#ddd}; a[title~=class], a[title~=interface], a[title~=enum]{text-decoration: underline; font-weight: bold} dd>code{background:#eee}</style>"]}
