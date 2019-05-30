@@ -10,7 +10,7 @@
 ;; az ennel keskenyebb oszlopokat kidobjuk!
 (def min-col-width 20)
 
-(defn- loc-cell?  [loc] (some-> loc zip/node :tag name #{"tc" "td" "th"}))
+(defn- loc-cell?  [loc] (some-> loc zip/node :tag name #{"tc"}))
 (defn- loc-row?   [loc] (some-> loc zip/node :tag name #{"tr"}))
 (defn- loc-table? [loc] (some-> loc zip/node :tag name #{"tbl" "table"}))
 
@@ -82,12 +82,8 @@
   (assert (loc-cell? loc))
   (let [cell-loc      (find-enclosing-cell loc)
         cell          (zip/node cell-loc)]
-    (case (name (:tag cell))
-      ;; html
-      ("td" "th") (-> cell :attrs :colspan ->int (or 1))
-
-      ;; ooxml
-      "tc"        (or (some->> loc (child-of-tag "tcPr") (child-of-tag "gridSpan") zip/node :attrs ooxml/val ->int) 1))))
+    (or (some->> loc (child-of-tag "tcPr") (child-of-tag "gridSpan") zip/node :attrs ooxml/val ->int)
+        1)))
 
 (defn shrink-column
   "Decreases logical width of current TD cell."
@@ -98,10 +94,10 @@
   (assert (integer? shrink-amount))
   (let [old-width (cell-width col-loc)]
     (assert (< shrink-amount old-width))
-    (case (name (:tag (zip/node col-loc)))
-      "td"        (zip/edit col-loc update-in [:attrs :colspan] - shrink-amount)
-      ("th" "tc") (-> (->> col-loc (child-of-tag "tcPr") (child-of-tag "gridSpan"))
-                      (zip/edit update-in [:attrs ooxml/val] #(str (- (->int %) shrink-amount))) (zip/up) (zip/up)))))
+    (-> col-loc
+        (->> (child-of-tag "tcPr") (child-of-tag "gridSpan"))
+        (zip/edit update-in [:attrs ooxml/val] #(str (- (->int %) shrink-amount)))
+        (zip/up) (zip/up))))
 
 (defn- current-column-indices
   "Visszaadja egy halmazban, hogy hanyadik oszlop(ok)ban vagyunk benne eppen."
