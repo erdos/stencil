@@ -51,10 +51,15 @@
           (java.nio.file.Files/copy istream (.toPath f) (into-array java.nio.file.CopyOption [])))
         (is (not= 0 (.length f)))))
 
-    (testing "After cleanup"
-      (testing "Preparing twice returns same object"
-        (is (identical? template (prepare template))))
+    (testing "Cannot render in a transaction"
+      (let [f (java.io.File/createTempFile "stencil" ".docx")]
+        (dosync
+         (is (thrown? IllegalStateException (render! template data :output f :overwrite? true))))))
 
+    (testing "Preparing twice returns same object"
+      (is (identical? template (prepare template))))
+
+    (testing "After cleanup"
       (cleanup! template)
       (testing "Subsequent cleanup call has no effect"
         (cleanup! template))
@@ -62,11 +67,12 @@
         (is (thrown? IllegalStateException (render! template data)))))))
 
 (deftest test-prepare-nil
-  (testing "Throws on nil"
-    (is (thrown? clojure.lang.ExceptionInfo (prepare nil)))))
+  (is (thrown? clojure.lang.ExceptionInfo (prepare nil))))
+
+(deftest test-fragment-nil
+  (is (thrown? clojure.lang.ExceptionInfo (fragment nil))))
 
 (deftest test-fragment
-  (is (thrown? clojure.lang.ExceptionInfo (fragment nil)))
   (let [f (fragment "./examples/Multipart Template/footer.docx")]
     (is (some? f))
     (is (identical? f (fragment f)))
