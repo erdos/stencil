@@ -18,6 +18,14 @@
              (into (for [x (:headers+footers (:main model))
                          f (:fragments (:executable x))] f)))))
 
+(defn- merge-variable-names [model]
+  (assoc model
+         :variables
+         (-> #{}
+             (into (-> model :main :executable :variables))
+             (into (for [x (:headers+footers (:main model))
+                         v (:variables (:executable x))] v)))))
+
 (defn prepare-template [^InputStream stream]
   (assert (instance? InputStream stream))
   (let [zip-dir   (FileHelper/createNonexistentTempFile "stencil-" ".zip.contents")]
@@ -25,7 +33,8 @@
       (ZipHelper/unzipStreamIntoDirectory zip-stream zip-dir))
     (-> zip-dir
         model/load-template-model
-        merge-fragment-names)))
+        merge-fragment-names
+        merge-variable-names)))
 
 (defn prepare-fragment [input]
   (assert (some? input))

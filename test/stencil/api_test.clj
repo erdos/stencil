@@ -118,13 +118,14 @@
                      {"customerName" "John Doe" "x" "XXX" "y" "yyyy"}))
 
 (deftest test-prepare-fragment-names
-  (let [template (prepare "test-resources/multipart/main.docx")]
-    (is (= #{"header" "footer" "body"}
-           (-> template .getVariables .getAllFragmentNames)))
-    (cleanup! template)))
+  (with-open [template (prepare "test-resources/multipart/main.docx")]
+    (is (= #{"header" "footer" "body"} (-> template .getVariables .getAllFragmentNames)))))
+
+(deftest test-prepare-variable-names
+  (with-open [template (prepare "test-resources/multipart/header.docx")]
+    (is (= #{"name"} (-> template .getVariables .getAllVariables)))))
 
 (comment
-
 
   (let [template (prepare "test-resources/multipart/main.docx")
         body     (fragment "test-resources/multipart/body.docx")
