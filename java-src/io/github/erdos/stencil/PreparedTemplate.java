@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
  * These files may be serialized or cached for later use.
  */
 @SuppressWarnings("unused")
-public interface PreparedTemplate {
+public interface PreparedTemplate extends AutoCloseable{
 
     /**
      * Original template file that was preprocessed.
@@ -60,5 +60,10 @@ public interface PreparedTemplate {
      */
     default EvaluatedDocument render(TemplateData templateData) {
         return API.render(this, templateData);
+    }
+
+    @Override
+    default void close() {
+        cleanup();
     }
 }

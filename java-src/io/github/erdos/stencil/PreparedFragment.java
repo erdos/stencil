@@ -5,7 +5,7 @@ import io.github.erdos.stencil.impl.FileHelper;
 import java.io.File;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public final class PreparedFragment {
+public final class PreparedFragment implements AutoCloseable {
 
     private final Object content;
     private final File zipDirResource;
@@ -34,5 +34,10 @@ public final class PreparedFragment {
         if (alive.compareAndSet(true, false)) {
             FileHelper.forceDelete(zipDirResource);
         }
+    }
+
+    @Override
+    public void close() {
+        cleanup();
     }
 }
