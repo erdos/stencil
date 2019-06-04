@@ -20,7 +20,7 @@ public class TemplateVariablesTest {
         final Set<String> schema = set("a.x.p", "a.x.q");
         Map<String, Object> data = map("a", map("x", map("p", null, "q", 23)));
 
-        fromPaths(schema).throwWhenInvalid(fromMap(data));
+        fromPaths(schema, emptySet()).throwWhenInvalid(fromMap(data));
     }
 
 
@@ -30,12 +30,12 @@ public class TemplateVariablesTest {
 
         // valid
         final Map<String, Object> data = singletonMap("x", asList(1, 2, 3));
-        fromPaths(schema).throwWhenInvalid(fromMap(data));
+        fromPaths(schema, emptySet()).throwWhenInvalid(fromMap(data));
 
         try {
             // invalid
             final TemplateData data2 = fromMap(singletonMap("a", singletonMap("x", asList(1, 2, 3))));
-            fromPaths(schema).throwWhenInvalid(data2);
+            fromPaths(schema, emptySet()).throwWhenInvalid(data2);
             fail("Should have thrown!");
         } catch (IllegalArgumentException ignored) {
         }
@@ -47,11 +47,11 @@ public class TemplateVariablesTest {
 
         // valid
         final Map<String, Object> data = singletonMap("a", singletonMap("x", singletonList(singletonList(singletonMap("p", 1)))));
-        fromPaths(schema).throwWhenInvalid(fromMap(data));
+        fromPaths(schema, emptySet()).throwWhenInvalid(fromMap(data));
 
         try {
             // invalid
-            fromPaths(schema).throwWhenInvalid(fromMap(singletonMap("a", singletonMap("x", asList(1, 2, 3)))));
+            fromPaths(schema, emptySet()).throwWhenInvalid(fromMap(singletonMap("a", singletonMap("x", asList(1, 2, 3)))));
             fail("Should have thrown!");
         } catch (IllegalArgumentException ignored) {
         }
@@ -64,7 +64,7 @@ public class TemplateVariablesTest {
         try {
             // invalid
             final Map<String, Object> data = singletonMap("a", 3);
-            fromPaths(schema).throwWhenInvalid(fromMap(data));
+            fromPaths(schema, emptySet()).throwWhenInvalid(fromMap(data));
             fail("Should have thrown!");
         } catch (IllegalArgumentException ignored) {
         }

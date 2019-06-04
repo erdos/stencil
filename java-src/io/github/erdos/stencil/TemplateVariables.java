@@ -114,8 +114,8 @@ public final class TemplateVariables {
         }
     }
 
-    public static TemplateVariables fromPaths(Collection<String> allVariablePaths) {
-        return new TemplateVariables(new HashSet<>(allVariablePaths));
+    public static TemplateVariables fromPaths(Collection<String> allVariablePaths, Collection<String> allFragmentNames) {
+        return new TemplateVariables(new HashSet<>(allVariablePaths), new HashSet<>(allFragmentNames));
     }
 
     /**

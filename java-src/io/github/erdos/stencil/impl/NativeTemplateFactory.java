@@ -78,6 +78,13 @@ public final class NativeTemplateFactory implements TemplateFactory {
     }
 
     @SuppressWarnings("unchecked")
+    private Set fragmentNames(Map prepared) {
+        return prepared.containsKey(ClojureHelper.Keywords.VARIABLES)
+                ? unmodifiableSet(new HashSet<Set>((Collection) prepared.get(ClojureHelper.Keywords.FRAGMENTS)))
+                : emptySet();
+    }
+
+    @SuppressWarnings("unchecked")
     private PreparedTemplate prepareTemplateImpl(TemplateDocumentFormats templateDocFormat, InputStream input, File originalFile) {
         final IFn prepareFunction = ClojureHelper.findFunction("prepare-template");
 
@@ -92,7 +99,7 @@ public final class NativeTemplateFactory implements TemplateFactory {
             throw ParsingException.wrapping("Could not parse template file!", e);
         }
 
-        final TemplateVariables vars = TemplateVariables.fromPaths(variableNames(prepared));
+        final TemplateVariables vars = TemplateVariables.fromPaths(variableNames(prepared), fragmentNames(prepared));
 
         final File zipDirResource = (File) prepared.get(ClojureHelper.Keywords.SOURCE_FOLDER.kw);
         if (zipDirResource != null) {
