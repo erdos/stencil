@@ -31,5 +31,6 @@
                          {:blocks [], :cmd :cmd/include, :name "elefant"}
                          {:close :b}
                          {:close :a}],
+            :fragments #{"elefant"}
             :variables ()}
            (test-prepare "<a><b>{%include \"elefant\"%}</b></a>")))))

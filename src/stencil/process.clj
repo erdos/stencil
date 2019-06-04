@@ -9,12 +9,23 @@
 
 (set! *warn-on-reflection* true)
 
+;; merge a set of fragment names under the :fragments key
+(defn- merge-fragment-names [model]
+  (assoc model
+         :fragments
+         (-> #{}
+             (into (-> model :main :executable :fragments))
+             (into (for [x (:headers+footers (:main model))
+                         f (:fragments (:executable x))] f)))))
+
 (defn prepare-template [^InputStream stream]
   (assert (instance? InputStream stream))
   (let [zip-dir   (FileHelper/createNonexistentTempFile "stencil-" ".zip.contents")]
     (with-open [zip-stream stream] ;; FIXME: maybe not deleted immediately
       (ZipHelper/unzipStreamIntoDirectory zip-stream zip-dir))
-    (model/load-template-model zip-dir)))
+    (-> zip-dir
+        model/load-template-model
+        merge-fragment-names)))
 
 (defn prepare-fragment [input]
   (assert (some? input))

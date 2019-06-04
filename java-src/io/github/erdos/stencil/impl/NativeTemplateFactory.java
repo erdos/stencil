@@ -72,15 +72,15 @@ public final class NativeTemplateFactory implements TemplateFactory {
     @SuppressWarnings("unchecked")
     private Set variableNames(Map prepared) {
         // TODO: ez mindig null lesz ugyhogy csinaljunk vele valamit!!!!!
-        return prepared.containsKey(ClojureHelper.Keywords.VARIABLES)
-                ? unmodifiableSet(new HashSet<Set>((Collection) prepared.get(ClojureHelper.Keywords.VARIABLES)))
+        return prepared.containsKey(ClojureHelper.Keywords.VARIABLES.kw)
+                ? unmodifiableSet(new HashSet<Set>((Collection) prepared.get(ClojureHelper.Keywords.VARIABLES.kw)))
                 : emptySet();
     }
 
     @SuppressWarnings("unchecked")
     private Set fragmentNames(Map prepared) {
-        return prepared.containsKey(ClojureHelper.Keywords.VARIABLES)
-                ? unmodifiableSet(new HashSet<Set>((Collection) prepared.get(ClojureHelper.Keywords.FRAGMENTS)))
+        return prepared.containsKey(ClojureHelper.Keywords.FRAGMENTS.kw)
+                ? unmodifiableSet(new HashSet<Set>((Collection) prepared.get(ClojureHelper.Keywords.FRAGMENTS.kw)))
                 : emptySet();
     }
 

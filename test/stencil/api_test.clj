@@ -117,6 +117,12 @@
   (render-template-2 "/tmp/output-7.pptx"
                      {"customerName" "John Doe" "x" "XXX" "y" "yyyy"}))
 
+(deftest test-prepare-fragment-names
+  (let [template (prepare "test-resources/multipart/main.docx")]
+    (is (= #{"header" "footer" "body"}
+           (-> template .getVariables .getAllFragmentNames)))
+    (cleanup! template)))
+
 (comment
 
 
