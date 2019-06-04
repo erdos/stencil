@@ -20,11 +20,13 @@ import static java.util.stream.Collectors.toList;
  */
 public final class TemplateVariables {
 
+    private final Set<String> fragmentNames;
     private final Set<String> variables;
     private final Node root;
 
-    private TemplateVariables(Set<String> variables) {
+    private TemplateVariables(Set<String> variables, Set<String> fragmentNames) {
         this.variables = unmodifiableSet(variables);
+        this.fragmentNames = unmodifiableSet(fragmentNames);
 
         Node r = LEAF;
         for (String x : variables) {
@@ -124,8 +126,12 @@ public final class TemplateVariables {
         return variables;
     }
 
+    public Set<String> getAllFragmentNames() {
+        return fragmentNames;
+    }
+
     /**
-     * Throws IllegalArgumentException exception when template data.
+     * Throws IllegalArgumentException exception when template data is missing values for schema.
      * <p>
      * Throws when referred keys are missing from data.
      *
