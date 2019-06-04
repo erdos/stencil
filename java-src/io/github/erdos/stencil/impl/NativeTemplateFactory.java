@@ -71,7 +71,6 @@ public final class NativeTemplateFactory implements TemplateFactory {
      */
     @SuppressWarnings("unchecked")
     private Set variableNames(Map prepared) {
-        // TODO: ez mindig null lesz ugyhogy csinaljunk vele valamit!!!!!
         return prepared.containsKey(ClojureHelper.Keywords.VARIABLES.kw)
                 ? unmodifiableSet(new HashSet<Set>((Collection) prepared.get(ClojureHelper.Keywords.VARIABLES.kw)))
                 : emptySet();
