@@ -1,5 +1,7 @@
 package io.github.erdos.stencil.functions;
 
+import javax.xml.datatype.DatatypeConfigurationException;
+import javax.xml.datatype.DatatypeFactory;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
@@ -81,8 +83,8 @@ public enum DateFunctions implements Function {
             return of((Date) obj);
         String s = obj.toString();
         try {
-            return of(javax.xml.bind.DatatypeConverter.parseDateTime(s).getTime());
-        } catch (IllegalArgumentException e) {
+            return of(DatatypeFactory.newInstance().newXMLGregorianCalendar(s).toGregorianCalendar().getTime());
+        } catch (IllegalArgumentException | DatatypeConfigurationException e) {
             for (String p : PATTERNS) {
                 try {
                     return of(new SimpleDateFormat(p).parse(s));
