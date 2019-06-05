@@ -71,9 +71,15 @@ public final class NativeTemplateFactory implements TemplateFactory {
      */
     @SuppressWarnings("unchecked")
     private Set variableNames(Map prepared) {
-        // TODO: ez mindig null lesz ugyhogy csinaljunk vele valamit!!!!!
-        return prepared.containsKey(ClojureHelper.Keywords.VARIABLES)
-                ? unmodifiableSet(new HashSet<Set>((Collection) prepared.get(ClojureHelper.Keywords.VARIABLES)))
+        return prepared.containsKey(ClojureHelper.Keywords.VARIABLES.kw)
+                ? unmodifiableSet(new HashSet<Set>((Collection) prepared.get(ClojureHelper.Keywords.VARIABLES.kw)))
+                : emptySet();
+    }
+
+    @SuppressWarnings("unchecked")
+    private Set fragmentNames(Map prepared) {
+        return prepared.containsKey(ClojureHelper.Keywords.FRAGMENTS.kw)
+                ? unmodifiableSet(new HashSet<Set>((Collection) prepared.get(ClojureHelper.Keywords.FRAGMENTS.kw)))
                 : emptySet();
     }
 
@@ -92,7 +98,7 @@ public final class NativeTemplateFactory implements TemplateFactory {
             throw ParsingException.wrapping("Could not parse template file!", e);
         }
 
-        final TemplateVariables vars = TemplateVariables.fromPaths(variableNames(prepared));
+        final TemplateVariables vars = TemplateVariables.fromPaths(variableNames(prepared), fragmentNames(prepared));
 
         final File zipDirResource = (File) prepared.get(ClojureHelper.Keywords.SOURCE_FOLDER.kw);
         if (zipDirResource != null) {

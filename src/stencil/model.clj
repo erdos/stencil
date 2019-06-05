@@ -100,7 +100,7 @@
   (with-open [stream (io/input-stream xml-streamable)]
     (-> (tokenizer/parse-to-tokens-seq stream)
         (cleanup/process)
-        (select-keys [:variables :dynamic? :executable]))))
+        (select-keys [:variables :dynamic? :executable :fragments]))))
 
 
 (defn load-template-model [^File dir]

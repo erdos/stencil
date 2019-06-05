@@ -208,12 +208,18 @@
                        []))]
     (distinct (collect {} control-ast))))
 
-; (find-variables [])
+(defn- find-fragments [control-ast]
+  ;; returns a set of fragment names use in this document
+  (set (for [item (tree-seq map? (comp flatten :blocks) {:blocks [control-ast]})
+             :when (map? item)
+             :when (= :cmd/include (:cmd item))]
+         (:name item))))
 
 (defn process [raw-token-seq]
   (let [ast (tokens->ast raw-token-seq)
         executable (control-ast-normalize (annotate-environments ast))]
     {:variables  (find-variables ast)
+     :fragments  (find-fragments ast)
      :dynamic?   (boolean (some :cmd executable))
      :executable executable}))
 

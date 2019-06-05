@@ -117,8 +117,15 @@
   (render-template-2 "/tmp/output-7.pptx"
                      {"customerName" "John Doe" "x" "XXX" "y" "yyyy"}))
 
-(comment
+(deftest test-prepare-fragment-names
+  (with-open [template (prepare "test-resources/multipart/main.docx")]
+    (is (= #{"header" "footer" "body"} (-> template .getVariables .getAllFragmentNames)))))
 
+(deftest test-prepare-variable-names
+  (with-open [template (prepare "test-resources/multipart/header.docx")]
+    (is (= #{"name"} (-> template .getVariables .getAllVariables)))))
+
+(comment
 
   (let [template (prepare "test-resources/multipart/main.docx")
         body     (fragment "test-resources/multipart/body.docx")
