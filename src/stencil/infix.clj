@@ -90,7 +90,8 @@
       \“ (read-until \”) ;; english double quotes
       \‘ (read-until \’) ;; english single quotes
       \’ (read-until \’) ;; hungarian single quotes (felidezojel)
-      \„ (read-until \”)))) ;; hungarian double quotes (macskakorom)
+      \„ (read-until \”) ;; hungarian double quotes (macskakorom)
+      (fail "No string literal" {:c (first characters)}))))
 
 (defn read-number
   "Reads a number literal from a sequence. Returns a tuple of read
@@ -275,7 +276,7 @@
 (def-reduce-step :neg [s0] (- s0))
 (def-reduce-step :times [s0 s1] (* s0 s1))
 (def-reduce-step :divide [s0 s1] (/ s1 s0))
-(def-reduce-step :plus [s0 s1] (+ s0 s1))
+(def-reduce-step :plus [s0 s1] (if (or (string? s0) (string? s1)) (str s1 s0) (+ s1 s0)))
 (def-reduce-step :minus [s0 s1] (- s1 s0))
 (def-reduce-step :eq [a b] (= a b))
 (def-reduce-step :or [a b] (or b a))

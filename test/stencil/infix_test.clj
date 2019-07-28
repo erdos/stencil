@@ -15,6 +15,10 @@
   (testing "comma"
     (is (= [:open 1 :comma 2 :comma 3 :close] (infix/tokenize "  (1,2   ,3)   ")))))
 
+(deftest test-read-string-literal
+  (testing "Incomplete string"
+    (is (thrown? ExceptionInfo (read-string-literal "'alaba")))))
+
 (deftest tokenize-string-literal
   (testing "spaces are kept"
     (is (= [" "] (infix/tokenize " \" \" ")))
@@ -102,8 +106,12 @@
       (is (false? (run "4 < 2")))
       (is (true? (run "4 > 3")))
       (is (true? (run "3 <= 3")))
-      (is (true? (run "34 >= 2"))))
-    ))
+      (is (true? (run "34 >= 2"))))))
+
+(deftest basic-string-operations
+  (testing "Concatenation of strings"
+    (is (= "abcd" (run "'ab' + 'c' + 'd'")))
+    (is (= "abc123" (run "'abc' + 1 + 23")))))
 
 (deftest logical-operators
   (testing "Mixed"
