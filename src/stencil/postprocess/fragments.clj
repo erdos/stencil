@@ -65,7 +65,7 @@
 
 
 (defn- split-texts [chunk-loc & insertable-runs]
-  (assert false "Not implemented!"))
+  (fail "Not implemented!" {}))
 
 
 (defn- split-runs [chunk-loc & insertable-runs]

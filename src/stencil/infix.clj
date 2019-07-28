@@ -211,7 +211,7 @@
       (empty? next-expr) ;; current is operator but without an operand
       (throw (ex-info "Missing operand!" {}))
 
-      :otherwise ;; operator
+      :else ;; operator
       (let [[popped-ops keep-ops]
             (split-with #(if (= :left (associativity e0))
                            (<= (precedence e0) (precedence %))
@@ -232,7 +232,7 @@
         (symbol? cmd)  :symbol
         (keyword? cmd) cmd
         (map? cmd)     FnCall
-        :else (throw (ex-info (str "Unexpected opcode: " cmd) {:opcode cmd}))))
+        :else          (fail "Unexpected opcode!" {:opcode cmd})))
 
 (defmulti ^:private reduce-step reduce-step-dispatch)
 (defmulti ^:private action-arity (partial reduce-step-dispatch []))

@@ -70,7 +70,7 @@
   (is (= 23 (->int 23)))
   (is (= 23 (->int "23")))
   (is (= 23 (->int 23.2)))
-  (is (thrown? AssertionError (->int :asdf))))
+  (is (thrown? clojure.lang.ExceptionInfo (->int :asdf))))
 
 (deftest update-some-test
   (is (= nil (update-some nil [:a] inc)))

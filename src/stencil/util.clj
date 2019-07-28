@@ -65,11 +65,16 @@
 (defn suffixes [xs] (take-while seq (iterate next xs)))
 (defn prefixes [xs] (take-while seq (iterate butlast xs)))
 
+(defmacro fail [msg obj]
+  (assert (string? msg))
+  (assert (map? obj))
+  `(throw (ex-info ~msg ~obj)))
+
 (defn ->int [x]
   (cond (nil? x)    nil
         (string? x) (Integer/parseInt (str x))
         (number? x) (int x)
-        :default    (assert false (format "Unexpected type %s of %s" (type x) (str x)))))
+        :else       (fail "Unexpected type of input" {:type (:type x) :input x})))
 
 (def print-trace? false)
 
@@ -77,6 +82,8 @@
   (assert (string? msg) "Log message must be a string")
   `(when print-trace?
      (println (format ~msg ~@(for [d details] `(pr-str ~d))))))
+
+
 
 (defn parsing-exception [expression message]
   (ParsingException/fromMessage (str expression) (str message)))
