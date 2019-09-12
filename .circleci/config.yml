@@ -34,7 +34,7 @@ jobs:
       - run: "bash <(curl -s https://codecov.io/bash)"
   test:
     docker:
-      - image: circleci/openjdk:8-jdk@sha256:13389d32dcfc87ca6dc0d15b2becd742385220633627d804687f9b381790d3e4
+      - image: circleci/openjdk:8u171-jdk
 
     working_directory: ~/repo
     steps:
