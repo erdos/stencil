@@ -24,18 +24,18 @@
     (is (= [" "] (infix/tokenize " \" \" ")))
     (is (= [" x "] (infix/tokenize " \" x \" "))))
   (testing "special string literals"
-    (is (= ["x" (infix/tokenize "'x'")]))
-           (is (= ["x" (infix/tokenize "'x'")]))
-           (is (= ["x" (infix/tokenize "‘x’")]))
-           (is (= ["x" (infix/tokenize "’x’")]))
-           (is (= ["x" (infix/tokenize "„x”")])))
+    (is (= ["x"] (infix/tokenize "'x'")))
+    (is (= ["x"] (infix/tokenize "'x'")))
+    (is (= ["x"] (infix/tokenize "‘x’")))
+    (is (= ["x"] (infix/tokenize "’x’")))
+    (is (= ["x"] (infix/tokenize "„x”"))))
   (testing "escape characters are supported"
     (is (= ["aaa\"bbb"] (infix/tokenize "\"aaa\\\"bbb\"")))))
 
 (deftest tokenize-string-fun-eq
   (testing "tricky"
-    (is (=  ["1" :eq #stencil.infix.FnCall{:fn-name "str"} 1 :close]
-            (infix/tokenize "\"1\" = str(1)")))
+    (is (= ["1" :eq #stencil.infix.FnCall{:fn-name "str"} 1 :close]
+           (infix/tokenize "\"1\" = str(1)")))
     (is (= ["1" 1 {:fn "str" :args 1} :eq]
            (infix/parse "\"1\" = str(1)")))))
 
