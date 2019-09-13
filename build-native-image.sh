@@ -31,6 +31,7 @@ native-image \
     -H:-MultiThreaded \
     -H:IncludeResources='.*.txt$' \
     --report-unsupported-elements-at-runtime \
+    --initialize-at-build-time \
     $OUTPUT
 
 # remove unused symbols and sections
