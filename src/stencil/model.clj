@@ -376,7 +376,7 @@
   (doall
    (for [[old-rel-id m] (-> model :main :relations :parsed (doto assert))
          :when (= rel-type-image (::type m))
-         :when (not= "Remote" (::mode m))
+         :when (not= "External" (::mode m))
          :let [new-id       (->relation-id)
                extension    (last (.split (str (::target m)) "\\."))
                new-path     (str new-id "." extension)]]
