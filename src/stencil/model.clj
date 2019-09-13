@@ -73,7 +73,7 @@
                 :when (= tag-relationship (:tag d))]
             [(:Id (:attrs d)) {::type   (doto (:Type (:attrs d)) assert)
                                ::target (doto (:Target (:attrs d)) assert)
-                               ::mode   (:TargetMode :attrs)}]))))
+                               ::mode   (:TargetMode (:attrs d))}]))))
 
 
 (defn- parse-style
@@ -284,6 +284,7 @@
                                                   (.getParentFile (file (:source-file m))))))
                       path-parent (some-> m :path file .getParentFile)]
                 relation (vals (:parsed (:relations m)))
+                :when (not= "External" (::mode relation))
                 :let [path (str (.normalize (.toPath (file path-parent (::target relation)))))]
                 :when (or (:writer relation) (not (contains? result path)))
                 :let [src (or (:source-file relation) (file @src-parent (::target relation)))]]
