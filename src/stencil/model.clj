@@ -40,6 +40,10 @@
   "Relationship type of image files in .rels files."
   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image")
 
+(def rel-type-hyperlink
+    "Relationship type of hyperlinks in .rels files."
+    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink")
+
 (def tag-relationships
   :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fpackage%2F2006%2Frelationships/Relationships)
 
@@ -273,6 +277,7 @@
     (into result
           (for [m (tree-seq coll? seq evaled-template-model)
                 :when (and (map? m) (not (sorted? m)) (:path m))
+                :when (not= "External" (::mode m))
                 :when (not (contains? result (:path m)))]
             [(:path m) (or (:writer (:result m)) (resource-copier m))]))
 
@@ -364,8 +369,11 @@
   (assert (every? string? (keys id-rename)))
   (assert (every? string? (vals id-rename)))
   (doall (for [item executable]
-           ;; Image relation ids are being renamed here.
-           (update-some item [:attrs ooxml/embed] id-rename))))
+           (-> item
+             ;; Image relation ids are being renamed here.
+             (update-some [:attrs ooxml/r-embed] id-rename)
+             ;; Hyperlink relation ids are being renamed here
+             (update-some [:attrs ooxml/r-id] id-rename)))))
 
 
 ;; generates a random relation id
@@ -375,7 +383,7 @@
 (defn- relation-ids-rename [model fragment-name]
   (doall
    (for [[old-rel-id m] (-> model :main :relations :parsed (doto assert))
-         :when (= rel-type-image (::type m))
+         :when (#{rel-type-image rel-type-hyperlink} (::type m))
          :let [new-id       (->relation-id)
                new-path     (if (= "External" (::mode m))
                               (::target m)
