@@ -67,17 +67,17 @@
 
 
 (defn- parse-relation [rel-file]
-  (let [parsed (with-open [r (io/input-stream (file rel-file))]
-                 (xml/parse r))]
-    (assert (= tag-relationships (:tag parsed))
-            (str "Unexpected tag: " (:tag parsed)))
-    (into (sorted-map)
-          (for [d (:content parsed)
-                :when (map? d)
-                :when (= tag-relationship (:tag d))]
-            [(:Id (:attrs d)) {::type   (doto (:Type (:attrs d)) assert)
-                               ::target (doto (:Target (:attrs d)) assert)
-                               ::mode   (:TargetMode (:attrs d))}]))))
+  (with-open [reader (io/input-stream (file rel-file))]
+    (let [parsed (xml/parse reader)]
+      (assert (= tag-relationships (:tag parsed))
+              (str "Unexpected tag: " (:tag parsed)))
+      (into (sorted-map)
+            (for [d (:content parsed)
+                  :when (map? d)
+                  :when (= tag-relationship (:tag d))]
+              [(:Id (:attrs d)) {::type   (doto (:Type (:attrs d)) assert)
+                                 ::target (doto (:Target (:attrs d)) assert)
+                                 ::mode   (:TargetMode (:attrs d))}])))))
 
 
 (defn- parse-style
