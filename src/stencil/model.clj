@@ -97,7 +97,7 @@
   (assert (.isFile cts))
   (let [parsed (with-open [r (io/input-stream cts)] (xml/parse r))]
     {:source-file cts
-     :path        (.getName cts)}))
+     ::path       (.getName cts)}))
 
 
 (defn ->exec [xml-streamable]
@@ -116,7 +116,7 @@
                  (let [rels-path (str (file (.getParentFile (file f)) "_rels" (str (.getName (file f)) ".rels")))
                        rels-file (file dir rels-path)]
                    (when (.exists rels-file)
-                     {:path rels-path, :source-file rels-file, :parsed (parse-relation rels-file)})))
+                     {::path rels-path, :source-file rels-file, :parsed (parse-relation rels-file)})))
 
         main-document-rels (->rels main-document)
 
@@ -125,14 +125,14 @@
                               (vals (:parsed main-document-rels)))]
     {:content-types (parse-content-types (file dir "[Content_Types].xml"))
      :source-folder dir
-     :relations     {:path (str (file "_rels" ".rels"))
+     :relations     {::path (str (file "_rels" ".rels"))
                      :source-file (file dir "_rels" ".rels")
                      :parsed package-rels}
-     :main          {:path        main-document
+     :main          {::path       main-document
                      :source-file (file dir main-document)
                      :executable  (->exec (file dir main-document))
                      :style (when main-style-path
-                              {:path        main-style-path
+                              {::path       main-style-path
                                :source-file (file dir main-style-path)
                                :parsed      (parse-style (file dir main-style-path))})
                      :relations main-document-rels
@@ -143,7 +143,7 @@
                                                       rel-type-slide}
                                                     (::type m))
                                              :let [f (file (.getParentFile (file main-document)) (::target m))]]
-                                         {:path        (str f)
+                                         {::path       (str f)
                                           :source-file (file dir f)
                                           :executable  (->exec (file dir f))
                                           :relations   (->rels f)}))}}))
@@ -164,7 +164,7 @@
 
 
 (defn- resource-copier [x]
-  (assert (:path x))
+  (assert (::path x))
   (assert (:source-file x))
   (fn [writer]
     (io!
@@ -189,7 +189,7 @@
 
 (defn- eval-model-part [part data functions]
   (assert (:executable part))
-  (assert (:path part))
+  (assert (::path part))
   (if (:dynamic? (:executable part))
     (eval-model-part-exec (:executable part) data functions)
     {:writer (resource-copier part)}))
@@ -220,11 +220,11 @@
                        (cond-> m
 
                          ;; create a rels file for the current xml
-                         (and (seq @*extra-files*) (nil? (:path (:relations m))))
-                         (assoc-in [:relations :path]
-                                   (str (file (.getParentFile (file (:path m)))
+                         (and (seq @*extra-files*) (nil? (::path (:relations m))))
+                         (assoc-in [:relations ::path]
+                                   (str (file (.getParentFile (file (::path m)))
                                               "_rels"
-                                              (str (.getName (file (:path m))) ".rels"))))
+                                              (str (.getName (file (::path m))) ".rels"))))
 
                          ;; add relations if any
                          (seq @*extra-files*)
@@ -268,18 +268,18 @@
     ;; relations files that are created on-the-fly
     (into result
           (for [m (tree-seq coll? seq evaled-template-model)
-                :when (and (map? m) (not (sorted? m)) (:path m))
+                :when (and (map? m) (not (sorted? m)) (::path m))
                 :when (:parsed (:relations m))
                 :when (not (:source-file (:relations m)))]
-            [(:path (:relations m)) (relation-writer (:parsed (:relations m)))]))
+            [(::path (:relations m)) (relation-writer (:parsed (:relations m)))]))
 
-    ;; create writer for every item where :path is specified
+    ;; create writer for every item where ::path is specified
     (into result
           (for [m (tree-seq coll? seq evaled-template-model)
-                :when (and (map? m) (not (sorted? m)) (:path m))
+                :when (and (map? m) (not (sorted? m)) (::path m))
                 :when (not= "External" (::mode m))
-                :when (not (contains? result (:path m)))]
-            [(:path m) (or (:writer (:result m)) (resource-copier m))]))
+                :when (not (contains? result (::path m)))]
+            [(::path m) (or (:writer (:result m)) (resource-copier m))]))
 
     ;; find all items in all relations
     (into result
@@ -287,14 +287,14 @@
                 :when (and (map? m) (not (sorted? m)) (:relations m))
                 :let [src-parent  (delay (file (or (:source-folder m)
                                                   (.getParentFile (file (:source-file m))))))
-                      path-parent (some-> m :path file .getParentFile)]
+                      path-parent (some-> m ::path file .getParentFile)]
                 relation (vals (:parsed (:relations m)))
                 :when (not= "External" (::mode relation))
                 :let [path (str (.normalize (.toPath (file path-parent (::target relation)))))]
                 :when (or (:writer relation) (not (contains? result path)))
                 :let [src (or (:source-file relation) (file @src-parent (::target relation)))]]
             [path (or (:writer relation)
-                      (resource-copier {:path path :source-file src}))]))))
+                      (resource-copier {::path path :source-file src}))]))))
 
 
 (defn template-model->writers-map
@@ -395,7 +395,7 @@
       :new-id      new-id
       :old-id      old-rel-id
       :source-file (file (-> model :main :source-file file .getParentFile) (::target m))
-      :path        new-path})))
+      ::path       new-path})))
 
 
 (defmethod eval/eval-step :cmd/include [f local-data-map {frag-name :name}]
