@@ -27,8 +27,7 @@
   (assert (string? s))
   (let [ind        (.indexOf s (str open-tag))]
     (when-not (neg? ind)
-      (let [str-before (.substring s 0 ind)
-            after-idx  (.indexOf s (str close-tag))]
+      (let [after-idx  (.indexOf s (str close-tag))]
         (if (neg? after-idx)
           (cond-> {:action-part (.substring s (+ ind (count open-tag)))}
             (not (zero? ind)) (assoc :before (.substring s 0 ind)))
@@ -98,9 +97,8 @@
         (if-let [this (-find-end-tag last-chars-count rest-tokens)]
           (concat
            (butlast (:tokens sts))
-           [{:text (apply str (drop-last
-                               last-chars-count
-                               (:text (last (:tokens sts)))))}]
+           (when-let [s (seq (drop-last last-chars-count (:text (last (:tokens sts)))))]
+             [{:text (apply str s)}])
            (lazy-seq
             (cleanup-runs-1
              (concat
