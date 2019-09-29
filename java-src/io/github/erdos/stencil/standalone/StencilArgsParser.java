@@ -9,6 +9,8 @@ public final class StencilArgsParser {
 
     public final static ArgsParser PARSER = new ArgsParser();
 
+    private StencilArgsParser() {}
+
     /**
      * Result files are placed in this directory.
      */

@@ -13,6 +13,8 @@ import java.util.Map;
 @SuppressWarnings("WeakerAccess")
 public class ClojureHelper {
 
+    private ClojureHelper() {}
+
     enum Keywords {
         DATA, FUNCTION, FRAGMENTS, TEMPLATE, VARIABLES, SOURCE_FOLDER, WRITER;
 

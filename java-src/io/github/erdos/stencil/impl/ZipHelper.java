@@ -14,6 +14,8 @@ import static io.github.erdos.stencil.impl.FileHelper.forceMkdir;
  */
 public final class ZipHelper {
 
+    private ZipHelper() {}
+
     /**
      * Unzips contents of a zip file under the target directory. Closes stream.
      * The unzipped files keep their relative paths from the zip file.

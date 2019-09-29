@@ -74,14 +74,12 @@
              (count %))
           (prefixes open-tag))))
 
-(defn cleanup-runs-1 [token-list]
-  (assert (sequential? token-list))
-  (assert (:text (first token-list)))
-  ;; feltehetjuk, hogy text token van elol.
-  (let [sts (text-split-tokens (:text (first token-list)))]
+(defn cleanup-runs-1 [[first-token & rest-tokens]]
+  (assert (:text first-token))
+  (let [sts (text-split-tokens (:text first-token))]
     (if (:action-part sts)
       ;; Ha van olyan akcio resz, amit elkezdtunk de nem irtunk vegig...
-      (let [next-token-list (cons {:text (:action-part sts)} (next token-list))
+      (let [next-token-list (cons {:text (:action-part sts)} rest-tokens)
             [this that] (split-with #(not= (seq close-tag)
                                            (take (count close-tag) (map :char %)))
                                     (suffixes (peek-next-text next-token-list)))
@@ -89,7 +87,6 @@
                           (throw (ex-info "Tag is not closed? " {:read (first this)}))
                           (first (nth that (dec (count close-tag)))))
             action-content (apply str (map (comp :char first) this))]
-        (assert (map? that)) ;; TODO: mi van ha nem lezarhato az elem?
         (concat
          (:tokens sts)
          [{:action action-content}]
@@ -98,7 +95,7 @@
            (lazy-seq (cleanup-runs-1 (cons {:text (apply str (:text-rest that))} (:rest that))))
            (lazy-seq (cleanup-runs (:rest that))))))
       (if-let [last-chars-count (-last-chars-count (:tokens sts))]
-        (if-let [this (-find-end-tag last-chars-count (next token-list))]
+        (if-let [this (-find-end-tag last-chars-count rest-tokens)]
           (concat
            (butlast (:tokens sts))
            [{:text (apply str (drop-last
@@ -110,8 +107,8 @@
               [{:text (str open-tag (apply str (:text-rest this)))}]
               (reverse (:stack this))
               (:rest this)))))
-          (concat (:tokens sts) (cleanup-runs (next token-list))))
-        (concat (:tokens sts) (cleanup-runs (next token-list)))))))
+          (concat (:tokens sts) (cleanup-runs rest-tokens)))
+        (concat (:tokens sts) (cleanup-runs rest-tokens))))))
 
 (defn cleanup-runs [token-list]
   (when-let [[t & ts] (seq token-list)]
