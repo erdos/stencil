@@ -11,11 +11,23 @@ import static java.util.Collections.emptyMap;
 
 public final class API {
 
+    private API() {}
+
     /**
      * Prepares a document template file from the file system.
      */
     public static PreparedTemplate prepare(File templateFile) throws IOException {
-        return new NativeTemplateFactory().prepareTemplateFile(templateFile);
+        return prepare(templateFile, null);
+    }
+
+    /**
+     * Prepares a document template file from the file system.
+     */
+    public static PreparedTemplate prepare(File templateFile, PrepareOptions options) throws IOException {
+        if (options == null) {
+            options = PrepareOptions.options();
+        }
+        return new NativeTemplateFactory().prepareTemplateFile(templateFile, options);
     }
 
     /**

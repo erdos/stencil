@@ -13,8 +13,8 @@ import javax.xml.stream.XMLStreamReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
-import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -160,7 +160,7 @@ public class TableColumnsTest {
             assertTrue(tmpdir.delete()); // so that we can create directory
             tmpdir.deleteOnExit();
 
-            try (FileInputStream docxStream = new FileInputStream(temporaryDocx)) {
+            try (InputStream docxStream = new FileInputStream(temporaryDocx)) {
                 ZipHelper.unzipStreamIntoDirectory(docxStream, tmpdir);
             }
 

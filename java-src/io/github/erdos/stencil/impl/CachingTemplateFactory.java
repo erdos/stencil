@@ -1,5 +1,6 @@
 package io.github.erdos.stencil.impl;
 
+import io.github.erdos.stencil.PrepareOptions;
 import io.github.erdos.stencil.PreparedTemplate;
 import io.github.erdos.stencil.TemplateFactory;
 
@@ -31,18 +32,18 @@ public final class CachingTemplateFactory implements TemplateFactory {
     }
 
     @Override
-    public PreparedTemplate prepareTemplateFile(File templateFile) throws IOException {
+    public PreparedTemplate prepareTemplateFile(File templateFile, PrepareOptions options) throws IOException {
         if (cache.containsKey(templateFile)) {
             PreparedTemplate stored = cache.get(templateFile);
             if (stored.creationDateTime().toEpochSecond(ZoneOffset.UTC) <= templateFile.lastModified()) {
                 // TODO: this is so not thread safe.
                 stored.cleanup();
-                stored = templateFactory.prepareTemplateFile(templateFile);
+                stored = templateFactory.prepareTemplateFile(templateFile, options);
                 cache.put(templateFile, stored);
             }
             return stored;
         } else {
-            final PreparedTemplate stored = templateFactory.prepareTemplateFile(templateFile);
+            final PreparedTemplate stored = templateFactory.prepareTemplateFile(templateFile, PrepareOptions.options());
             cache.put(templateFile, stored);
             return stored;
         }

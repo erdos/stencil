@@ -11,7 +11,7 @@ import java.util.Map;
  * Clojure utilities.
  */
 @SuppressWarnings("WeakerAccess")
-public class ClojureHelper {
+public final class ClojureHelper {
 
     enum Keywords {
         DATA, FUNCTION, FRAGMENTS, TEMPLATE, VARIABLES, SOURCE_FOLDER, WRITER;
@@ -32,6 +32,8 @@ public class ClojureHelper {
         final IFn req = RT.var("clojure.core", "require");
         req.invoke(Symbol.intern("stencil.process"));
     }
+
+    private ClojureHelper() {}
 
     /**
      * Finds a function in stencil.process namespace and returns it.

@@ -10,14 +10,16 @@ import java.util.function.Supplier;
  * Logging support
  */
 @SuppressWarnings("WeakerAccess")
-public class Logging {
+public final class Logging {
+
+    private Logging() {}
 
     /**
      * Returns a consumer that can be used to print elapsed time.
      */
     public static Consumer<Supplier<String>> debugStopWatch(Logger logger) {
         AtomicLong lastMeasure = new AtomicLong(0);
-        return (msg) -> {
+        return msg -> {
             long now = System.currentTimeMillis();
             long previous = lastMeasure.getAndSet(now);
 

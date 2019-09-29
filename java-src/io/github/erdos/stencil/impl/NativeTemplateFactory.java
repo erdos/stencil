@@ -22,11 +22,15 @@ import static java.util.Collections.unmodifiableSet;
 public final class NativeTemplateFactory implements TemplateFactory {
 
     @Override
-    public PreparedTemplate prepareTemplateFile(final File inputTemplateFile) throws IOException {
+    public PreparedTemplate prepareTemplateFile(final File inputTemplateFile, PrepareOptions options) throws IOException {
         final Optional<TemplateDocumentFormats> templateDocFormat = ofExtension(inputTemplateFile.getName());
 
         if (!templateDocFormat.isPresent()) {
             throw new IllegalArgumentException("Unexpected type of file: " + inputTemplateFile.getName());
+        }
+
+        if (options == null) {
+            throw new IllegalArgumentException("Template preparation options are missing!");
         }
 
         try (InputStream input = new FileInputStream(inputTemplateFile)) {

@@ -100,16 +100,17 @@
      ::path       (.getName cts)}))
 
 
-(defn ->exec [xml-streamable]
+(defn ->exec [xml-streamable options-map]
   (with-open [stream (io/input-stream xml-streamable)]
     (-> (tokenizer/parse-to-tokens-seq stream)
         (cleanup/process)
         (select-keys [:variables :dynamic? :executable :fragments]))))
 
 
-(defn load-template-model [^File dir]
+(defn load-template-model [^File dir, options-map]
   (assert (.exists dir))
   (assert (.isDirectory dir))
+  (assert (map? options))
   (let [package-rels (parse-relation (file dir "_rels" ".rels"))
         main-document (some #(when (= rel-type-main (::type %)) (::target %)) (vals package-rels))
         ->rels (fn [f]

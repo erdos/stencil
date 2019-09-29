@@ -1,5 +1,6 @@
 package io.github.erdos.stencil.impl;
 
+import io.github.erdos.stencil.PrepareOptions;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -82,13 +83,13 @@ public class DirWatcherTemplateFactoryTest implements TemplateFactory {
     }
 
     @Override
-    public PreparedTemplate prepareTemplateFile(File templateFile) {
-        calledFiles.add(templateFile);
+    public PreparedTemplate prepareTemplateFile(File inputTemplateFile, PrepareOptions options) {
+        calledFiles.add(inputTemplateFile);
         return new PreparedTemplate() {
 
             @Override
             public File getTemplateFile() {
-                return templateFile;
+                return inputTemplateFile;
             }
 
             @Override

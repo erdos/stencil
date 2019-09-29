@@ -5,6 +5,7 @@
 
 (def open-tag "{%")
 (def close-tag "%}")
+(def |close-tag| (count close-tag))
 
 (defrecord OpenTag [open])
 (defrecord CloseTag [close])

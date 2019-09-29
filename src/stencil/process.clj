@@ -2,6 +2,7 @@
   "These functions are called from Java."
   (:import [java.io File PipedInputStream PipedOutputStream InputStream]
            [java.util.zip ZipEntry ZipOutputStream]
+           [io.github.erdos.stencil PrepareOptions]
            [io.github.erdos.stencil.impl FileHelper ZipHelper])
   (:require [clojure.java.io :as io]
             [stencil.util :refer [trace]]
@@ -26,23 +27,23 @@
              (into (for [x (:headers+footers (:main model))
                          v (:variables (:executable x))] v)))))
 
-(defn prepare-template [^InputStream stream]
+(defn prepare-template [^InputStream stream, ^PrepareOptions options]
   (assert (instance? InputStream stream))
   (let [zip-dir   (FileHelper/createNonexistentTempFile "stencil-" ".zip.contents")]
-    (with-open [zip-stream stream] ;; FIXME: maybe not deleted immediately
+    (with-open [zip-stream stream]
       (ZipHelper/unzipStreamIntoDirectory zip-stream zip-dir))
     (-> zip-dir
-        model/load-template-model
+        (model/load-template-model options)
         merge-fragment-names
         merge-variable-names)))
 
-(defn prepare-fragment [input]
+(defn prepare-fragment [input, ^PrepareOptions options]
   (assert (some? input))
   (let [zip-dir (FileHelper/createNonexistentTempFile
                  "stencil-fragment-" ".zip.contents")]
     (with-open [zip-stream (io/input-stream input)]
       (ZipHelper/unzipStreamIntoDirectory zip-stream zip-dir))
-    (model/load-fragment-model zip-dir)))
+    (model/load-fragment-model zip-dir options)))
 
 (defn- render-writers-map [writers-map outstream]
   (assert (map? writers-map))

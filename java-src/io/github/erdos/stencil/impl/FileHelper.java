@@ -20,6 +20,8 @@ public final class FileHelper {
         return extension(f.getName());
     }
 
+    private FileHelper() {}
+
     public static String extension(String filename) {
         String[] parts = filename.split("\\.");
         return parts[parts.length - 1].trim().toLowerCase();
