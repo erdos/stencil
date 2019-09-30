@@ -1,9 +1,12 @@
 (ns stencil.merger
   "Token listaban a text tokenekbol kiszedi a parancsokat es action tokenekbe teszi."
   (:require [clojure.test :refer [deftest testing is are]]
+            [clojure.data.xml :as xml]
+            [stencil.postprocess.ignored-tag :as ignored-tag]
             [stencil
              [cleanup :refer :all]
              [types :refer :all]
+             [tokenizer :as tokenizer]
              [util :refer [prefixes suffixes]]]))
 
 (set! *warn-on-reflection* true)
@@ -89,7 +92,6 @@
                           (throw (ex-info "Tag is not closed? " {:read (first this)}))
                           (first (nth that (dec (count close-tag)))))
             action-content (apply str (map (comp :char first) this))]
-        (assert (map? that)) ;; TODO: mi van ha nem lezarhato az elem?
         (concat
          (:tokens sts)
          [{:action action-content}]
@@ -119,6 +121,17 @@
       (cleanup-runs-1 token-list)
       (cons t (lazy-seq (cleanup-runs ts))))))
 
-(def map-actions-in-token-list cleanup-runs)
+(defn- map-token [token] (if (:action token) (tokenizer/text->cmd (:action token)) token))
+
+(defn parse-to-tokens-seq
+  "Parses input and returns a token sequence."
+  [input]
+  (let [parsed (xml/parse input)]
+    (assert (map? parsed))
+    (->> parsed
+         (ignored-tag/map-ignored-attr)
+         (tokenizer/structure->seq)
+         (cleanup-runs)
+         (map map-token))))
 
 :OK

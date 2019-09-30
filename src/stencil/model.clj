@@ -11,7 +11,7 @@
             [clojure.walk :refer [postwalk]]
             [stencil.ooxml :as ooxml]
             [stencil.eval :as eval]
-            [stencil.tokenizer :as tokenizer]
+            [stencil.merger :as merger]
             [stencil.tree-postprocess :as tree-postprocess]
             [stencil.types :refer [->FragmentInvoke]]
             [stencil.util :refer :all]
@@ -100,17 +100,18 @@
      ::path       (.getName cts)}))
 
 
-(defn ->exec [xml-streamable options-map]
+;; TODO: options-map
+(defn ->exec [xml-streamable]
   (with-open [stream (io/input-stream xml-streamable)]
-    (-> (tokenizer/parse-to-tokens-seq stream)
+    (-> (merger/parse-to-tokens-seq stream)
         (cleanup/process)
         (select-keys [:variables :dynamic? :executable :fragments]))))
 
 
-(defn load-template-model [^File dir, options-map]
+(defn load-template-model [^File dir, #_options-map]
   (assert (.exists dir))
   (assert (.isDirectory dir))
-  (assert (map? options))
+  ; (assert (map? options-map))
   (let [package-rels (parse-relation (file dir "_rels" ".rels"))
         main-document (some #(when (= rel-type-main (::type %)) (::target %)) (vals package-rels))
         ->rels (fn [f]

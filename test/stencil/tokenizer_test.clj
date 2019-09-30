@@ -1,9 +1,9 @@
 (ns stencil.tokenizer-test
-  (:require [stencil.tokenizer :as t]
+  (:require [stencil.merger :as m]
             [clojure.test :refer [deftest testing is]]))
 
 (defn- run [s]
-  (t/parse-to-tokens-seq (java.io.ByteArrayInputStream. (.getBytes (str s)))))
+  (m/parse-to-tokens-seq (java.io.ByteArrayInputStream. (.getBytes (str s)))))
 
 (deftest read-tokens-nested
   (testing "Read a list of nested tokens"
