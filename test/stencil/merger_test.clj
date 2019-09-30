@@ -1,6 +1,8 @@
 (ns stencil.merger-test
   (:require [stencil.merger :refer :all]
-            [clojure.test :refer [deftest testing is are]]))
+            [clojure.test :refer [deftest testing is are use-fixtures]]))
+
+(use-fixtures :once (fn [f] (with-redefs [action-maybe-parsed identity] (f))))
 
 (deftest peek-next-text-test
   (testing "Simple case"
@@ -67,6 +69,11 @@
 
       [{:text "asdf{%1234"} {:text "56%"} {:text "}ghi"}]
       [{:text "asdf"} {:action "123456"} {:text "ghi"}]))
+
+  (testing "Complex case"
+     (are [x expected] (= expected (cleanup-runs x))
+      [{:text "a{"} {:text "%"} {:text "="} {:text "1"} {:text "%"} {:text "}b"}]
+      [{:text "a"} {:action "=1"} {:text "b"}]))
 
   (testing "Unchanged"
     (are [x expected] (= expected (cleanup-runs x))
