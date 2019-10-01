@@ -125,29 +125,29 @@
       (if-let [last-chars-count (-last-chars-count (:tokens sts))]
         ;; an open tag starts at the end of the text node..
         (if-let [this (-find-open-tag last-chars-count (next token-list))]
-          (let [ap (action-maybe-parsed {:action (apply str (:text-rest this))})]
-            (if (:action ap)
-              (concat
-               (map map-action-token (butlast (:tokens sts)))
-               (when-let [s (seq (drop-last last-chars-count (:text (last (:tokens sts)))))]
-                 [{:text (apply str s)}])
-               (list* ap (reverse (:stack this)))
+          (let [action-txt (apply str (:text-rest this))
+                ap         (when (not-empty action-txt)
+                             (action-maybe-parsed {:action action-txt}))]
+            (concat
+             (map map-action-token (butlast (:tokens sts)))
+             (when-let [s (seq (drop-last last-chars-count (:text (last (:tokens sts)))))]
+               [{:text (apply str s)}])
+             (when (:action ap) [ap])
+             (reverse (:stack this))
+             (let [[this2 that2] (split-with #(not= (seq close-tag)
+                                                    (take (count close-tag) (map :char %)))
+                                             (suffixes (peek-next-text (:rest this))))
+                   that2        (if (empty? that2) (throw (ex-info "Tag is not closed?" {}))
+                                    (first (nth that2 (dec (count close-tag)))))]
+               (concat
+                (when-let [action-txt (not-empty (apply str (map (comp :char first) this2)))]
+                  [(action-maybe-parsed {:action action-txt})])
+                (reverse (:stack that2))
+                (when (seq (:text-rest that2))
+                  [{:text (apply str (:text-rest that2))}])
+                (lazy-seq (cleanup-runs (:rest that2))))))
 
-               ;; itt a (:rest this) helyett elore kellene menni es beolvasni amig lehet?
-
-               (let [[this2 that2] (split-with #(not= (seq close-tag)
-                                                      (take (count close-tag) (map :char %)))
-                                               (suffixes (peek-next-text (:rest this))))
-                     that2        (if (empty? that2) (throw (ex-info "Tag is not closed?" {}))
-                                      (first (nth that2 (dec (count close-tag)))))]
-                 (concat
-                  (reverse (:stack that2))
-                  (lazy-seq (cleanup-runs (:rest that2))))))
-
-
-              666 #_(concat
-               (map map-action-token (:tokens sts))
-               (lazy-seq (cleanup-runs (next token-list))))))
+             )
           (concat (map map-action-token (:tokens sts)) (cleanup-runs (next token-list))))
         (concat (map map-action-token (:tokens sts)) (cleanup-runs (next token-list)))))))
 
