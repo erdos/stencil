@@ -93,7 +93,7 @@
     token))
 
 (defn cleanup-runs-1 [[first-token & rest-tokens]]
-  (assert (:text first-token) )
+  (assert (:text first-token))
   (let [sts (text-split-tokens (:text first-token))]
 
     (if (:action-part sts)
@@ -108,7 +108,6 @@
             action-content (apply str (map (comp :char first) this))]
         (concat
          (map map-action-token (:tokens sts))
-
          (let [ap (map-action-token {:action (apply str (map (comp :char first) this))})]
            (if (:action ap)
              (concat
