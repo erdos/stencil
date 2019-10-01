@@ -2,7 +2,7 @@
   (:require [stencil.merger :refer :all]
             [clojure.test :refer [deftest testing is are use-fixtures]]))
 
-(use-fixtures :once (fn [f] (with-redefs [action-maybe-parsed identity] (f))))
+(use-fixtures :once (fn [f] (with-redefs [map-action-token identity] (f))))
 
 (deftest peek-next-text-test
   (testing "Simple case"

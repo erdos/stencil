@@ -11,6 +11,9 @@
 
 (set! *warn-on-reflection* true)
 
+;; only fragment includes are evaluated
+(def ^:private ^:dynamic *only-fragments* false)
+
 (defn peek-next-text
   "Returns a lazy seq of text content characters from the token list."
   [tokens]
@@ -80,20 +83,14 @@
              (count %))
           (prefixes open-tag))))
 
-;; tries to parse action
-(defn action-maybe-parsed [token]
+(defn map-action-token [token]
   (if-let [action (:action token)]
     (let [parsed (tokenizer/text->cmd action)]
-      (if true #_( ;; ha fragment.
-           )
-        {:action parsed}
-        {:text (str open-tag " " action " " close-tag)}))
+      (if (and *only-fragments*
+               (not= :cmd/include (:cmd parsed)))
+        {:text (str open-tag " " action " " close-tag)}
+        {:action parsed}))
     token))
-
-;; TODO: csak akkor parszoljuk fel, ha fragment
-;; egyebkent text tokenne alakitjuk ugy, ahogyan volt.
-;; lel.
-(defn map-action-token [token] (action-maybe-parsed token))
 
 (defn cleanup-runs-1 [[first-token & rest-tokens]]
   (assert (:text first-token))
@@ -112,7 +109,7 @@
         (concat
          (map map-action-token (:tokens sts))
 
-         (let [ap (action-maybe-parsed {:action (apply str (map (comp :char first) this))})]
+         (let [ap (map-action-token {:action (apply str (map (comp :char first) this))})]
            (if (:action ap)
              (concat
               (list* ap (reverse (:stack that)))
