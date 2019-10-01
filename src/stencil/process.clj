@@ -27,25 +27,25 @@
              (into (for [x (:headers+footers (:main model))
                          v (:variables (:executable x))] v)))))
 
-(defn prepare-template [^InputStream stream ;, ^PrepareOptions options
-                        ]
+(defn prepare-template [^InputStream stream, ^PrepareOptions options]
   (assert (instance? InputStream stream))
-  (let [zip-dir   (FileHelper/createNonexistentTempFile "stencil-" ".zip.contents")]
+  (let [zip-dir   (FileHelper/createNonexistentTempFile "stencil-" ".zip.contents")
+        options   {:only-fragments (.isOnlyIncludes options)}]
     (with-open [zip-stream stream]
       (ZipHelper/unzipStreamIntoDirectory zip-stream zip-dir))
     (-> zip-dir
-        (model/load-template-model #_options)
+        (model/load-template-model options)
         merge-fragment-names
         merge-variable-names)))
 
-(defn prepare-fragment [input, ; ^PrepareOptions options
-                        ]
+(defn prepare-fragment [input, ^PrepareOptions options]
   (assert (some? input))
   (let [zip-dir (FileHelper/createNonexistentTempFile
-                 "stencil-fragment-" ".zip.contents")]
+                 "stencil-fragment-" ".zip.contents")
+        options {:only-fragments (.isOnlyIncludes options)}]
     (with-open [zip-stream (io/input-stream input)]
       (ZipHelper/unzipStreamIntoDirectory zip-stream zip-dir))
-    (model/load-fragment-model zip-dir #_ options)))
+    (model/load-fragment-model zip-dir options)))
 
 (defn- render-writers-map [writers-map outstream]
   (assert (map? writers-map))

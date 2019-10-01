@@ -34,11 +34,11 @@ public final class NativeTemplateFactory implements TemplateFactory {
         }
 
         try (InputStream input = new FileInputStream(inputTemplateFile)) {
-            return prepareTemplateImpl(templateDocFormat.get(), input, inputTemplateFile);
+            return prepareTemplateImpl(templateDocFormat.get(), input, inputTemplateFile, options);
         }
     }
 
-    public PreparedFragment prepareFragmentFile(final File fragmentFile) throws IOException {
+    public PreparedFragment prepareFragmentFile(final File fragmentFile, PrepareOptions options) throws IOException {
         if (fragmentFile == null) {
             throw new IllegalArgumentException("Fragment file parameter is null!");
         }
@@ -49,7 +49,7 @@ public final class NativeTemplateFactory implements TemplateFactory {
 
         try {
             //noinspection unchecked
-            prepared = (Map<Keyword, Object>) prepareFunction.invoke(fragmentFile);
+            prepared = (Map<Keyword, Object>) prepareFunction.invoke(fragmentFile, options);
         } catch (ParsingException e) {
             throw e;
         } catch (Exception e) {
@@ -88,14 +88,14 @@ public final class NativeTemplateFactory implements TemplateFactory {
     }
 
     @SuppressWarnings("unchecked")
-    private PreparedTemplate prepareTemplateImpl(TemplateDocumentFormats templateDocFormat, InputStream input, File originalFile) {
+    private PreparedTemplate prepareTemplateImpl(TemplateDocumentFormats templateDocFormat, InputStream input, File originalFile, PrepareOptions options) {
         final IFn prepareFunction = ClojureHelper.findFunction("prepare-template");
 
         final String format = templateDocFormat.name();
         final Map<Keyword, Object> prepared;
 
         try {
-            prepared = (Map<Keyword, Object>) prepareFunction.invoke(input);
+            prepared = (Map<Keyword, Object>) prepareFunction.invoke(input, options);
         } catch (ParsingException e) {
             throw e;
         } catch (Exception e) {

@@ -12,6 +12,10 @@ public final class PrepareOptions {
 		return instance;
 	}
 
+	public boolean isOnlyIncludes() {
+		return onlyIncludes;
+	}
+
 	/**
 	 * Prepared template should contain only fragment include directories but not other expressions.
 	 */

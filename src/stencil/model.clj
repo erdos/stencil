@@ -108,10 +108,10 @@
         (select-keys [:variables :dynamic? :executable :fragments]))))
 
 
-(defn load-template-model [^File dir, #_options-map]
+(defn load-template-model [^File dir, options-map]
   (assert (.exists dir))
   (assert (.isDirectory dir))
-  ; (assert (map? options-map))
+  (assert (map? options-map))
   (let [package-rels (parse-relation (file dir "_rels" ".rels"))
         main-document (some #(when (= rel-type-main (::type %)) (::target %)) (vals package-rels))
         ->rels (fn [f]
@@ -124,7 +124,9 @@
 
         main-style-path (some #(when (= rel-type-style (::type %))
                                  (str (file (.getParentFile (file main-document)) (::target %))))
-                              (vals (:parsed main-document-rels)))]
+                              (vals (:parsed main-document-rels)))
+        ->exec (binding [merger/*only-fragments* (boolean (:only-fragments options-map))]
+                 (bound-fn* ->exec))]
     {:content-types (parse-content-types (file dir "[Content_Types].xml"))
      :source-folder dir
      :relations     {::path (str (file "_rels" ".rels"))
@@ -151,8 +153,8 @@
                                           :relations   (->rels f)}))}}))
 
 
-(defn load-fragment-model [dir]
-  (-> (load-template-model dir)
+(defn load-fragment-model [dir options-map]
+  (-> (load-template-model dir options-map)
       ;; Headers and footers are not used in fragments.
       (update :main dissoc :headers+footers)))
 
