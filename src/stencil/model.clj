@@ -358,16 +358,13 @@
           {} style-defs))
 
 
-(defn- executable-rename-style-ids [executable style-id-renames]
-  (assert (sequential? executable)
-          (str "Not sequential: " (pr-str executable)))
-  (assert (map? style-id-renames))
-  (assert (every? string? (keys style-id-renames)))
-  (assert (every? string? (vals style-id-renames)))
-  (doall (for [item executable]
-           (if (some-> (or (:open item) (:open+close item)) (str) (.endsWith "Style"))
-             (update-some item [:attrs ooxml/val] style-id-renames)
-             item))))
+(defn xml-rename-style-ids [style-id-renames xml-tree]
+  (if (map? xml-tree)
+    (if (-> xml-tree :tag name (.endsWith "Style"))
+      (update-some xml-tree [:attrs ooxml/val] style-id-renames)
+      (update xml-tree :content (partial map (partial xml-rename-style-ids style-id-renames))))
+    xml-tree))
+
 
 (defn- map-rename-relation-ids [item id-rename]
   (-> item
@@ -375,6 +372,7 @@
       (update-some [:attrs ooxml/r-embed] id-rename)
       ;; Hyperlink relation ids are being renamed here
       (update-some [:attrs ooxml/r-id] id-rename)))
+
 
 (defn- xml-rename-relation-ids [id-rename xml-tree]
   (if (map? xml-tree)
@@ -412,8 +410,6 @@
    (if-let [fragment-model (get *all-fragments* frag-name)]
      (let [;; merge style definitions from fragment
            style-ids-rename (-> fragment-model :main :style :parsed (doto assert) (insert-styles!))
-           fragment-model   (update-in fragment-model [:main :executable :executable]
-                                       executable-rename-style-ids style-ids-rename)
 
            relation-ids-rename (relation-ids-rename fragment-model frag-name)
            relation-rename-map (into {} (map (juxt :old-id :new-id) relation-ids-rename))
@@ -427,7 +423,8 @@
            evaled-parts (->> evaled :main :result
                              (get-xml)
                              (extract-body-parts)
-                             (map (partial xml-rename-relation-ids relation-rename-map)))]
+                             (map (partial xml-rename-relation-ids relation-rename-map))
+                             (map (partial xml-rename-style-ids style-ids-rename)))]
        (swap! *inserted-fragments* conj frag-name)
        (swap! *extra-files* into relation-ids-rename)
        [{:text (->FragmentInvoke {:frag-evaled-parts evaled-parts})}])
