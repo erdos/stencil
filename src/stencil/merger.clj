@@ -12,7 +12,7 @@
 (set! *warn-on-reflection* true)
 
 ;; only fragment includes are evaluated
-(def ^:private ^:dynamic *only-fragments* false)
+(def ^:dynamic *only-fragments* false)
 
 (defn peek-next-text
   "Returns a lazy seq of text content characters from the token list."
@@ -88,12 +88,12 @@
     (let [parsed (tokenizer/text->cmd action)]
       (if (and *only-fragments*
                (not= :cmd/include (:cmd parsed)))
-        {:text (str open-tag " " action " " close-tag)}
+        {:text (str open-tag action close-tag)}
         {:action parsed}))
     token))
 
 (defn cleanup-runs-1 [[first-token & rest-tokens]]
-  (assert (:text first-token))
+  (assert (:text first-token) )
   (let [sts (text-split-tokens (:text first-token))]
 
     (if (:action-part sts)
@@ -116,8 +116,8 @@
               (if (seq (:text-rest that))
                 (lazy-seq (cleanup-runs-1 (cons {:text (apply str (:text-rest that))} (:rest that))))
                 (lazy-seq (cleanup-runs (:rest that)))))
-             666 #_ (list* {:text (:action-part sts)}
-                    (lazy-seq (cleanup-runs (rest token-list))))))))
+             (list* {:text (str open-tag (:action-part sts))}
+                    (lazy-seq (cleanup-runs rest-tokens)))))))
 
       ;; If the current :text node ends with a prefix of open-tag:
       (if-let [last-chars-count (-last-chars-count (:tokens sts))]
@@ -135,7 +135,7 @@
                tail
                (concat [{:text (str open-tag (apply str (:text-rest this)))}]
                        (reverse (:stack this))
-                       (cleanup-runs-1 (:rest this))))))
+                       (cleanup-runs (:rest this))))))
           (concat (map map-action-token (:tokens sts)) (cleanup-runs rest-tokens)))
         (concat (map map-action-token (:tokens sts)) (cleanup-runs rest-tokens))))))
 

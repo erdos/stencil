@@ -2,7 +2,9 @@
   (:require [stencil.merger :refer :all]
             [clojure.test :refer [deftest testing is are use-fixtures]]))
 
-(use-fixtures :once (fn [f] (with-redefs [map-action-token identity] (f))))
+(def map-action-token' map-action-token)
+
+(use-fixtures :each (fn [f] (with-redefs [map-action-token identity] (f))))
 
 (deftest peek-next-text-test
   (testing "Simple case"
@@ -85,3 +87,43 @@
     (are [x expected] (= expected (cleanup-runs x))
       [{:text "asdf{"} {:text "{aaa"}]
       [{:text "asdf{"} {:text "{aaa"}])))
+
+(defmacro are+ [argv [& exprs] & bodies] (list* 'do (for [e exprs] `(are ~argv ~e ~@bodies))))
+
+(def O1 {:open 1})
+(def O2 {:open 2})
+(def O3 {:open 3})
+(def O4 {:open 4})
+(def O5 {:open 5})
+
+(deftest ^:map-action-token cleanup-runs_fragments-only
+  (testing "text token has full expression"
+    (with-redefs [map-action-token map-action-token']
+      (are+ [x expected-literal expected-parsed]
+            [(= expected-literal (binding [*only-fragments* true] (doall (cleanup-runs x))))
+             (= expected-parsed (binding [*only-fragments* false] (doall (cleanup-runs x))))]
+
+            [{:text "{%=1%}"}]
+            [{:text "{%=1%}"}]
+            [{:action {:cmd :echo, :expression [1]}}]
+
+            [{:text "a{%=1%}b"}]
+            [{:text "a"} {:text "{%=1%}"} {:text "b"}]
+            [{:text "a"} {:action {:cmd :echo, :expression [1]}} {:text "b"}]
+
+            [{:text "a{%="} O1 O2 {:text "1"} O3 O4 {:text "%}b"}]
+            [{:text "a"} {:text "{%="} O1 O2 {:text "1"} O3 O4 {:text "%}b"}]
+            [{:text "a"} {:action {:cmd :echo, :expression [1]}} O1 O2 O3 O4 {:text "b"}]
+
+            [{:text "a{%="} O1 O2 {:text "1%"} O3 O4 {:text "}b"}]
+            [{:text "a"} {:text "{%="} O1 O2 {:text "1%"} O3 O4 {:text "}b"}]
+            [{:text "a"} {:action {:cmd :echo, :expression [1]}} O1 O2 O3 O4 {:text "b"}]
+
+            [{:text "a{%="} O1 {:text "1"} O2 {:text "%"} O3 {:text "}"} O4 {:text "b"}]
+            [{:text "a"} {:text "{%="} O1 {:text "1"} O2 {:text "%"} O3 {:text "}"} O4 {:text "b"}]
+            [{:text "a"} {:action {:cmd :echo, :expression [1]}} O1 O2 O3 O4{:text "b"}]
+
+            [{:text "a{"} O1 {:text "%"} O2 {:text "=1"} O3 {:text "2"} O4 {:text "%"} O5 {:text "}"} {:text "b"}]
+            [{:text "a"} {:text "{%"} O1 O2 {:text "=1"} O3 {:text "2"} O4 {:text "%"} O5 {:text "}"} {:text "b"}]
+            [{:text "a"} {:action {:cmd :echo, :expression [12]}} O1 O2 O3 O4 O5 {:text "b"}]
+            ))))
