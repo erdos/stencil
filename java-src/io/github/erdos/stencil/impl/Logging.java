@@ -10,7 +10,7 @@ import java.util.function.Supplier;
  * Logging support
  */
 @SuppressWarnings("WeakerAccess")
-public class Logging {
+public final class Logging {
 
     private Logging() {}
 

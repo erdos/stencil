@@ -11,6 +11,8 @@ import static java.util.Collections.emptyMap;
 
 public final class API {
 
+    private API() {}
+
     /**
      * Prepares a document template file from the file system.
      */
