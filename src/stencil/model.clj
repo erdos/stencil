@@ -196,7 +196,10 @@
   (assert (::path part))
   (if (:dynamic? (:executable part))
     (eval-model-part-exec (:executable part) data functions)
-    {:writer (resource-copier part)}))
+    {:writer (resource-copier part)
+     :xml-delay (delay
+                 (with-open [reader (io/input-stream (:source-file part))]
+                   (update (xml/parse reader) :content doall)))}))
 
 
 (defn- style-file-writer [template]
@@ -421,7 +424,8 @@
            evaled (eval-template-model fragment-model local-data-map {} {})
 
            ;; write back
-           evaled-parts (-> evaled :main :result :xml (doto assert) extract-body-parts)]
+           get-xml      (fn [x] (or (:xml x) @(:xml-delay x)))
+           evaled-parts (-> evaled :main :result get-xml extract-body-parts)]
        (swap! *inserted-fragments* conj frag-name)
        (swap! *extra-files* into relation-ids-rename)
        [{:text (->FragmentInvoke {:frag-evaled-parts evaled-parts})}])
