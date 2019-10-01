@@ -62,6 +62,7 @@
 
 (declare cleanup-runs)
 
+;; returns a map of {:char :stack :text-rest :rest}
 (defn -find-open-tag [last-chars-count next-token-list]
   (assert (integer? last-chars-count))
   (assert (pos? last-chars-count))
@@ -95,7 +96,7 @@
 ;; lel.
 (defn map-action-token [token] (action-maybe-parsed token))
 
-(defn cleanup-runs-1 [token-list]
+(defn cleanup-runs-1 [[first-tokens & rest-tokens :as token-list]]
   (assert (sequential? token-list))
   (assert (:text (first token-list)))
   ;; feltehetjuk, hogy text token van elol.
@@ -122,34 +123,25 @@
              666 #_ (list* {:text (:action-part sts)}
                     (lazy-seq (cleanup-runs (rest token-list))))))))
 
+      ;; If the current :text node ends with a prefix of open-tag:
       (if-let [last-chars-count (-last-chars-count (:tokens sts))]
-        ;; an open tag starts at the end of the text node..
-        (if-let [this (-find-open-tag last-chars-count (next token-list))]
-          (let [action-txt (apply str (:text-rest this))
-                ap         (when (not-empty action-txt)
-                             (action-maybe-parsed {:action action-txt}))]
-            (concat
-             (map map-action-token (butlast (:tokens sts)))
-             (when-let [s (seq (drop-last last-chars-count (:text (last (:tokens sts)))))]
-               [{:text (apply str s)}])
-             (when (:action ap) [ap])
-             (reverse (:stack this))
-             (let [[this2 that2] (split-with #(not= (seq close-tag)
-                                                    (take (count close-tag) (map :char %)))
-                                             (suffixes (peek-next-text (:rest this))))
-                   that2        (if (empty? that2) (throw (ex-info "Tag is not closed?" {}))
-                                    (first (nth that2 (dec (count close-tag)))))]
-               (concat
-                (when-let [action-txt (not-empty (apply str (map (comp :char first) this2)))]
-                  [(action-maybe-parsed {:action action-txt})])
-                (reverse (:stack that2))
-                (when (seq (:text-rest that2))
-                  [{:text (apply str (:text-rest that2))}])
-                (lazy-seq (cleanup-runs (:rest that2))))))
+        (if-let [this (-find-open-tag last-chars-count rest-tokens)]
+          (concat
+           (map map-action-token (butlast (:tokens sts)))
+           (when-let [s (seq (drop-last last-chars-count (:text (last (:tokens sts)))))]
+             [{:text (apply str s)}])
 
-             )
-          (concat (map map-action-token (:tokens sts)) (cleanup-runs (next token-list))))
-        (concat (map map-action-token (:tokens sts)) (cleanup-runs (next token-list)))))))
+           (let [tail (cleanup-runs-1
+                       (concat [{:text (str open-tag (apply str (:text-rest this)))}]
+                               (reverse (:stack this))
+                               (:rest this)))]
+             (if (:action (first tail))
+               tail
+               (concat [{:text (str open-tag (apply str (:text-rest this)))}]
+                       (reverse (:stack this))
+                       (cleanup-runs-1 (:rest this))))))
+          (concat (map map-action-token (:tokens sts)) (cleanup-runs rest-tokens)))
+        (concat (map map-action-token (:tokens sts)) (cleanup-runs rest-tokens))))))
 
 (defn cleanup-runs [token-list]
   (when-let [[t & ts] (seq token-list)]
