@@ -12,7 +12,7 @@
 (set! *warn-on-reflection* true)
 
 ;; only fragment includes are evaluated
-(def ^:dynamic *only-fragments* false)
+(def ^:dynamic *only-includes* false)
 
 (defn peek-next-text
   "Returns a lazy seq of text content characters from the token list."
@@ -86,7 +86,7 @@
 (defn map-action-token [token]
   (if-let [action (:action token)]
     (let [parsed (tokenizer/text->cmd action)]
-      (if (and *only-fragments*
+      (if (and *only-includes*
                (not= :cmd/include (:cmd parsed)))
         {:text (str open-tag action close-tag)}
         {:action parsed}))

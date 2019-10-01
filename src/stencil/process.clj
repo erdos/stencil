@@ -30,7 +30,7 @@
 (defn prepare-template [^InputStream stream, ^PrepareOptions options]
   (assert (instance? InputStream stream))
   (let [zip-dir   (FileHelper/createNonexistentTempFile "stencil-" ".zip.contents")
-        options   {:only-fragments (.isOnlyIncludes options)}]
+        options   {:only-includes (.isOnlyIncludes options)}]
     (with-open [zip-stream stream]
       (ZipHelper/unzipStreamIntoDirectory zip-stream zip-dir))
     (-> zip-dir
@@ -42,7 +42,7 @@
   (assert (some? input))
   (let [zip-dir (FileHelper/createNonexistentTempFile
                  "stencil-fragment-" ".zip.contents")
-        options {:only-fragments (.isOnlyIncludes options)}]
+        options {:only-includes (.isOnlyIncludes options)}]
     (with-open [zip-stream (io/input-stream input)]
       (ZipHelper/unzipStreamIntoDirectory zip-stream zip-dir))
     (model/load-fragment-model zip-dir options)))

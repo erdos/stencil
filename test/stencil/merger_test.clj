@@ -100,8 +100,8 @@
   (testing "text token has full expression"
     (with-redefs [map-action-token map-action-token']
       (are+ [x expected-literal expected-parsed]
-            [(= expected-literal (binding [*only-fragments* true] (doall (cleanup-runs x))))
-             (= expected-parsed (binding [*only-fragments* false] (doall (cleanup-runs x))))]
+            [(= expected-literal (binding [*only-includes* true] (doall (cleanup-runs x))))
+             (= expected-parsed (binding [*only-includes* false] (doall (cleanup-runs x))))]
 
             [{:text "{%=1%}"}]
             [{:text "{%=1%}"}]

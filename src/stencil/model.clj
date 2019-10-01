@@ -125,7 +125,7 @@
         main-style-path (some #(when (= rel-type-style (::type %))
                                  (str (file (.getParentFile (file main-document)) (::target %))))
                               (vals (:parsed main-document-rels)))
-        ->exec (binding [merger/*only-fragments* (boolean (:only-fragments options-map))]
+        ->exec (binding [merger/*only-includes* (boolean (:only-includes options-map))]
                  (bound-fn* ->exec))]
     {:content-types (parse-content-types (file dir "[Content_Types].xml"))
      :source-folder dir
