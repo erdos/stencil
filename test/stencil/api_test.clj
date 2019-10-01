@@ -83,9 +83,10 @@
 (deftest test-render-with-fragments
   (let [footer (fragment "./examples/Multipart Template/footer.docx")
         header (fragment "./examples/Multipart Template/header.docx")
+        static (fragment "./examples/Multipart Template/static.docx")
         template (prepare "./examples/Multipart Template/template.docx")
         data {:companyName "ACME" :companyAddress "Moon"}
-        fs-map {:footer footer :header header}]
+        fs-map {:footer footer :header header :static static}]
     (testing "Rendering multipart template"
       (render! template data :fragments fs-map))
     (testing "Can not render when fragments can not be found."

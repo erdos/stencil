@@ -8,17 +8,18 @@ import java.util.Map;
 public class Main {
 
     public static void main(String... args) throws IOException {
-
         // prepare template file
         PreparedTemplate template = API.prepare(findFile("template.docx"));
 
         // prepare header fragment
         PreparedFragment header = API.fragment(findFile("header.docx"));
         PreparedFragment footer = API.fragment(findFile("footer.docx"));
+        PreparedFragment staticContent = API.fragment(findFile("static.docx"));
 
         Map<String, PreparedFragment> fragments = new HashMap<>();
         fragments.put("header", header);
         fragments.put("footer", footer);
+        fragments.put("static", staticContent);
 
         // assemble template data
         Map<String, Object> dataMap = new HashMap<>();
