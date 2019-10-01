@@ -202,7 +202,7 @@ public class TableColumnsTest {
         assertTrue(xmlFile.exists());
 
         final StringBuilder buffer = new StringBuilder();
-        try (FileInputStream inputStream = new FileInputStream(xmlFile)) {
+        try (InputStream inputStream = new FileInputStream(xmlFile)) {
             final XMLStreamReader reader = XMLInputFactory.newFactory().createXMLStreamReader(inputStream);
 
             while (reader.hasNext()) {
