@@ -369,19 +369,19 @@
              (update-some item [:attrs ooxml/val] style-id-renames)
              item))))
 
+(defn- map-rename-relation-ids [item id-rename]
+  (-> item
+      ;; Image relation ids are being renamed here.
+      (update-some [:attrs ooxml/r-embed] id-rename)
+      ;; Hyperlink relation ids are being renamed here
+      (update-some [:attrs ooxml/r-id] id-rename)))
 
-(defn- executable-rename-relation-ids [executable id-rename]
-  (assert (sequential? executable))
-  (assert (map? id-rename))
-  (assert (every? string? (keys id-rename)))
-  (assert (every? string? (vals id-rename)))
-  (doall (for [item executable]
-           (-> item
-             ;; Image relation ids are being renamed here.
-             (update-some [:attrs ooxml/r-embed] id-rename)
-             ;; Hyperlink relation ids are being renamed here
-             (update-some [:attrs ooxml/r-id] id-rename)))))
-
+(defn- xml-rename-relation-ids [id-rename xml-tree]
+  (if (map? xml-tree)
+    (-> xml-tree
+        (map-rename-relation-ids id-rename)
+        (update :content (partial map (partial xml-rename-relation-ids id-rename))))
+    xml-tree))
 
 ;; generates a random relation id
 (defn- ->relation-id [] (str (gensym "stencilRelId")))
@@ -416,16 +416,18 @@
                                        executable-rename-style-ids style-ids-rename)
 
            relation-ids-rename (relation-ids-rename fragment-model frag-name)
-
-           fragment-model   (update-in fragment-model [:main :executable :executable]
-                                       executable-rename-relation-ids (into {} (map (juxt :old-id :new-id) relation-ids-rename)))
+           relation-rename-map (into {} (map (juxt :old-id :new-id) relation-ids-rename))
 
            ;; evaluate
            evaled (eval-template-model fragment-model local-data-map {} {})
 
+
            ;; write back
            get-xml      (fn [x] (or (:xml x) @(:xml-delay x)))
-           evaled-parts (-> evaled :main :result get-xml extract-body-parts)]
+           evaled-parts (->> evaled :main :result
+                             (get-xml)
+                             (extract-body-parts)
+                             (map (partial xml-rename-relation-ids relation-rename-map)))]
        (swap! *inserted-fragments* conj frag-name)
        (swap! *extra-files* into relation-ids-rename)
        [{:text (->FragmentInvoke {:frag-evaled-parts evaled-parts})}])
