@@ -44,6 +44,12 @@
       [{:text "{%1234%}"} {:text "{%a%}{%b%}"}]
       [{:action "1234"} {:action "a"} {:action "b"}]
 
+      [{:text "{"} {:text "%a%}"}]
+      [{:action "a"}]
+
+      [{:text "{%"} {:text "b%}"}]
+      [{:action "b"}]
+
       [{:text "a{%1234%}b{%5678%}c"}]
       [{:text "a"} {:action "1234"} {:text "b"} {:action "5678"} {:text "c"}]))
 

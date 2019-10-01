@@ -30,8 +30,7 @@
   (assert (string? s))
   (let [ind        (.indexOf s (str open-tag))]
     (when-not (neg? ind)
-      (let [str-before (.substring s 0 ind)
-            after-idx  (.indexOf s (str close-tag))]
+      (let [after-idx  (.indexOf s (str close-tag))]
         (if (neg? after-idx)
           (cond-> {:action-part (.substring s (+ ind (count open-tag)))}
             (not (zero? ind)) (assoc :before (.substring s 0 ind)))
@@ -96,20 +95,20 @@
 ;; lel.
 (defn map-action-token [token] (action-maybe-parsed token))
 
-(defn cleanup-runs-1 [[first-tokens & rest-tokens :as token-list]]
-  (assert (sequential? token-list))
-  (assert (:text (first token-list)))
-  ;; feltehetjuk, hogy text token van elol.
-  (let [sts (text-split-tokens (:text (first token-list)))]
+(defn cleanup-runs-1 [[first-token & rest-tokens]]
+  (assert (:text first-token))
+  (let [sts (text-split-tokens (:text first-token))]
+
     (if (:action-part sts)
       ;; Ha van olyan akcio resz, amit elkezdtunk de nem irtunk vegig...
-      (let [next-token-list (cons {:text (:action-part sts)} (next token-list))
+      (let [next-token-list (cons {:text (:action-part sts)} rest-tokens)
             [this that] (split-with #(not= (seq close-tag)
                                            (take (count close-tag) (map :char %)))
                                     (suffixes (peek-next-text next-token-list)))
             that        (if (empty? that)
                           (throw (ex-info "Tag is not closed? " {:read (first this)}))
-                          (first (nth that (dec (count close-tag)))))]
+                          (first (nth that (dec (count close-tag)))))
+            action-content (apply str (map (comp :char first) this))]
         (concat
          (map map-action-token (:tokens sts))
 

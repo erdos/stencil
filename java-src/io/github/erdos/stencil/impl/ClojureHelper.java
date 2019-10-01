@@ -13,6 +13,8 @@ import java.util.Map;
 @SuppressWarnings("WeakerAccess")
 public final class ClojureHelper {
 
+    private ClojureHelper() {}
+
     enum Keywords {
         DATA, FUNCTION, FRAGMENTS, TEMPLATE, VARIABLES, SOURCE_FOLDER, WRITER;
 
@@ -33,8 +35,6 @@ public final class ClojureHelper {
         req.invoke(Symbol.intern("stencil.process"));
     }
 
-    private ClojureHelper() {}
-
     /**
      * Finds a function in stencil.process namespace and returns it.
      *
@@ -45,4 +45,3 @@ public final class ClojureHelper {
         return RT.var("stencil.process", functionName);
     }
 }
-

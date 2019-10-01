@@ -16,11 +16,11 @@ public final class FileHelper {
 
     private final static File TEMP_DIRECTORY = new File(System.getProperty("java.io.tmpdir"));
 
+    private FileHelper() {}
+
     public static String extension(File f) {
         return extension(f.getName());
     }
-
-    private FileHelper() {}
 
     public static String extension(String filename) {
         String[] parts = filename.split("\\.");
