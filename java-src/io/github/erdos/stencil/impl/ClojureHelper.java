@@ -11,7 +11,7 @@ import java.util.Map;
  * Clojure utilities.
  */
 @SuppressWarnings("WeakerAccess")
-public class ClojureHelper {
+public final class ClojureHelper {
 
     private ClojureHelper() {}
 
@@ -45,4 +45,3 @@ public class ClojureHelper {
         return RT.var("stencil.process", functionName);
     }
 }
-

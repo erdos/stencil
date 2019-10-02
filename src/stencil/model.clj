@@ -11,7 +11,7 @@
             [clojure.walk :refer [postwalk]]
             [stencil.ooxml :as ooxml]
             [stencil.eval :as eval]
-            [stencil.tokenizer :as tokenizer]
+            [stencil.merger :as merger]
             [stencil.tree-postprocess :as tree-postprocess]
             [stencil.types :refer [->FragmentInvoke]]
             [stencil.util :refer :all]
@@ -100,16 +100,18 @@
      ::path       (.getName cts)}))
 
 
+;; TODO: options-map
 (defn ->exec [xml-streamable]
   (with-open [stream (io/input-stream xml-streamable)]
-    (-> (tokenizer/parse-to-tokens-seq stream)
+    (-> (merger/parse-to-tokens-seq stream)
         (cleanup/process)
         (select-keys [:variables :dynamic? :executable :fragments]))))
 
 
-(defn load-template-model [^File dir]
+(defn load-template-model [^File dir, options-map]
   (assert (.exists dir))
   (assert (.isDirectory dir))
+  (assert (map? options-map))
   (let [package-rels (parse-relation (file dir "_rels" ".rels"))
         main-document (some #(when (= rel-type-main (::type %)) (::target %)) (vals package-rels))
         ->rels (fn [f]
@@ -122,7 +124,9 @@
 
         main-style-path (some #(when (= rel-type-style (::type %))
                                  (str (file (.getParentFile (file main-document)) (::target %))))
-                              (vals (:parsed main-document-rels)))]
+                              (vals (:parsed main-document-rels)))
+        ->exec (binding [merger/*only-includes* (boolean (:only-includes options-map))]
+                 (bound-fn* ->exec))]
     {:content-types (parse-content-types (file dir "[Content_Types].xml"))
      :source-folder dir
      :relations     {::path (str (file "_rels" ".rels"))
@@ -149,8 +153,8 @@
                                           :relations   (->rels f)}))}}))
 
 
-(defn load-fragment-model [dir]
-  (-> (load-template-model dir)
+(defn load-fragment-model [dir options-map]
+  (-> (load-template-model dir options-map)
       ;; Headers and footers are not used in fragments.
       (update :main dissoc :headers+footers)))
 

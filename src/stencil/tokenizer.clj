@@ -1,11 +1,8 @@
 (ns stencil.tokenizer
   "Fog egy XML dokumentumot es tokenekre bontja"
   (:require [clojure.data.xml :as xml]
-            [clojure.string :as s]
-            [stencil.postprocess.ignored-tag :as ignored-tag]
             [stencil.infix :as infix]
             [stencil.types :refer :all]
-            [stencil.merger :as merger]
             [stencil.util :refer :all]))
 
 (set! *warn-on-reflection* true)
@@ -54,31 +51,21 @@
     (catch clojure.lang.ExceptionInfo e
       (throw (parsing-exception (str open-tag text close-tag) (.getMessage e))))))
 
-(defn- structure->seq [parsed]
+(defn structure->seq [parsed]
   (cond
-    (string? parsed) [{:text parsed}] ; (split-text-token parsed)
+    (string? parsed)
+    [{:text parsed}]
 
-    (map? parsed)    (if (seq (:content parsed))
-                       (concat [(cond-> {:open (:tag parsed)}
-                                  (seq (:attrs parsed)) (assoc :attrs (:attrs parsed)))]
-                               (mapcat structure->seq (:content parsed))
-                               [{:close (:tag parsed)}])
-                       [(cond-> {:open+close (:tag parsed)}
-                          (seq (:attrs parsed)) (assoc :attrs (:attrs parsed)))])
-    :else       (throw (ex-info "Unexpected node: " {:node parsed}))))
+    (seq (:content parsed))
+    (concat
+     [(cond-> {:open (:tag parsed)}
+        (seq (:attrs parsed)) (assoc :attrs (:attrs parsed)))]
+     (mapcat structure->seq (:content parsed))
+     [{:close (:tag parsed)}])
 
-(defn- map-token [token] (if (:action token) (text->cmd (:action token)) token))
-
-(defn parse-to-tokens-seq
-  "Parses input and returns a token sequence."
-  [input]
-  (let [parsed (xml/parse input)]
-    (assert (map? parsed))
-    (->> parsed
-         (ignored-tag/map-ignored-attr)
-         (structure->seq)
-         (merger/map-actions-in-token-list)
-         (map map-token))))
+    :else
+    [(cond-> {:open+close (:tag parsed)}
+       (seq (:attrs parsed)) (assoc :attrs (:attrs parsed)))]))
 
 (defn- tokens-seq-reducer [stack token]
   (cond

@@ -17,7 +17,14 @@ public final class API {
      * Prepares a document template file from the file system.
      */
     public static PreparedTemplate prepare(File templateFile) throws IOException {
-        return new NativeTemplateFactory().prepareTemplateFile(templateFile);
+        return prepare(templateFile, PrepareOptions.options());
+    }
+
+    /**
+     * Prepares a document template file from the file system.
+     */
+    public static PreparedTemplate prepare(File templateFile, PrepareOptions options) throws IOException {
+        return new NativeTemplateFactory().prepareTemplateFile(templateFile, options);
     }
 
     /**
@@ -30,8 +37,12 @@ public final class API {
      * @throws IOException                   on file system error
      * @throws java.io.FileNotFoundException when file is not found on file system
      */
+    public static PreparedFragment fragment(File fragmentFile, PrepareOptions options) throws IOException {
+        return new NativeTemplateFactory().prepareFragmentFile(fragmentFile, options);
+    }
+
     public static PreparedFragment fragment(File fragmentFile) throws IOException {
-        return new NativeTemplateFactory().prepareFragmentFile(fragmentFile);
+        return fragment(fragmentFile, PrepareOptions.options());
     }
 
     public static EvaluatedDocument render(PreparedTemplate template, TemplateData data) {

@@ -1,6 +1,7 @@
 package io.github.erdos.stencil.standalone;
 
 import io.github.erdos.stencil.EvaluatedDocument;
+import io.github.erdos.stencil.PrepareOptions;
 import io.github.erdos.stencil.PreparedTemplate;
 import io.github.erdos.stencil.TemplateData;
 import io.github.erdos.stencil.impl.FileHelper;
@@ -27,11 +28,18 @@ public class StandaloneApplication {
     private final ArgsParser.ParseResult parsed;
     private final File outputDir;
     private final boolean overwriteOutput;
+    private final PrepareOptions prepareOptions;
 
     public StandaloneApplication(ArgsParser.ParseResult parsed) {
         this.parsed = parsed;
         this.outputDir = StencilArgsParser.getOutputDirectory(parsed);
         this.overwriteOutput = StencilArgsParser.getOutputOverwritten(parsed);
+
+        if (StencilArgsParser.getOnlyIncludes(parsed)) {
+            this.prepareOptions = PrepareOptions.options().withOnlyIncludes();
+        } else {
+            this.prepareOptions = PrepareOptions.options();
+        }
     }
 
     private void checkRestFilesExist() {
@@ -65,7 +73,7 @@ public class StandaloneApplication {
     private void processJobs(Iterator<String> rest) throws IOException {
         while (rest.hasNext()) {
             final File templateFile = new File(rest.next()).getAbsoluteFile();
-            final PreparedTemplate template = prepare(templateFile);
+            final PreparedTemplate template = prepare(templateFile, prepareOptions);
 
             while (rest.hasNext()) {
                 final File dataFile = new File(rest.next()).getAbsoluteFile();

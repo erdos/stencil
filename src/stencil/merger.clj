@@ -1,12 +1,18 @@
 (ns stencil.merger
   "Token listaban a text tokenekbol kiszedi a parancsokat es action tokenekbe teszi."
   (:require [clojure.test :refer [deftest testing is are]]
+            [clojure.data.xml :as xml]
+            [stencil.postprocess.ignored-tag :as ignored-tag]
             [stencil
              [cleanup :refer :all]
              [types :refer :all]
-             [util :refer [prefixes suffixes]]]))
+             [tokenizer :as tokenizer]
+             [util :refer [prefixes suffixes subs-last]]]))
 
 (set! *warn-on-reflection* true)
+
+;; only fragment includes are evaluated
+(def ^:dynamic *only-includes* false)
 
 (defn peek-next-text
   "Returns a lazy seq of text content characters from the token list."
@@ -55,7 +61,8 @@
 
 (declare cleanup-runs)
 
-(defn -find-end-tag [last-chars-count next-token-list]
+;; returns a map of {:char :stack :text-rest :rest}
+(defn -find-open-tag [last-chars-count next-token-list]
   (assert (integer? last-chars-count))
   (assert (pos? last-chars-count))
   (assert (sequential? next-token-list))
@@ -73,9 +80,19 @@
              (count %))
           (prefixes open-tag))))
 
+(defn map-action-token [token]
+  (if-let [action (:action token)]
+    (let [parsed (tokenizer/text->cmd action)]
+      (if (and *only-includes*
+               (not= :cmd/include (:cmd parsed)))
+        {:text (str open-tag action close-tag)}
+        {:action parsed}))
+    token))
+
 (defn cleanup-runs-1 [[first-token & rest-tokens]]
   (assert (:text first-token))
   (let [sts (text-split-tokens (:text first-token))]
+
     (if (:action-part sts)
       ;; Ha van olyan akcio resz, amit elkezdtunk de nem irtunk vegig...
       (let [next-token-list (cons {:text (:action-part sts)} rest-tokens)
@@ -87,26 +104,36 @@
                           (first (nth that (dec (count close-tag)))))
             action-content (apply str (map (comp :char first) this))]
         (concat
-         (:tokens sts)
-         [{:action action-content}]
-         (reverse (:stack that))
-         (if (seq (:text-rest that))
-           (lazy-seq (cleanup-runs-1 (cons {:text (apply str (:text-rest that))} (:rest that))))
-           (lazy-seq (cleanup-runs (:rest that))))))
+         (map map-action-token (:tokens sts))
+         (let [ap (map-action-token {:action (apply str (map (comp :char first) this))})]
+           (if (:action ap)
+             (concat
+              [ap]
+              (reverse (:stack that))
+              (if (seq (:text-rest that))
+                (lazy-seq (cleanup-runs-1 (cons {:text (apply str (:text-rest that))} (:rest that))))
+                (lazy-seq (cleanup-runs (:rest that)))))
+             (list* {:text (str open-tag (:action-part sts))}
+                    (lazy-seq (cleanup-runs rest-tokens)))))))
+
+      ;; If the current :text node ends with a prefix of open-tag:
       (if-let [last-chars-count (-last-chars-count (:tokens sts))]
-        (if-let [this (-find-end-tag last-chars-count rest-tokens)]
+        (if-let [this (-find-open-tag last-chars-count rest-tokens)]
           (concat
-           (butlast (:tokens sts))
+           (map map-action-token (butlast (:tokens sts)))
            (when-let [s (seq (drop-last last-chars-count (:text (last (:tokens sts)))))]
              [{:text (apply str s)}])
-           (lazy-seq
-            (cleanup-runs-1
-             (concat
-              [{:text (str open-tag (apply str (:text-rest this)))}]
-              (reverse (:stack this))
-              (:rest this)))))
-          (concat (:tokens sts) (cleanup-runs rest-tokens)))
-        (concat (:tokens sts) (cleanup-runs rest-tokens))))))
+
+           (let [tail (cleanup-runs-1
+                       (concat [{:text (str open-tag (apply str (:text-rest this)))}]
+                               (reverse (:stack this))
+                               (:rest this)))]
+             (if (:action (first tail))
+               tail
+               (cons {:text (subs-last (:text (last (:tokens sts))) last-chars-count)}
+                     (lazy-seq (cleanup-runs rest-tokens))))))
+          (concat (map map-action-token (:tokens sts)) (cleanup-runs rest-tokens)))
+        (concat (map map-action-token (:tokens sts)) (cleanup-runs rest-tokens))))))
 
 (defn cleanup-runs [token-list]
   (when-let [[t & ts] (seq token-list)]
@@ -114,6 +141,16 @@
       (cleanup-runs-1 token-list)
       (cons t (lazy-seq (cleanup-runs ts))))))
 
-(def map-actions-in-token-list cleanup-runs)
+(defn- map-token [token] (:action token token))
+
+(defn parse-to-tokens-seq
+  "Parses input and returns a token sequence."
+  [input]
+  (->> input
+       (xml/parse)
+       (ignored-tag/map-ignored-attr)
+       (tokenizer/structure->seq)
+       (cleanup-runs)
+       (map map-token)))
 
 :OK
