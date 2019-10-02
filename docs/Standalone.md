@@ -24,6 +24,7 @@ The arguments and flags are the following:
 - `-O` or `--overwrite` flag states that the rendered documents should be overwritten when the target file already exists instead of exiting with and error. Defaults to false.
 - `-j JOBSFILE` or `--jobs=JOBSFILE` specifies a file that contains a newline-separated repeating sequence of a template file path and data file paths.
 - `-s` or `--stdin` specifies that the sequence of template files and data files should come from the standard input.
+- `-i` or `--only-includes` specifies that only fragment inclusion directives should be evaluated in the template files.
 
 The `filenames` part is a repeating sequence of a template file and data files. For example: `template1.docx t1data1.json t1data2.json template2.json t2data2.json ...` Each template
 file will be rendered with the data files after it. So the output will be three rendered documents with the names `template1-t1data1.docx`, `template1-t1data2.docx` and `template2-t2data2.json`.
