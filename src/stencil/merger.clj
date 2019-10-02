@@ -7,7 +7,7 @@
              [cleanup :refer :all]
              [types :refer :all]
              [tokenizer :as tokenizer]
-             [util :refer [prefixes suffixes]]]))
+             [util :refer [prefixes suffixes subs-last]]]))
 
 (set! *warn-on-reflection* true)
 
@@ -111,7 +111,8 @@
          (let [ap (map-action-token {:action (apply str (map (comp :char first) this))})]
            (if (:action ap)
              (concat
-              (list* ap (reverse (:stack that)))
+              [ap]
+              (reverse (:stack that))
               (if (seq (:text-rest that))
                 (lazy-seq (cleanup-runs-1 (cons {:text (apply str (:text-rest that))} (:rest that))))
                 (lazy-seq (cleanup-runs (:rest that)))))
@@ -132,9 +133,8 @@
                                (:rest this)))]
              (if (:action (first tail))
                tail
-               (concat [{:text (str open-tag (apply str (:text-rest this)))}]
-                       (reverse (:stack this))
-                       (cleanup-runs (:rest this))))))
+               (cons {:text (subs-last (:text (last (:tokens sts))) last-chars-count)}
+                     (lazy-seq (cleanup-runs rest-tokens))))))
           (concat (map map-action-token (:tokens sts)) (cleanup-runs rest-tokens)))
         (concat (map map-action-token (:tokens sts)) (cleanup-runs rest-tokens))))))
 

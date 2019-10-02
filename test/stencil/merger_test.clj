@@ -107,23 +107,23 @@
             [{:text "{%=1%}"}]
             [{:action {:cmd :echo, :expression [1]}}]
 
-            [{:text "a{%=1%}b"}]
-            [{:text "a"} {:text "{%=1%}"} {:text "b"}]
-            [{:text "a"} {:action {:cmd :echo, :expression [1]}} {:text "b"}]
+            [{:text "abc{%=1%}b"}]
+            [{:text "abc"} {:text "{%=1%}"} {:text "b"}]
+            [{:text "abc"} {:action {:cmd :echo, :expression [1]}} {:text "b"}]
 
-            [{:text "a{%="} O1 O2 {:text "1"} O3 O4 {:text "%}b"}]
-            [{:text "a"} {:text "{%="} O1 O2 {:text "1"} O3 O4 {:text "%}b"}]
-            [{:text "a"} {:action {:cmd :echo, :expression [1]}} O1 O2 O3 O4 {:text "b"}]
+            [{:text "abc{%="} O1 O2 {:text "1"} O3 O4 {:text "%}b"}]
+            [{:text "abc"} {:text "{%="} O1 O2 {:text "1"} O3 O4 {:text "%}b"}]
+            [{:text "abc"} {:action {:cmd :echo, :expression [1]}} O1 O2 O3 O4 {:text "b"}]
 
-            [{:text "a{%="} O1 O2 {:text "1%"} O3 O4 {:text "}b"}]
-            [{:text "a"} {:text "{%="} O1 O2 {:text "1%"} O3 O4 {:text "}b"}]
-            [{:text "a"} {:action {:cmd :echo, :expression [1]}} O1 O2 O3 O4 {:text "b"}]
+            [{:text "abc{%="} O1 O2 {:text "1%"} O3 O4 {:text "}b"}]
+            [{:text "abc"} {:text "{%="} O1 O2 {:text "1%"} O3 O4 {:text "}b"}]
+            [{:text "abc"} {:action {:cmd :echo, :expression [1]}} O1 O2 O3 O4 {:text "b"}]
 
-            [{:text "a{%="} O1 {:text "1"} O2 {:text "%"} O3 {:text "}"} O4 {:text "b"}]
-            [{:text "a"} {:text "{%="} O1 {:text "1"} O2 {:text "%"} O3 {:text "}"} O4 {:text "b"}]
-            [{:text "a"} {:action {:cmd :echo, :expression [1]}} O1 O2 O3 O4{:text "b"}]
+            [{:text "abcd{%="} O1 {:text "1"} O2 {:text "%"} O3 {:text "}"} O4 {:text "b"}]
+            [{:text "abcd"} {:text "{%="} O1 {:text "1"} O2 {:text "%"} O3 {:text "}"} O4 {:text "b"}]
+            [{:text "abcd"} {:action {:cmd :echo, :expression [1]}} O1 O2 O3 O4{:text "b"}]
 
-            [{:text "a{"} O1 {:text "%"} O2 {:text "=1"} O3 {:text "2"} O4 {:text "%"} O5 {:text "}"} {:text "b"}]
-            [{:text "a"} {:text "{%"} O1 O2 {:text "=1"} O3 {:text "2"} O4 {:text "%"} O5 {:text "}"} {:text "b"}]
-            [{:text "a"} {:action {:cmd :echo, :expression [12]}} O1 O2 O3 O4 O5 {:text "b"}]
+            [{:text "abc{"} O1 {:text "%"} O2 {:text "=1"} O3 {:text "2"} O4 {:text "%"} O5 {:text "}"} {:text "b"}]
+            [{:text "abc"} {:text "{"} O1 {:text "%"} O2 {:text "=1"} O3 {:text "2"} O4 {:text "%"} O5 {:text "}"} {:text "b"}]
+            [{:text "abc"} {:action {:cmd :echo, :expression [12]}} O1 O2 O3 O4 O5 {:text "b"}]
             ))))

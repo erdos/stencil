@@ -76,6 +76,8 @@
         (number? x) (int x)
         :else       (fail "Unexpected type of input" {:type (:type x) :input x})))
 
+(defn subs-last [^String s ^long n] (.substring s (- (.length s) n)))
+
 (def print-trace? false)
 
 (defmacro trace [msg & details]
