@@ -43,9 +43,6 @@
             (not (= (+ (count close-tag) after-idx) (count s)))
             (assoc :after (.substring s (+ (count close-tag) after-idx)))))))))
 
-;; returns a map with keys:
-;; :tokens -> a seq of tokens
-;; :action-part -> if string ends with a part of an action marker then it contains.
 (defn text-split-tokens [^String s]
   (assert (string? s))
   (loop [s      s
