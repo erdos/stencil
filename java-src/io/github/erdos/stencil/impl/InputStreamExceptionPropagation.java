@@ -27,8 +27,8 @@ public final class InputStreamExceptionPropagation extends FilterInputStream {
             } else if (e != null) {
                 throw new IOException("Exception while writing", e);
             }
-        } catch (final InterruptedException e) {
-            throw new IOException("Interrupted while waiting for synchronised closure");
+        } catch (InterruptedException e) {
+            throw new IOException("Interrupted!", e);
         } finally {
             in.close();
         }
@@ -38,7 +38,7 @@ public final class InputStreamExceptionPropagation extends FilterInputStream {
         exception.set(requireNonNull(e));
     }
 
-    public void countDown() {
+    public void finish() {
         complete.countDown();
     }
 }

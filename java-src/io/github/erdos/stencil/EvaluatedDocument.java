@@ -64,7 +64,7 @@ public interface EvaluatedDocument {
                     inputStreamErrors.fail(e);
                     throw e;
                 } finally {
-                    inputStreamErrors.countDown();
+                    inputStreamErrors.finish();
                 }
             }
         });
