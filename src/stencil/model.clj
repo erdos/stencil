@@ -65,6 +65,8 @@
 ;; throws error when not invoked from inside fragment context
 (defmacro ^:private expect-fragment-context! [& bodies] `(do (assert *current-styles*) ~@bodies))
 
+(defn- unix-path [^File f]
+  (some-> f .toPath FileHelper/toUnixSeparatedString))
 
 (defn- parse-relation [rel-file]
   (with-open [reader (io/input-stream (file rel-file))]
@@ -115,7 +117,7 @@
   (let [package-rels (parse-relation (file dir "_rels" ".rels"))
         main-document (some #(when (= rel-type-main (::type %)) (::target %)) (vals package-rels))
         ->rels (fn [f]
-                 (let [rels-path (str (file (.getParentFile (file f)) "_rels" (str (.getName (file f)) ".rels")))
+                 (let [rels-path (unix-path (file (.getParentFile (file f)) "_rels" (str (.getName (file f)) ".rels")))
                        rels-file (file dir rels-path)]
                    (when (.exists rels-file)
                      {::path rels-path, :source-file rels-file, :parsed (parse-relation rels-file)})))
@@ -123,13 +125,13 @@
         main-document-rels (->rels main-document)
 
         main-style-path (some #(when (= rel-type-style (::type %))
-                                 (str (file (.getParentFile (file main-document)) (::target %))))
+                                 (unix-path (file (.getParentFile (file main-document)) (::target %))))
                               (vals (:parsed main-document-rels)))
         ->exec (binding [merger/*only-includes* (boolean (:only-includes options-map))]
                  (bound-fn* ->exec))]
     {:content-types (parse-content-types (file dir "[Content_Types].xml"))
      :source-folder dir
-     :relations     {::path (str (file "_rels" ".rels"))
+     :relations     {::path (unix-path (file "_rels" ".rels"))
                      :source-file (file dir "_rels" ".rels")
                      :parsed package-rels}
      :main          {::path       main-document
@@ -147,7 +149,7 @@
                                                       rel-type-slide}
                                                     (::type m))
                                              :let [f (file (.getParentFile (file main-document)) (::target m))]]
-                                         {::path       (str f)
+                                         {::path       (unix-path f)
                                           :source-file (file dir f)
                                           :executable  (->exec (file dir f))
                                           :relations   (->rels f)}))}}))
@@ -229,7 +231,7 @@
                          ;; create a rels file for the current xml
                          (and (seq @*extra-files*) (nil? (::path (:relations m))))
                          (assoc-in [:relations ::path]
-                                   (str (file (.getParentFile (file (::path m)))
+                                   (unix-path (file (.getParentFile (file (::path m)))
                                               "_rels"
                                               (str (.getName (file (::path m))) ".rels"))))
 
@@ -297,7 +299,7 @@
                       path-parent (some-> m ::path file .getParentFile)]
                 relation (vals (:parsed (:relations m)))
                 :when (not= "External" (::mode relation))
-                :let [path (str (.normalize (.toPath (file path-parent (::target relation)))))]
+                :let [path (unix-path (.toFile (.normalize (.toPath (file path-parent (::target relation))))))]
                 :when (or (:writer relation) (not (contains? result path)))
                 :let [src (or (:source-file relation) (file @src-parent (::target relation)))]]
             [path (or (:writer relation)
