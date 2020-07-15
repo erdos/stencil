@@ -1,5 +1,7 @@
 package io.github.erdos.stencil;
 
+import io.github.erdos.stencil.impl.InputStreamExceptionPropagation;
+
 import java.io.*;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
@@ -41,6 +43,7 @@ public interface EvaluatedDocument {
     default InputStream toInputStream(ExecutorService executorService) {
         final PipedOutputStream outputStream = new PipedOutputStream();
         final PipedInputStream inputStream = new PipedInputStream();
+        final InputStreamExceptionPropagation inputStreamErrors = new InputStreamExceptionPropagation(inputStream);
 
         try {
             inputStream.connect(outputStream);
@@ -55,10 +58,17 @@ public interface EvaluatedDocument {
             if (childId == parentId) {
                 throw new IllegalStateException("The supplied executor must submit jobs to new threads!");
             } else {
-                writeToStream(outputStream);
+                try {
+                    writeToStream(outputStream);
+                } catch (Throwable e) {
+                    inputStreamErrors.fail(e);
+                    throw e;
+                } finally {
+                    inputStreamErrors.countDown();
+                }
             }
         });
 
-        return inputStream;
+        return inputStreamErrors;
     }
 }
