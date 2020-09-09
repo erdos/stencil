@@ -1,4 +1,4 @@
-FROM clojure AS build-env
+FROM clojure:lein-2.8.1 AS build-env
 WORKDIR /usr/src/myapp
 
 COPY project.clj /usr/src/myapp/
