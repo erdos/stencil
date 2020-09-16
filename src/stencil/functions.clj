@@ -21,7 +21,8 @@
 
 (defmethod call-fn "length" [_ items] (count items))
 
-(defmethod call-fn "contains" [_ item items] (.contains items item))
+(defmethod call-fn "contains" [_ item items]
+  (boolean (some #{(str item)} (map str items))))
 
 (defmethod call-fn "hideColumn" [_ & args]
   (case (first args)
