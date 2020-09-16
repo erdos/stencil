@@ -195,7 +195,10 @@
     (is (= true (run "1 = length(\" \")")))))
 
 (deftest contains-function
-  (is (= true (run "contains(\"value2\", [\"value1\", \"value2\"])"))))
+  (is (= true (run "contains(\"red\", vals)"
+                   {"vals" ["red" "green" "blue"]})))
+  (is (= false (run "contains(\"yellow\", vals)"
+                    {"vals" ["red" "green" "blue"]}))))
 
 (deftest coalesce-function
   (is (= nil (run "coalesce(\"\", \"\")")))
