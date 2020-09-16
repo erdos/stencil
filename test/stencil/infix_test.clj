@@ -194,6 +194,9 @@
     (is (= true (run "length(\"\")==0")))
     (is (= true (run "1 = length(\" \")")))))
 
+(deftest contains-function
+  (is (= true (run "contains(\"value2\", [\"value1\", \"value2\"])"))))
+
 (deftest coalesce-function
   (is (= nil (run "coalesce(\"\", \"\")")))
   (is (= "a" (run "coalesce(\"\", \"\", \"a\", \"b\")"))))

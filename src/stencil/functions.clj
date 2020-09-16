@@ -21,6 +21,8 @@
 
 (defmethod call-fn "length" [_ items] (count items))
 
+(defmethod call-fn "contains" [_ item items] (.contains items item))
+
 (defmethod call-fn "hideColumn" [_ & args]
   (case (first args)
     ("cut") (->HideTableColumnMarker :cut)

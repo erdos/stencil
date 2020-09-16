@@ -26,6 +26,7 @@ This is a short description of the functions implemented in Stencil:
 - `titlecase`
 - `uppercase`
 - [xml](#xml)
+- [contains](#contains)
 
 ## Basic Functions
 
@@ -152,3 +153,7 @@ Expects one number argument. Rounds the argument to the closest integer that is 
 ### Ceil
 
 Expects one number argument. Rounds its argument to the closest integer that is not smaller than the argument. Usage: `ceil(x)`
+
+### Contains
+
+Expects two arguments: a value and a list. Checks if list contains the value. Usage: `contains("myValue", myList)`
