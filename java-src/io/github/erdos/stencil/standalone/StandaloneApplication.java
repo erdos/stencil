@@ -1,9 +1,13 @@
 package io.github.erdos.stencil.standalone;
 
+import clojure.lang.IFn;
+import clojure.lang.RT;
+import clojure.lang.Symbol;
 import io.github.erdos.stencil.EvaluatedDocument;
 import io.github.erdos.stencil.PrepareOptions;
 import io.github.erdos.stencil.PreparedTemplate;
 import io.github.erdos.stencil.TemplateData;
+import io.github.erdos.stencil.impl.ClojureHelper;
 import io.github.erdos.stencil.impl.FileHelper;
 
 import java.io.BufferedReader;
@@ -156,18 +160,8 @@ public class StandaloneApplication {
         }
     }
 
-    private void displayVersionInfo() throws IOException {
-        final URL url = getClass().getResource("/STENCIL_VERSION.txt");
-        if (url == null) {
-            throw new IllegalStateException("Missing STENCIL_VERSION.txt file!");
-        }
-
-        System.out.println("Stencil standalone runner");
-        System.out.println("Version:");
-        try (final BufferedReader in = new BufferedReader(new InputStreamReader(url.openStream()))) {
-            for (String inputLine; (inputLine = in.readLine()) != null; ) {
-                System.out.println(inputLine);
-            }
-        }
+    private void displayVersionInfo() {
+        RT.var("clojure.core", "require").invoke(Symbol.intern("stencil.api"));
+        System.out.println(RT.var("stencil.api", "version").deref().toString());
     }
 }
