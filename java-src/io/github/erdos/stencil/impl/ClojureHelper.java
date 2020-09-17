@@ -11,7 +11,9 @@ import java.util.Map;
  * Clojure utilities.
  */
 @SuppressWarnings("WeakerAccess")
-public class ClojureHelper {
+public final class ClojureHelper {
+
+    private ClojureHelper() {}
 
     enum Keywords {
         DATA, FUNCTION, FRAGMENTS, TEMPLATE, VARIABLES, SOURCE_FOLDER, WRITER;
@@ -43,4 +45,3 @@ public class ClojureHelper {
         return RT.var("stencil.process", functionName);
     }
 }
-

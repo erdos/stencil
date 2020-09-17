@@ -9,6 +9,8 @@ public final class StencilArgsParser {
 
     public final static ArgsParser PARSER = new ArgsParser();
 
+    private StencilArgsParser() {}
+
     /**
      * Result files are placed in this directory.
      */
@@ -37,6 +39,12 @@ public final class StencilArgsParser {
      * Should display version info.
      */
     public static final ArgsParser.ParamMarker<Boolean> SHOW_VERSION = PARSER.addFlagOption('v', "version", "Displays version information");
+
+    /**
+     * Only evaluate fragment include directives.
+     */
+    public static final ArgsParser.ParamMarker<Boolean> ONLY_INLCUDES = PARSER.addFlagOption('i', "only-include", "Only evaluate fragment includes");
+
 
     public static ArgsParser.ParseResult parse(String... args) {
         return PARSER.parse(args);
@@ -88,5 +96,15 @@ public final class StencilArgsParser {
      */
     public static Boolean getOutputOverwritten(ArgsParser.ParseResult result) {
         return result.getParamValue(OVERWRITE).orElse(false);
+    }
+
+    /**
+     * If specified, only inlclude directives will be evaluated in template.
+     *
+     * @return default false
+     * @throws NullPointerException if param is null
+     */
+    public static Boolean getOnlyIncludes(ArgsParser.ParseResult result) {
+        return result.getParamValue(ONLY_INLCUDES).orElse(false);
     }
 }

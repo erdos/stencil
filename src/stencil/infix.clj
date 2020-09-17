@@ -192,7 +192,7 @@
 
       (instance? FnCall e0)
       (recur next-expr (conj opstack :open) result
-             (inc parentheses) ;; TODO: maybe incr?
+             (inc parentheses)
              (conj functions {:fn (:fn-name  e0)
                               :args (if (= :close (first next-expr)) 0 1)}))
       ;; (recur next-expr (conj opstack :fncall) result (conj functions {:fn e0}))

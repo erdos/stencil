@@ -1,5 +1,6 @@
 package io.github.erdos.stencil.impl;
 
+import io.github.erdos.stencil.PrepareOptions;
 import io.github.erdos.stencil.PreparedTemplate;
 import io.github.erdos.stencil.TemplateFactory;
 
@@ -67,7 +68,7 @@ public final class DirWatcherTemplateFactory implements TemplateFactory {
         assert (f.isAbsolute());
 
         try {
-            final PreparedTemplate template = factory.prepareTemplateFile(f);
+            final PreparedTemplate template = factory.prepareTemplateFile(f, PrepareOptions.options());
             // TODO: we may use logging here
             return Optional.of(template);
         } catch (IOException e) {
@@ -105,7 +106,7 @@ public final class DirWatcherTemplateFactory implements TemplateFactory {
 
                     List<DelayedContainer<File>> elems = new LinkedList<>();
                     if (0 < delayQueue.drainTo(elems)) {
-                        elems.forEach((x) -> {
+                        elems.forEach(x -> {
                             delays.remove(x.getElem());
                             handle(x.getElem());
                         });
@@ -169,14 +170,14 @@ public final class DirWatcherTemplateFactory implements TemplateFactory {
     }
 
     @Override
-    public PreparedTemplate prepareTemplateFile(File templateFile) throws IOException {
-        if (templateFile == null)
+    public PreparedTemplate prepareTemplateFile(File inputTemplateFile, PrepareOptions options) {
+        if (inputTemplateFile == null)
             throw new IllegalArgumentException("templateFile argument must not be null!");
-        if (templateFile.isAbsolute())
+        if (inputTemplateFile.isAbsolute())
             throw new IllegalArgumentException("templateFile must not be an absolute file!");
         else
-            return handle(templateFile)
-                    .orElseThrow(() -> new IllegalArgumentException("Can not build template file: " + templateFile));
+            return handle(inputTemplateFile)
+                    .orElseThrow(() -> new IllegalArgumentException("Can not build template file: " + inputTemplateFile));
     }
 
     private final class DelayedContainer<X> implements Delayed {

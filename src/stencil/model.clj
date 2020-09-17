@@ -11,7 +11,7 @@
             [clojure.walk :refer [postwalk]]
             [stencil.ooxml :as ooxml]
             [stencil.eval :as eval]
-            [stencil.tokenizer :as tokenizer]
+            [stencil.merger :as merger]
             [stencil.tree-postprocess :as tree-postprocess]
             [stencil.types :refer [->FragmentInvoke]]
             [stencil.util :refer :all]
@@ -65,6 +65,8 @@
 ;; throws error when not invoked from inside fragment context
 (defmacro ^:private expect-fragment-context! [& bodies] `(do (assert *current-styles*) ~@bodies))
 
+(defn- unix-path [^File f]
+  (some-> f .toPath FileHelper/toUnixSeparatedString))
 
 (defn- parse-relation [rel-file]
   (with-open [reader (io/input-stream (file rel-file))]
@@ -100,20 +102,22 @@
      ::path       (.getName cts)}))
 
 
+;; TODO: options-map
 (defn ->exec [xml-streamable]
   (with-open [stream (io/input-stream xml-streamable)]
-    (-> (tokenizer/parse-to-tokens-seq stream)
+    (-> (merger/parse-to-tokens-seq stream)
         (cleanup/process)
         (select-keys [:variables :dynamic? :executable :fragments]))))
 
 
-(defn load-template-model [^File dir]
+(defn load-template-model [^File dir, options-map]
   (assert (.exists dir))
   (assert (.isDirectory dir))
+  (assert (map? options-map))
   (let [package-rels (parse-relation (file dir "_rels" ".rels"))
         main-document (some #(when (= rel-type-main (::type %)) (::target %)) (vals package-rels))
         ->rels (fn [f]
-                 (let [rels-path (str (file (.getParentFile (file f)) "_rels" (str (.getName (file f)) ".rels")))
+                 (let [rels-path (unix-path (file (.getParentFile (file f)) "_rels" (str (.getName (file f)) ".rels")))
                        rels-file (file dir rels-path)]
                    (when (.exists rels-file)
                      {::path rels-path, :source-file rels-file, :parsed (parse-relation rels-file)})))
@@ -121,11 +125,13 @@
         main-document-rels (->rels main-document)
 
         main-style-path (some #(when (= rel-type-style (::type %))
-                                 (str (file (.getParentFile (file main-document)) (::target %))))
-                              (vals (:parsed main-document-rels)))]
+                                 (unix-path (file (.getParentFile (file main-document)) (::target %))))
+                              (vals (:parsed main-document-rels)))
+        ->exec (binding [merger/*only-includes* (boolean (:only-includes options-map))]
+                 (bound-fn* ->exec))]
     {:content-types (parse-content-types (file dir "[Content_Types].xml"))
      :source-folder dir
-     :relations     {::path (str (file "_rels" ".rels"))
+     :relations     {::path (unix-path (file "_rels" ".rels"))
                      :source-file (file dir "_rels" ".rels")
                      :parsed package-rels}
      :main          {::path       main-document
@@ -143,14 +149,14 @@
                                                       rel-type-slide}
                                                     (::type m))
                                              :let [f (file (.getParentFile (file main-document)) (::target m))]]
-                                         {::path       (str f)
+                                         {::path       (unix-path f)
                                           :source-file (file dir f)
                                           :executable  (->exec (file dir f))
                                           :relations   (->rels f)}))}}))
 
 
-(defn load-fragment-model [dir]
-  (-> (load-template-model dir)
+(defn load-fragment-model [dir options-map]
+  (-> (load-template-model dir options-map)
       ;; Headers and footers are not used in fragments.
       (update :main dissoc :headers+footers)))
 
@@ -192,7 +198,10 @@
   (assert (::path part))
   (if (:dynamic? (:executable part))
     (eval-model-part-exec (:executable part) data functions)
-    {:writer (resource-copier part)}))
+    {:writer (resource-copier part)
+     :xml-delay (delay
+                 (with-open [reader (io/input-stream (:source-file part))]
+                   (update (xml/parse reader) :content doall)))}))
 
 
 (defn- style-file-writer [template]
@@ -222,7 +231,7 @@
                          ;; create a rels file for the current xml
                          (and (seq @*extra-files*) (nil? (::path (:relations m))))
                          (assoc-in [:relations ::path]
-                                   (str (file (.getParentFile (file (::path m)))
+                                   (unix-path (file (.getParentFile (file (::path m)))
                                               "_rels"
                                               (str (.getName (file (::path m))) ".rels"))))
 
@@ -290,7 +299,7 @@
                       path-parent (some-> m ::path file .getParentFile)]
                 relation (vals (:parsed (:relations m)))
                 :when (not= "External" (::mode relation))
-                :let [path (str (.normalize (.toPath (file path-parent (::target relation)))))]
+                :let [path (unix-path (.toFile (.normalize (.toPath (file path-parent (::target relation))))))]
                 :when (or (:writer relation) (not (contains? result path)))
                 :let [src (or (:source-file relation) (file @src-parent (::target relation)))]]
             [path (or (:writer relation)
@@ -351,30 +360,28 @@
           {} style-defs))
 
 
-(defn- executable-rename-style-ids [executable style-id-renames]
-  (assert (sequential? executable)
-          (str "Not sequential: " (pr-str executable)))
-  (assert (map? style-id-renames))
-  (assert (every? string? (keys style-id-renames)))
-  (assert (every? string? (vals style-id-renames)))
-  (doall (for [item executable]
-           (if (some-> (or (:open item) (:open+close item)) (str) (.endsWith "Style"))
-             (update-some item [:attrs ooxml/val] style-id-renames)
-             item))))
+(defn xml-rename-style-ids [style-id-renames xml-tree]
+  (if (map? xml-tree)
+    (if (-> xml-tree :tag name (.endsWith "Style"))
+      (update-some xml-tree [:attrs ooxml/val] style-id-renames)
+      (update xml-tree :content (partial map (partial xml-rename-style-ids style-id-renames))))
+    xml-tree))
 
 
-(defn- executable-rename-relation-ids [executable id-rename]
-  (assert (sequential? executable))
-  (assert (map? id-rename))
-  (assert (every? string? (keys id-rename)))
-  (assert (every? string? (vals id-rename)))
-  (doall (for [item executable]
-           (-> item
-             ;; Image relation ids are being renamed here.
-             (update-some [:attrs ooxml/r-embed] id-rename)
-             ;; Hyperlink relation ids are being renamed here
-             (update-some [:attrs ooxml/r-id] id-rename)))))
+(defn- map-rename-relation-ids [item id-rename]
+  (-> item
+      ;; Image relation ids are being renamed here.
+      (update-some [:attrs ooxml/r-embed] id-rename)
+      ;; Hyperlink relation ids are being renamed here
+      (update-some [:attrs ooxml/r-id] id-rename)))
 
+
+(defn- xml-rename-relation-ids [id-rename xml-tree]
+  (if (map? xml-tree)
+    (-> xml-tree
+        (map-rename-relation-ids id-rename)
+        (update :content (partial map (partial xml-rename-relation-ids id-rename))))
+    xml-tree))
 
 ;; generates a random relation id
 (defn- ->relation-id [] (str (gensym "stencilRelId")))
@@ -405,19 +412,21 @@
    (if-let [fragment-model (get *all-fragments* frag-name)]
      (let [;; merge style definitions from fragment
            style-ids-rename (-> fragment-model :main :style :parsed (doto assert) (insert-styles!))
-           fragment-model   (update-in fragment-model [:main :executable :executable]
-                                       executable-rename-style-ids style-ids-rename)
 
            relation-ids-rename (relation-ids-rename fragment-model frag-name)
-
-           fragment-model   (update-in fragment-model [:main :executable :executable]
-                                       executable-rename-relation-ids (into {} (map (juxt :old-id :new-id) relation-ids-rename)))
+           relation-rename-map (into {} (map (juxt :old-id :new-id) relation-ids-rename))
 
            ;; evaluate
            evaled (eval-template-model fragment-model local-data-map {} {})
 
+
            ;; write back
-           evaled-parts (-> evaled :main :result :xml (doto assert) extract-body-parts)]
+           get-xml      (fn [x] (or (:xml x) @(:xml-delay x)))
+           evaled-parts (->> evaled :main :result
+                             (get-xml)
+                             (extract-body-parts)
+                             (map (partial xml-rename-relation-ids relation-rename-map))
+                             (map (partial xml-rename-style-ids style-ids-rename)))]
        (swap! *inserted-fragments* conj frag-name)
        (swap! *extra-files* into relation-ids-rename)
        [{:text (->FragmentInvoke {:frag-evaled-parts evaled-parts})}])

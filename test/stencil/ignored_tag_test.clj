@@ -4,6 +4,7 @@
             [clojure.walk :as walk]
             [clojure.test :refer [deftest is are testing]]
             [stencil.tokenizer :as tokenizer]
+            [stencil.merger :as merger]
             [stencil.postprocess.ignored-tag :refer :all]))
 
 ;; make all private maps public!
@@ -32,7 +33,7 @@
    "The value in the Ignorable tag is mapped so that the namespace it
        references doesn't change."
     (-> test-data-2
-        (java.io.StringReader.) (tokenizer/parse-to-tokens-seq) (tokenizer/tokens-seq->document)
+        (java.io.StringReader.) (merger/parse-to-tokens-seq) (tokenizer/tokens-seq->document)
         (clear-all-metas) (unmap-ignored-attr) (xml/emit-str) (xml/parse-str)
         (as-> *
               (let [ignorable-value
@@ -57,7 +58,7 @@
   (-> test-data-1
       (java.io.StringReader.)
 
-      (tokenizer/parse-to-tokens-seq)
+      (merger/parse-to-tokens-seq)
       (tokenizer/tokens-seq->document)
 
       (unmap-ignored-attr)
@@ -80,7 +81,7 @@
   (-> test-data-3
       (java.io.StringReader.)
 
-      (tokenizer/parse-to-tokens-seq)
+      (merger/parse-to-tokens-seq)
       (tokenizer/tokens-seq->document)
 
       (unmap-ignored-attr)

@@ -14,7 +14,7 @@ public enum BasicFunctions implements Function {
      */
     SWITCH {
         @Override
-        public Object call(Object... arguments) throws IllegalArgumentException {
+        public Object call(Object... arguments) {
             if (arguments.length < 3) {
                 throw new IllegalArgumentException("switch() function expects at least 3 args!");
             }
@@ -58,7 +58,7 @@ public enum BasicFunctions implements Function {
      */
     EMPTY {
         @Override
-        public Object call(Object... arguments) throws IllegalArgumentException {
+        public Object call(Object... arguments) {
             if (arguments.length != 1)
                 throw new IllegalArgumentException("empty() function expects exactly 1 argument, " + arguments.length + " given.");
             Object x = arguments[0];
