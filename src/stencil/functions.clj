@@ -24,6 +24,9 @@
 (defmethod call-fn "contains" [_ item items]
   (boolean (some #{(str item)} (map str items))))
 
+(defmethod call-fn "sum" [_ items]
+  (reduce + items))
+
 (defmethod call-fn "hideColumn" [_ & args]
   (case (first args)
     ("cut") (->HideTableColumnMarker :cut)
