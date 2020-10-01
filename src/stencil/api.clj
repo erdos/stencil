@@ -82,3 +82,7 @@
         (instance? PreparedFragment template) (.cleanup ^PreparedFragment template)
         :else (throw (ex-info "Unexpected object to clean up!" {:template template})))
   template)
+
+(defmacro ^:private get-version [] (System/getProperty "stencil-core.version"))
+
+(def version (get-version))
