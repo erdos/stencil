@@ -52,8 +52,16 @@
             {:status status#, :body (.getMessage e#)}
             (throw e#)))))
 
+(defn- wrap-log [handler]
+  (fn [request]
+    (let [log-level (get-in handler [:headers "x-stencil-log"] "INFO")]
+      (when-not (#{"INFO" "DEBUG" "TRACE" "WARN" "ERROR"} log-level)
+        (throw (ex-info "Unexpected log level header value!" {:status 400})))
+      (handler request)
+      )))
+
 (defn -app [request]
-  (wrap-err
+  (->
    (case (:request-method request)
      :post
      (if-let [prepared (get-template (:uri request))]
@@ -62,14 +70,16 @@
           :body rendered
           :headers {"content-type" "application/octet-stream"}}))
      ;; otherwise:
-     (throw (ex-info "Method Not Allowed" {:status 405})))))
+     (throw (ex-info "Method Not Allowed" {:status 405})))
+   (wrap-err)
+   (wrap-log)))
 
 (def app (wrap-json-body -app {:keywords? false}))
 
 (defn -main [& args]
   (let [http-port    (get-http-port)
         template-dir ^File (get-template-dir)
-        server (run-server app {:port http-port})]
+        server (run-server (wrapp-log app) {:port http-port})]
     (println "Started listening on" http-port "serving" (str template-dir))
     (println "Available template files: ")
     (doseq [^File line (tree-seq #(.isDirectory ^File %) (comp next file-seq) template-dir)
