@@ -5,6 +5,7 @@
             [stencil.api :as api]
             [clojure.data :refer [diff]]
             [clojure.java.io :refer [file]]
+            [clojure.tools.logging :as log]
             [ring.middleware.json :refer [wrap-json-body]]))
 
 (set! *warn-on-reflection* true)
@@ -45,44 +46,66 @@
       (prepared template)
       (throw (ex-info "Template file does not exist!" {:status 404})))))
 
-(defmacro wrap-err [& bodies]
-  `(try ~@bodies
-        (catch clojure.lang.ExceptionInfo e#
-          (if-let [status# (:status (ex-data e#))]
-            {:status status#, :body (.getMessage e#)}
-            (throw e#)))))
+(defn wrap-err [handler]
+  (fn [request]
+    (try (handler request)
+        (catch clojure.lang.ExceptionInfo e
+          (log/error "Error" e)
+          (if-let [status (:status (ex-data e))]
+            {:status status
+             :body (str "ERROR: " (.getMessage e))}
+            (throw e))))))
+
+(def ^:dynamic *active-log-levels* #{:error :info :warn :trace :debug :fatal})
 
 (defn- wrap-log [handler]
-  (fn [request]
-    (let [log-level (get-in handler [:headers "x-stencil-log"] "INFO")]
-      (when-not (#{"INFO" "DEBUG" "TRACE" "WARN" "ERROR"} log-level)
-        (throw (ex-info "Unexpected log level header value!" {:status 400})))
-      (handler request)
-      )))
+  (fn [req]
+    (if-let [level (get-in req [:headers "x-stencil-log"])]
+      (binding [*active-log-levels* (case level
+                                      "debug" #{:error :info :warn :debug}
+                                      "trace" #{:error :info :warn :debug :trace})]
+        (handler req))
+      (handler req))))
 
 (defn -app [request]
-  (->
    (case (:request-method request)
      :post
      (if-let [prepared (get-template (:uri request))]
        (let [rendered (api/render! prepared (:body request) :output :input-stream)]
+         (log/info "Successfully rendered template" (:uri request))
          {:status 200
           :body rendered
           :headers {"content-type" "application/octet-stream"}}))
      ;; otherwise:
-     (throw (ex-info "Method Not Allowed" {:status 405})))
-   (wrap-err)
-   (wrap-log)))
+     (throw (ex-info "Method Not Allowed" {:status 405}))))
 
-(def app (wrap-json-body -app {:keywords? false}))
+(def app
+  (-> -app
+      (wrap-json-body {:keywords? false})
+      (wrap-log)
+      (wrap-err)))
+
+(alter-var-root
+  #'clojure.tools.logging/*logger-factory*
+  (constantly
+    (reify
+      clojure.tools.logging.impl.LoggerFactory
+      (name [_] "stencil-own-logger")
+      (get-logger [t log-ns] t)
+
+      clojure.tools.logging.impl.Logger
+      (enabled? [_ level] (contains? *active-log-levels* level))
+      (write! [_ level throwable message] (println (str "[" (name level) "]") message)))))
+
+(clojure.tools.logging/info "Hello")
 
 (defn -main [& args]
   (let [http-port    (get-http-port)
         template-dir ^File (get-template-dir)
-        server (run-server (wrapp-log app) {:port http-port})]
-    (println "Started listening on" http-port "serving" (str template-dir))
-    (println "Available template files: ")
-    (doseq [^File line (tree-seq #(.isDirectory ^File %) (comp next file-seq) template-dir)
+        server (run-server app {:port http-port})]
+    (log/info "Started listening on" http-port "serving" (str template-dir))
+    ;(log/info "Available template files: ")
+    #_(doseq [^File line (tree-seq #(.isDirectory ^File %) (comp next file-seq) template-dir)
             :when (.isFile line)]
-      (println (str (.relativize (.toPath template-dir) (.toPath line)))))
+        (println (str (.relativize (.toPath template-dir) (.toPath line)))))
     (while true (read-line))))
