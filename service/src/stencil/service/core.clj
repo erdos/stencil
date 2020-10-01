@@ -97,8 +97,6 @@
       (enabled? [_ level] (contains? *active-log-levels* level))
       (write! [_ level throwable message] (println (str "[" (name level) "]") message)))))
 
-(clojure.tools.logging/info "Hello")
-
 (defn -main [& args]
   (let [http-port    (get-http-port)
         template-dir ^File (get-template-dir)
