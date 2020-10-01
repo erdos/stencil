@@ -56,7 +56,7 @@
              :body (str "ERROR: " (.getMessage e))}
             (throw e))))))
 
-(def ^:dynamic *active-log-levels* #{:error :info :warn :trace :debug :fatal})
+(def ^:dynamic *active-log-levels* #{:fatal :error :info :warn})
 
 (defn- wrap-log [handler]
   (fn [req]
