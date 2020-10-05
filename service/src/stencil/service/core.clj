@@ -49,35 +49,36 @@
 (defn wrap-err [handler]
   (fn [request]
     (try (handler request)
-        (catch clojure.lang.ExceptionInfo e
-          (log/error "Error" e)
-          (if-let [status (:status (ex-data e))]
-            {:status status
-             :body (str "ERROR: " (.getMessage e))}
-            (throw e))))))
+         (catch clojure.lang.ExceptionInfo e
+           (log/error "Error" e)
+           (if-let [status (:status (ex-data e))]
+             {:status status
+              :body (str "ERROR: " (.getMessage e))}
+             (throw e))))))
 
 (def ^:dynamic *active-log-levels* #{:fatal :error :info :warn})
 
 (defn- wrap-log [handler]
   (fn [req]
     (if-let [level (get-in req [:headers "x-stencil-log"])]
-      (binding [*active-log-levels* (case level
-                                      "debug" #{:error :info :warn :debug}
-                                      "trace" #{:error :info :warn :debug :trace})]
+      (binding [*active-log-levels*
+                (case level
+                  "debug" #{:error :info :warn :debug}
+                  "trace" #{:error :info :warn :debug :trace})]
         (handler req))
       (handler req))))
 
 (defn -app [request]
-   (case (:request-method request)
-     :post
-     (if-let [prepared (get-template (:uri request))]
-       (let [rendered (api/render! prepared (:body request) :output :input-stream)]
-         (log/info "Successfully rendered template" (:uri request))
-         {:status 200
-          :body rendered
-          :headers {"content-type" "application/octet-stream"}}))
-     ;; otherwise:
-     (throw (ex-info "Method Not Allowed" {:status 405}))))
+  (case (:request-method request)
+    :post
+    (if-let [prepared (get-template (:uri request))]
+      (let [rendered (api/render! prepared (:body request) :output :input-stream)]
+        (log/info "Successfully rendered template" (:uri request))
+        {:status 200
+         :body rendered
+         :headers {"content-type" "application/octet-stream"}}))
+    ;; otherwise:
+    (throw (ex-info "Method Not Allowed" {:status 405}))))
 
 (def app
   (-> -app
@@ -86,16 +87,16 @@
       (wrap-err)))
 
 (alter-var-root
-  #'clojure.tools.logging/*logger-factory*
-  (constantly
-    (reify
-      clojure.tools.logging.impl.LoggerFactory
-      (name [_] "stencil-own-logger")
-      (get-logger [t log-ns] t)
+ #'clojure.tools.logging/*logger-factory*
+ (constantly
+  (reify
+    clojure.tools.logging.impl.LoggerFactory
+    (name [_] "stencil-own-logger")
+    (get-logger [t log-ns] t)
 
-      clojure.tools.logging.impl.Logger
-      (enabled? [_ level] (contains? *active-log-levels* level))
-      (write! [_ level throwable message] (println (str "[" (name level) "]") message)))))
+    clojure.tools.logging.impl.Logger
+    (enabled? [_ level] (contains? *active-log-levels* level))
+    (write! [_ level throwable message] (println (str "[" (name level) "]") message)))))
 
 (defn -main [& args]
   (let [http-port    (get-http-port)
@@ -103,7 +104,7 @@
         server (run-server app {:port http-port})]
     (log/info "Started listening on" http-port "serving" (str template-dir))
     ;(log/info "Available template files: ")
-    #_(doseq [^File line (tree-seq #(.isDirectory ^File %) (comp next file-seq) template-dir)
+    (doseq [^File line (tree-seq #(.isDirectory ^File %) (comp next file-seq) template-dir)
             :when (.isFile line)]
-        (println (str (.relativize (.toPath template-dir) (.toPath line)))))
+      (println (str (.relativize (.toPath template-dir) (.toPath line)))))
     (while true (read-line))))
