@@ -31,16 +31,22 @@ Opening the output file shows that the file contents are rendered all right: `oo
 
 You can send requests over a HTTP API. At the moment only one request is supported: preparing and rendering a template file.
 
-Preparing the template file takes place at the first request for each template file. The prepared template is cached. Therefore, the first request may take a little longer than the rest. 
+Preparing the template file takes place at the first request for each template file. The prepared template is cached. Therefore, the first request may take a little longer than the rest.
 
 Changing the template files on the file system will force preparing the template files again.
 
-**request:**
+**Liveness endpoint**
+
+Call `GET /` for a liveness status check.
+
+**Document generation requests:**
 
 - method: `POST`
 - uri: relative path of template file in templates folder
 - headers: `Content-Type: application/json`
 - request body: a JSON map of template data.
+
+You can add the `X-Stencil-Log: debug` or `X-Stencil-Log: trace` header to specify the log level while serving the request.
 
 The different responses have different HTTP staus codes.
 
