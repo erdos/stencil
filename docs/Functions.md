@@ -27,6 +27,7 @@ This is a short description of the functions implemented in Stencil:
 - `uppercase`
 - [xml](#xml)
 - [contains](#contains)
+- [sum](#sum)
 
 ## Basic Functions
 
@@ -157,3 +158,7 @@ Expects one number argument. Rounds its argument to the closest integer that is 
 ### Contains
 
 Expects two arguments: a value and a list. Checks if list contains the value. Usage: `contains("myValue", myList)`
+
+### Sum
+
+Expects one number argument containing a list with numbers. Sums up the numbers and returns result. Usage: `sum(myList)`

@@ -200,6 +200,11 @@
   (is (= false (run "contains(\"yellow\", vals)"
                     {"vals" ["red" "green" "blue"]}))))
 
+(deftest sum-function
+  (is (= 123.45 (run "sum(vals)", {"vals" [100 20 3 0.45]})))
+  (is (= 17 (run "sum(vals)", {"vals" [17]})))
+  (is (= 0 (run "sum(vals)", {"vals" []}))))
+
 (deftest coalesce-function
   (is (= nil (run "coalesce(\"\", \"\")")))
   (is (= "a" (run "coalesce(\"\", \"\", \"a\", \"b\")"))))

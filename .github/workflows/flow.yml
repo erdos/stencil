@@ -1,0 +1,22 @@
+name: Flow
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install dependencies
+      run: lein deps
+    - name: Run tests
+      run: lein test
+    - name: Release
+      env:
+        CLOJARS_USER: ${{ secrets.CLOJARS_USER }}
+        CLOJARS_PASS: ${{ secrets.CLOJARS_PASS }}
+      run: lein deploy snapshots
