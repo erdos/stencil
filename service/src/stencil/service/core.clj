@@ -69,15 +69,20 @@
       (handler req))))
 
 (defn -app [request]
-  (case (:request-method request)
-    :post
+  (cond
+    (and (= :get (:request-method request)) (= "/" (:uri request)))
+    {:status 200
+     :body "I am alive."}
+
+    (= :post (:request-method request) :post)
     (if-let [prepared (get-template (:uri request))]
       (let [rendered (api/render! prepared (:body request) :output :input-stream)]
         (log/info "Successfully rendered template" (:uri request))
         {:status 200
          :body rendered
          :headers {"content-type" "application/octet-stream"}}))
-    ;; otherwise:
+
+    :else
     (throw (ex-info "Method Not Allowed" {:status 405}))))
 
 (def app
