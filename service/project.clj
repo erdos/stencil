@@ -4,7 +4,7 @@
   :license {:name "Eclipse Public License - v 2.0"
             :url "https://www.eclipse.org/legal/epl-2.0/"}
   :dependencies [[org.clojure/clojure "1.9.0"]
-                 [io.github.erdos/stencil-core "0.3.9"]
+                 [io.github.erdos/stencil-core "0.3.10-SNAPSHOT"]
                  [http-kit "2.2.0"]
                  [ring/ring-json "0.4.0"]]
   :main stencil.service.core)

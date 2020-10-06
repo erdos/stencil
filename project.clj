@@ -22,6 +22,10 @@
                                    "-top" "<style>kbd{background:#ddd}; a[title~=class], a[title~=interface], a[title~=enum]{text-decoration: underline; font-weight: bold} dd>code{background:#eee}</style>"]}
   :repl-options {:init-ns stencil.api}
   :jar-exclusions [#".*\.xml"]
+  :repositories [["snapshots" {:url "https://clojars.org/repo"
+                               :username :env/clojars_user
+                               :password :env/clojars_pass
+                               :sign-releases false}]]
   :profiles {:uberjar {:aot :all}
              :dev {:aot :all}
              :test {:aot :all
