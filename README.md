@@ -31,11 +31,16 @@ them to make the template more readable.
 - Dynamically show/hide rows and columns in tables
 
 
-## Getting Started
+## Getting Started with the Library
 
 - See the [Example templates](examples)
 - Read the [Documentation](docs/index.md)
 - Read about the [Java API](docs/GettingStarted.md#java-api) and the [Clojure API](docs/GettingStarted.md#clojure-api) or see the [Technical Documentation](https://cljdoc.org/d/io.github.erdos/stencil-core/)
+
+
+## Getting Started with the Service
+
+The project has a simple [service implementation](https://github.com/erdos/stencil/tree/master/service), which is available on the GitHub Package Repository as a [Docker image](https://github.com/users/erdos/packages/container/package/stencil).
 
 
 ## Version
