@@ -4,7 +4,8 @@
 
 ;;flags: https://c-rex.net/projects/samples/ooxml/e1/Part4/OOXML_P4_DOCX_REFREF_topic_ID0ESRL1.html#topic_ID0ESRL1
 ;; r: Inserts the entire paragraph number of the bookmarked paragraph in relative context—or relative to its position in the numbering scheme —without trailing periods.
-;; r: creates hyperlink
+;; h: creates hyperlink
+;; w: Inserts the paragraph number of the bookmarked paragraph in full context from anywhere in the document.
 
 (deftest render-number-decimal
   (is (= "123" (render-number "decimal" 123))))
@@ -25,5 +26,10 @@
                 [{:start 1 :num-fmt "decimal" :lvl-text "%1."}
                  {:start 1 :num-fmt "decimal" :lvl-text "%1(%2)"}]
                 [2 5]
-                #{:r :h})))
-  )
+                #{:r :h}))))
+
+#_
+(deftest
+  (is (= " REF __RefNumPara__1_1003916714 \\w \\h "
+         (instr-text-ref {:tag :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/instrText
+                          :contents [" REF __RefNumPara__1_1003916714 \\w \\h "]}))))

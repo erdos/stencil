@@ -1,4 +1,7 @@
-(ns stencil.postprocess.list-ref)
+(ns stencil.postprocess.list-ref
+  (:require [stencil.util :refer :all]
+            [stencil.ooxml :as ooxml]
+            [clojure.zip :as zip]))
 
 (set! *warn-on-reflection* true)
 
@@ -48,4 +51,99 @@
              (str (:lvl-text (nth styles (dec (count levels)))))
              (mapv (fn [style level] (render-number (:num-fmt style) (+ (:start style) level -1))) styles levels)))
 
-(defn fix-list-dirty-refs [tree] tree)
+(defn node-instr-ref? [node]
+  ;; returns true iff node is a paragraph number reference
+  nil)
+
+(defn instr-text-ref [node]
+  (when (map? node)
+    (when (= :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/instrText
+             (:tag node))
+      (first (:contents node)))))
+
+;; returns node if it is an fldChar node
+(defn fld-char [node]
+  (when (map? node)
+    (when (= ooxml/fld-char (:tag node))
+      node)))
+
+
+
+;; Algorithm:
+;; - find all bookmarks, calculated their numeric paths (ilvl, numId attributes)
+;; - find all <instrText> node with REF and repeat for all:
+;; - replace parts after separate with calculated path
+;;
+
+
+(defn- find-first-in-tree [pred tree]
+  (assert (zipper? tree))
+  (assert (fn? pred))
+  (find-first (comp pred zip/node) (take-while (complement zip/end?) (iterate zip/next tree))))
+
+(defn parse-num-pr [node]
+  (assert (= ooxml/num-pr (:tag node)))
+  (reduce (fn [m node]
+            (case (some-> node :tag name)
+              "ilvl" (assoc m :ilvl (-> node :attrs ooxml/val ->int)) ;; level, starting from 0
+              "numId" (assoc m :num-id (-> node :attrs ooxml/val))
+              m)) {} (:content node)))
+
+(defn fix-list-dirty-refs [xml-tree]
+  (let [nr->stack (volatile! {})]
+    (dfs-walk-xml xml-tree
+                       (fn [node] (and (map? node) (= (:tag node) ooxml/num-pr)))
+                       (fn [node]
+                         (let [{:keys [ilvl num-id]} (parse-num-pr node)]
+                           (vswap! nr->stack
+                                  update
+                                  num-id
+                                  (fnil
+                                   (fn [stack length]
+                                     (cond (< (inc length) (count stack))
+                                           (update-peek (next stack) inc)
+
+                                           (> (inc length) (count stack))
+                                           (conj stack 1)
+
+                                           :else
+                                           (update-peek stack inc)))
+                                   ())
+                                  ilvl)
+                           (assoc node ::enumeration
+                                  {:ilvl ilvl
+                                   :num-id num-id
+                                   :stack (get @nr->stack num-id)})))))
+  ;; adds meta data to all tag-num-pr element.
+  ;; TODO:
+  ;;
+  ;; - for all bookmark node
+  ;; - find their position
+  ;; - save it to meta
+  ;;
+  ;; - for all reference
+  ;; - find bookmark meta
+  ;; - re-calculate rendered cross-ref data
+
+  #_
+  (let [bookmark-nodes (atom {})]
+    (dfs-walk-xml-node xml-tree
+                       (fn [node] (and (map? node) (= (:tag node) ooxml/bookmark-start)))
+                       (fn [zipper]
+                         (let [id (-> zipper zip/node :attrs ooxml/name)
+                               nr-id (->> zipper
+                                          zip/up
+                                          (find-first-in-tree (fn [node] (= tag-num-id (:tag node))))
+                                          zip/node
+                                          :attrs
+                                          attr-val)
+
+                               ;; go left from node, find
+                               nr-idx nil]
+                           (swap! bookmark-nodes assoc id [nr-id nr-idx]))
+                         zipper))
+    (println "!!!")
+    (println @bookmark-nodes)
+    xml-tree)
+  xml-tree
+  )
