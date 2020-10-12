@@ -67,15 +67,6 @@
     (when (= ooxml/fld-char (:tag node))
       node)))
 
-
-
-;; Algorithm:
-;; - find all bookmarks, calculated their numeric paths (ilvl, numId attributes)
-;; - find all <instrText> node with REF and repeat for all:
-;; - replace parts after separate with calculated path
-;;
-
-
 (defn- find-first-in-tree [pred tree]
   (assert (zipper? tree))
   (assert (fn? pred))
@@ -90,40 +81,49 @@
               m)) {} (:content node)))
 
 (defn fix-list-dirty-refs [xml-tree]
-  (let [nr->stack (volatile! {})]
-    (dfs-walk-xml xml-tree
-                       (fn [node] (and (map? node) (= (:tag node) ooxml/num-pr)))
-                       (fn [node]
-                         (let [{:keys [ilvl num-id]} (parse-num-pr node)]
-                           (vswap! nr->stack
-                                  update
-                                  num-id
-                                  (fnil
-                                   (fn [stack length]
-                                     (cond (< (inc length) (count stack))
-                                           (update-peek (next stack) inc)
+  (let [xml-tree (atom xml-tree)]
 
-                                           (> (inc length) (count stack))
-                                           (conj stack 1)
+    ;; step 1: add meta data to all numPr elements
+    (let [nr->stack (volatile! {})]
+      (swap! xml-tree
+             dfs-walk-xml
+             (fn [node] (and (map? node) (= (:tag node) ooxml/num-pr)))
+             (fn [node]
+               (let [{:keys [ilvl num-id]} (parse-num-pr node)]
+                 (vswap! nr->stack
+                         update
+                         num-id
+                         (fnil
+                          (fn [stack length]
+                            (cond (< (inc length) (count stack))
+                                  (update-peek (next stack) inc)
 
-                                           :else
-                                           (update-peek stack inc)))
-                                   ())
-                                  ilvl)
-                           (assoc node ::enumeration
-                                  {:ilvl ilvl
-                                   :num-id num-id
-                                   :stack (get @nr->stack num-id)})))))
-  ;; adds meta data to all tag-num-pr element.
-  ;; TODO:
-  ;;
-  ;; - for all bookmark node
-  ;; - find their position
-  ;; - save it to meta
-  ;;
-  ;; - for all reference
-  ;; - find bookmark meta
-  ;; - re-calculate rendered cross-ref data
+                                  (> (inc length) (count stack))
+                                  (conj stack 1)
+
+                                  :else
+                                  (update-peek stack inc)))
+                          ())
+                         ilvl)
+                 (assoc node ::enumeration
+                        {:ilvl ilvl
+                         :num-id num-id
+                         :stack (get @nr->stack num-id)})))))
+
+    ;; step 2:
+    ;;
+    ;; - for all bookmark node
+    ;; - find their position and stack snapshot
+    ;; - save it to global atom
+
+    ;; step 3:
+    ;;
+    ;; - for all reference
+    ;; - find bookmark meta in global atom
+    ;; - re-calculate rendered cross-ref data
+
+
+    @xml-tree)
 
   #_
   (let [bookmark-nodes (atom {})]
