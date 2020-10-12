@@ -5,7 +5,8 @@
             [stencil.postprocess.whitespaces :refer :all]
             [stencil.postprocess.ignored-tag :refer :all]
             [stencil.postprocess.fragments :refer :all]
-            [stencil.postprocess.html :refer :all]))
+            [stencil.postprocess.html :refer :all]
+            [stencil.postprocess.list-ref :refer :all]))
 
 ;; calls postprocess
 (def postprocess
@@ -22,6 +23,8 @@
 
    ;; includes html() call results.
    #'fix-html-chunks
+
+   #'fix-list-dirty-refs
 
    ;; not used at the moment
    #'deref-delayed-values
