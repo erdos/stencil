@@ -126,7 +126,7 @@
                    (update (xml/parse reader) :content doall)))}))
 
 
-(defn eval-template-model [template-model data functions fragments]
+(defn- eval-template-model [template-model data functions fragments]
   (assert (:main template-model) "Should be a result of load-template-model call!")
   (assert (some? fragments))
   (binding [*current-styles*     (atom (:parsed (:style (:main template-model))))
@@ -167,7 +167,7 @@
 
 
 ;; returns a map where key is path and value is writer fn.
-(defn evaled-template-model->writers-map [evaled-template-model]
+(defn- evaled-template-model->writers-map [evaled-template-model]
   (as-> (sorted-map) result
 
     ;; relations files that are created on-the-fly
