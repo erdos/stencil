@@ -16,6 +16,7 @@
             [stencil.types :refer [->FragmentInvoke]]
             [stencil.util :refer :all]
 
+            [stencil.model.relations :as relations]
             [stencil.model.common :refer :all]
             [stencil.model.style :as style
              :refer [expect-fragment-context! *current-styles*]]
@@ -44,12 +45,6 @@
     "Relationship type of hyperlinks in .rels files."
     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink")
 
-(def tag-relationships
-  :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fpackage%2F2006%2Frelationships/Relationships)
-
-(def tag-relationship
-  :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fpackage%2F2006%2Frelationships/Relationship)
-
 ;; all insertable fragments. map of id to frag def.
 (def ^:private ^:dynamic *all-fragments* nil)
 
@@ -62,20 +57,6 @@
 
 (defn- unix-path [^File f]
   (some-> f .toPath FileHelper/toUnixSeparatedString))
-
-
-(defn- parse-relation [rel-file]
-  (with-open [reader (io/input-stream (file rel-file))]
-    (let [parsed (xml/parse reader)]
-      (assert (= tag-relationships (:tag parsed))
-              (str "Unexpected tag: " (:tag parsed)))
-      (into (sorted-map)
-            (for [d (:content parsed)
-                  :when (map? d)
-                  :when (= tag-relationship (:tag d))]
-              [(:Id (:attrs d)) {::type   (doto (:Type (:attrs d)) assert)
-                                 ::target (doto (:Target (:attrs d)) assert)
-                                 ::mode   (:TargetMode (:attrs d))}])))))
 
 
 (defn- parse-content-types [^File cts]
@@ -98,13 +79,13 @@
   (assert (.exists dir))
   (assert (.isDirectory dir))
   (assert (map? options-map))
-  (let [package-rels (parse-relation (file dir "_rels" ".rels"))
+  (let [package-rels (relations/parse (file dir "_rels" ".rels"))
         main-document (some #(when (= rel-type-main (::type %)) (::target %)) (vals package-rels))
         ->rels (fn [f]
                  (let [rels-path (unix-path (file (.getParentFile (file f)) "_rels" (str (.getName (file f)) ".rels")))
                        rels-file (file dir rels-path)]
                    (when (.exists rels-file)
-                     {::path rels-path, :source-file rels-file, :parsed (parse-relation rels-file)})))
+                     {::path rels-path, :source-file rels-file, :parsed (relations/parse rels-file)})))
 
         main-document-rels (->rels main-document)
 
@@ -209,20 +190,6 @@
             (assoc-in [:main :style :result] (style/file-writer template-model)))))))
 
 
-(defn- relation-writer [relation-map]
-  (assert (map? relation-map))
-  (assert (every? string? (keys relation-map)) (str "Not all str: " (keys relation-map)))
-  (->
-   {:tag tag-relationships
-    :content (for [[k v] relation-map]
-               {:tag tag-relationship
-                :attrs (cond-> {:Type (::type v), :Target (::target v), :Id k}
-                         (::mode v) (assoc :TargetMode (::mode v)))})}
-   ;; LibreOffice opens the generated document only when default xml namespace is the following:
-   (with-meta {:clojure.data.xml/nss
-               (pu/assoc pu/EMPTY "" "http://schemas.openxmlformats.org/package/2006/relationships")})
-   (->xml-writer)))
-
 ;; returns a map where key is path and value is writer fn.
 (defn evaled-template-model->writers-map [evaled-template-model]
   (as-> (sorted-map) result
@@ -233,7 +200,7 @@
                 :when (and (map? m) (not (sorted? m)) (::path m))
                 :when (:parsed (:relations m))
                 :when (not (:source-file (:relations m)))]
-            [(::path (:relations m)) (relation-writer (:parsed (:relations m)))]))
+            [(::path (:relations m)) (relations/writer (:parsed (:relations m)))]))
 
     ;; create writer for every item where ::path is specified
     (into result
