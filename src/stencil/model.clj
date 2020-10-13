@@ -3,18 +3,18 @@
    See: http://officeopenxml.com/anatomyofOOXML.php
   "
   (:import [java.io File]
-           [java.nio.file Files]
            [io.github.erdos.stencil.impl FileHelper])
   (:require [clojure.data.xml :as xml]
-            [clojure.data.xml.pu-map :as pu]
             [clojure.java.io :as io :refer [file]]
-            [clojure.walk :refer [postwalk]]
-            [stencil.ooxml :as ooxml]
             [stencil.eval :as eval]
             [stencil.merger :as merger]
             [stencil.tree-postprocess :as tree-postprocess]
             [stencil.types :refer [->FragmentInvoke]]
             [stencil.util :refer :all]
+            [stencil.model.relations :as relations]
+            [stencil.model.common :refer :all]
+            [stencil.model.style :as style
+             :refer [expect-fragment-context! *current-styles*]]
             [stencil.cleanup :as cleanup]))
 
 (set! *warn-on-reflection* true)
@@ -22,10 +22,6 @@
 (def rel-type-main
   "Relationship type of main document in _rels/.rels file."
   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument")
-
-(def rel-type-style
-  "Relationship type of style definitions in _rels/.rels file."
-  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles")
 
 (def rel-type-footer
   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer")
@@ -36,23 +32,6 @@
 (def rel-type-slide
   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide")
 
-(def rel-type-image
-  "Relationship type of image files in .rels files."
-  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image")
-
-(def rel-type-hyperlink
-    "Relationship type of hyperlinks in .rels files."
-    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink")
-
-(def tag-relationships
-  :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fpackage%2F2006%2Frelationships/Relationships)
-
-(def tag-relationship
-  :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fpackage%2F2006%2Frelationships/Relationship)
-
-;; style definitions of the main document
-(def ^:dynamic ^:private *current-styles* nil)
-
 ;; all insertable fragments. map of id to frag def.
 (def ^:private ^:dynamic *all-fragments* nil)
 
@@ -62,36 +41,9 @@
 ;; list of extra relations to be added after evaluating document
 (def ^:private ^:dynamic *extra-files* nil)
 
-;; throws error when not invoked from inside fragment context
-(defmacro ^:private expect-fragment-context! [& bodies] `(do (assert *current-styles*) ~@bodies))
 
 (defn- unix-path [^File f]
   (some-> f .toPath FileHelper/toUnixSeparatedString))
-
-(defn- parse-relation [rel-file]
-  (with-open [reader (io/input-stream (file rel-file))]
-    (let [parsed (xml/parse reader)]
-      (assert (= tag-relationships (:tag parsed))
-              (str "Unexpected tag: " (:tag parsed)))
-      (into (sorted-map)
-            (for [d (:content parsed)
-                  :when (map? d)
-                  :when (= tag-relationship (:tag d))]
-              [(:Id (:attrs d)) {::type   (doto (:Type (:attrs d)) assert)
-                                 ::target (doto (:Target (:attrs d)) assert)
-                                 ::mode   (:TargetMode (:attrs d))}])))))
-
-
-(defn- parse-style
-  "Returns a map where key is style id and value is style definition."
-  [style-file]
-  (assert style-file)
-  (with-open [r (io/input-stream (file style-file))]
-    (into (sorted-map)
-          (for [d (:content (xml/parse r))
-                :when (map? d)
-                :when (= ooxml/style (:tag d))]
-            [(ooxml/style-id (:attrs d)) d]))))
 
 
 (defn- parse-content-types [^File cts]
@@ -114,17 +66,17 @@
   (assert (.exists dir))
   (assert (.isDirectory dir))
   (assert (map? options-map))
-  (let [package-rels (parse-relation (file dir "_rels" ".rels"))
+  (let [package-rels (relations/parse (file dir "_rels" ".rels"))
         main-document (some #(when (= rel-type-main (::type %)) (::target %)) (vals package-rels))
         ->rels (fn [f]
                  (let [rels-path (unix-path (file (.getParentFile (file f)) "_rels" (str (.getName (file f)) ".rels")))
                        rels-file (file dir rels-path)]
                    (when (.exists rels-file)
-                     {::path rels-path, :source-file rels-file, :parsed (parse-relation rels-file)})))
+                     {::path rels-path, :source-file rels-file, :parsed (relations/parse rels-file)})))
 
         main-document-rels (->rels main-document)
 
-        main-style-path (some #(when (= rel-type-style (::type %))
+        main-style-path (some #(when (= style/rel-type (::type %))
                                  (unix-path (file (.getParentFile (file main-document)) (::target %))))
                               (vals (:parsed main-document-rels)))
         ->exec (binding [merger/*only-includes* (boolean (:only-includes options-map))]
@@ -140,7 +92,7 @@
                      :style (when main-style-path
                               {::path       main-style-path
                                :source-file (file dir main-style-path)
-                               :parsed      (parse-style (file dir main-style-path))})
+                               :parsed      (style/parse (file dir main-style-path))})
                      :relations main-document-rels
                      :headers+footers (doall
                                        (for [[id m] (:parsed main-document-rels)
@@ -159,25 +111,6 @@
   (-> (load-template-model dir options-map)
       ;; Headers and footers are not used in fragments.
       (update :main dissoc :headers+footers)))
-
-
-(defn ->xml-writer [tree]
-  (fn [output-stream]
-    (io!
-     (let [writer (io/writer output-stream)]
-       (xml/emit tree writer)
-       (.flush writer)))))
-
-
-(defn- resource-copier [x]
-  (assert (::path x))
-  (assert (:source-file x))
-  (fn [writer]
-    (io!
-     (let [stream (io/output-stream writer)]
-       (Files/copy (.toPath (io/file (:source-file x))) stream)
-       (.flush stream)
-       nil))))
 
 
 (defn- eval-model-part-exec [part data functions]
@@ -202,18 +135,6 @@
      :xml-delay (delay
                  (with-open [reader (io/input-stream (:source-file part))]
                    (update (xml/parse reader) :content doall)))}))
-
-
-(defn- style-file-writer [template]
-  (expect-fragment-context!
-   (let [original-style-file (:source-file (:style (:main template)))
-         _ (assert (.exists ^File original-style-file))
-         extended-tree (with-open [r (io/input-stream original-style-file)]
-                         (let [tree (xml/parse r)
-                               all-ids (set (keep (comp ooxml/style-id :attrs) (:content tree)))
-                               insertable (vals (apply dissoc @*current-styles* all-ids))]
-                           (update tree :content concatv insertable)))]
-     {:writer (->xml-writer extended-tree)})))
 
 
 (defn eval-template-model [template-model data functions fragments]
@@ -253,22 +174,8 @@
           (update-in [:main :headers+footers] (partial mapv evaluate))
 
           (cond-> (-> template-model :main :style)
-            (assoc-in [:main :style :result] (style-file-writer template-model)))))))
+            (assoc-in [:main :style :result] (style/file-writer template-model)))))))
 
-
-(defn- relation-writer [relation-map]
-  (assert (map? relation-map))
-  (assert (every? string? (keys relation-map)) (str "Not all str: " (keys relation-map)))
-  (->
-   {:tag tag-relationships
-    :content (for [[k v] relation-map]
-               {:tag tag-relationship
-                :attrs (cond-> {:Type (::type v), :Target (::target v), :Id k}
-                         (::mode v) (assoc :TargetMode (::mode v)))})}
-   ;; LibreOffice opens the generated document only when default xml namespace is the following:
-   (with-meta {:clojure.data.xml/nss
-               (pu/assoc pu/EMPTY "" "http://schemas.openxmlformats.org/package/2006/relationships")})
-   (->xml-writer)))
 
 ;; returns a map where key is path and value is writer fn.
 (defn evaled-template-model->writers-map [evaled-template-model]
@@ -280,7 +187,7 @@
                 :when (and (map? m) (not (sorted? m)) (::path m))
                 :when (:parsed (:relations m))
                 :when (not (:source-file (:relations m)))]
-            [(::path (:relations m)) (relation-writer (:parsed (:relations m)))]))
+            [(::path (:relations m)) (relations/writer (:parsed (:relations m)))]))
 
     ;; create writer for every item where ::path is specified
     (into result
@@ -324,109 +231,27 @@
      elem)))
 
 
-(defn- -insert-style!
-  "Returns possibly new style id."
-  [style-definition]
-  (assert (= "style" (name (:tag style-definition))))
-  (assert (contains? (:attrs style-definition) ooxml/style-id))
-  (expect-fragment-context!
-   (let [id (-> style-definition :attrs ooxml/style-id)]
-     (if-let [old-style (get @*current-styles* id)]
-       (if (= old-style style-definition)
-         id
-         (let [new-id    (name (gensym "sid"))
-               new-style (assoc-in style-definition [:attrs ooxml/style-id] new-id)
-               new-style (update new-style :content
-                                 #(for [c %]
-                                    ;; TODO: itt leptetni kell majd,
-                                    ;; hogy a nev rendes erteket kapjon!!!!
-                                    (if (= ooxml/name (:tag c))
-                                      (assoc-in c [:attrs ooxml/val] (name (gensym "title")))
-                                      c)))]
-           (swap! *current-styles* assoc new-id new-style)
-           new-id))
-       (do (swap! *current-styles* assoc id style-definition)
-           id)))))
-
-
-(defn- insert-styles!
-  "Returns a map of all style definitions where key is style id and value is style xml."
-  [style-defs]
-  (assert (map? style-defs) (str "Not map: " (pr-str style-defs) (type style-defs)))
-  (assert (every? string? (keys style-defs)))
-  (reduce (fn [m [id style]]
-            (let [id2 (-insert-style! style)]
-              (if (= id id2) m (assoc m id id2))))
-          {} style-defs))
-
-
-(defn xml-rename-style-ids [style-id-renames xml-tree]
-  (if (map? xml-tree)
-    (if (-> xml-tree :tag name (.endsWith "Style"))
-      (update-some xml-tree [:attrs ooxml/val] style-id-renames)
-      (update xml-tree :content (partial map (partial xml-rename-style-ids style-id-renames))))
-    xml-tree))
-
-
-(defn- map-rename-relation-ids [item id-rename]
-  (-> item
-      ;; Image relation ids are being renamed here.
-      (update-some [:attrs ooxml/r-embed] id-rename)
-      ;; Hyperlink relation ids are being renamed here
-      (update-some [:attrs ooxml/r-id] id-rename)))
-
-
-(defn- xml-rename-relation-ids [id-rename xml-tree]
-  (if (map? xml-tree)
-    (-> xml-tree
-        (map-rename-relation-ids id-rename)
-        (update :content (partial map (partial xml-rename-relation-ids id-rename))))
-    xml-tree))
-
-;; generates a random relation id
-(defn- ->relation-id [] (str (gensym "stencilRelId")))
-
-
-(defn- relation-ids-rename [model fragment-name]
-  (doall
-   (for [[old-rel-id m] (-> model :main :relations :parsed (doto assert))
-         :when (#{rel-type-image rel-type-hyperlink} (::type m))
-         :let [new-id       (->relation-id)
-               new-path     (if (= "External" (::mode m))
-                              (::target m)
-                              (str new-id "." (last (.split (str (::target m)) "\\."))))]]
-     {::type       (::type m)
-      ::mode       (::mode m)
-      ::target     new-path
-      :fragment-name fragment-name
-      :new-id      new-id
-      :old-id      old-rel-id
-      :source-file (file (-> model :main :source-file file .getParentFile) (::target m))
-      ::path       new-path})))
-
-
 (defmethod eval/eval-step :cmd/include [f local-data-map {frag-name :name}]
   (assert (map? local-data-map))
   (assert (string? frag-name))
   (expect-fragment-context!
    (if-let [fragment-model (get *all-fragments* frag-name)]
      (let [;; merge style definitions from fragment
-           style-ids-rename (-> fragment-model :main :style :parsed (doto assert) (insert-styles!))
+           style-ids-rename (-> fragment-model :main :style :parsed (doto assert) (style/insert-styles!))
 
-           relation-ids-rename (relation-ids-rename fragment-model frag-name)
+           relation-ids-rename (relations/ids-rename fragment-model frag-name)
            relation-rename-map (into {} (map (juxt :old-id :new-id) relation-ids-rename))
 
            ;; evaluate
            evaled (eval-template-model fragment-model local-data-map {} {})
-
 
            ;; write back
            get-xml      (fn [x] (or (:xml x) @(:xml-delay x)))
            evaled-parts (->> evaled :main :result
                              (get-xml)
                              (extract-body-parts)
-                             (map (partial xml-rename-relation-ids relation-rename-map))
-                             (map (partial xml-rename-style-ids style-ids-rename)))]
+                             (map (partial relations/xml-rename-relation-ids relation-rename-map))
+                             (map (partial style/xml-rename-style-ids style-ids-rename)))]
        (swap! *inserted-fragments* conj frag-name)
        (swap! *extra-files* into relation-ids-rename)
        [{:text (->FragmentInvoke {:frag-evaled-parts evaled-parts})}])
