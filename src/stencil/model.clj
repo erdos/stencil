@@ -32,9 +32,6 @@
 (def rel-type-slide
   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide")
 
-(def rel-type-numbering
-  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering")
-
 ;; all insertable fragments. map of id to frag def.
 (def ^:private ^:dynamic *all-fragments* nil)
 
@@ -75,13 +72,8 @@
 
         main-document-rels (->rels main-document)
 
-        main-numbering-path (some #(when (= rel-type-numbering (::type %))
-                                     (unix-path (file (.getParentFile (file main-document)) (::target %))))
-                                  (vals (:parsed main-document-rels)))
-
         ->exec (binding [merger/*only-includes* (boolean (:only-includes options-map))]
                  (bound-fn* ->exec))]
-    (println "Main numbering path: " main-numbering-path)
     {:content-types (parse-content-types (file dir "[Content_Types].xml"))
      :source-folder dir
      :relations     {::path (unix-path (file "_rels" ".rels"))
@@ -91,10 +83,7 @@
                      :source-file (file dir main-document)
                      :executable  (->exec (file dir main-document))
 
-                     :numbering (when main-numbering-path
-                                  {::path       main-numbering-path
-                                   :source-file (file dir main-numbering-path)
-                                   :parsed      (numbering/parse (file dir main-numbering-path))})
+                     :numbering   (numbering/main-numbering dir main-document main-document-rels)
                      :style       (style/main-style-item dir main-document main-document-rels)
                      :relations main-document-rels
                      :headers+footers (doall
