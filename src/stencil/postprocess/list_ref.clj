@@ -1,6 +1,7 @@
 (ns stencil.postprocess.list-ref
   (:require [stencil.util :refer :all]
             [stencil.ooxml :as ooxml]
+            ; [stencil.model :as model]
             [clojure.zip :as zip]))
 
 (set! *warn-on-reflection* true)
@@ -80,8 +81,23 @@
               "numId" (assoc m :num-id (-> node :attrs ooxml/val))
               m)) {} (:content node)))
 
+(defn- find-first-child
+  "Returns zipper of first child where predicate holds for the node or nil when not found."
+  [pred loc]
+  (assert (ifn? pred))
+  (assert (zipper? loc))
+  (find-first (comp pred zip/node) (take-while some? (iterations zip/right (zip/down loc)))))
+
+(defn- tag-matches? [tag elem] (and (map? elem) (some-> elem :tag name #{tag})))
+
+(defn- child-of-tag [tag-name loc]
+  (assert (zipper? loc))
+  (assert (string? tag-name))
+  (find-first-child (partial tag-matches? tag-name) loc))
+
 (defn fix-list-dirty-refs [xml-tree]
-  (let [xml-tree (atom xml-tree)]
+  (let [xml-tree (atom xml-tree)
+        bookmark->meta (volatile! {})]
 
     ;; step 1: add meta data to all numPr elements
     (let [nr->stack (volatile! {})]
@@ -110,11 +126,27 @@
                          :num-id num-id
                          :stack (get @nr->stack num-id)})))))
 
+
+
     ;; step 2:
     ;;
     ;; - for all bookmark node
     ;; - find their position and stack snapshot
     ;; - save it to global atom
+    (dfs-walk-xml-node
+     @xml-tree
+     (fn [node] (and (map? node) (= (:tag node) ooxml/bookmark-start)))
+     (fn [zipper]
+       (let [bookmark-id (->(zip/node zipper) :attrs ooxml/name)]
+         (some->> zipper
+                  (zip/up)
+                  (child-of-tag "pPr")
+                  (child-of-tag "numPr")
+                  (zip/node)
+                  (::enumeration)
+                  (vswap! bookmark->meta assoc bookmark-id))
+         zipper)))
+    (println "Bookmark meta: " @bookmark->meta)
 
     ;; step 3:
     ;;
@@ -122,6 +154,11 @@
     ;; - find bookmark meta in global atom
     ;; - re-calculate rendered cross-ref data
 
+
+    ;; TODO: make sure numbering relationship file is added (also for fragments!)
+    ;; TODO: make sure we have access to numbering definition
+    ;; TODO: read numbering definition, transform it to acceptable form
+    ;; TODO: do the rendering based on style def
 
     @xml-tree)
 

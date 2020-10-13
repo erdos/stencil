@@ -12,6 +12,7 @@
             [stencil.ooxml :as ooxml]
             [stencil.eval :as eval]
             [stencil.merger :as merger]
+            [stencil.model.numbering :as numbering]
             [stencil.tree-postprocess :as tree-postprocess]
             [stencil.types :refer [->FragmentInvoke]]
             [stencil.util :refer :all]
@@ -43,6 +44,9 @@
 (def rel-type-hyperlink
     "Relationship type of hyperlinks in .rels files."
     "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink")
+
+(def rel-type-numbering
+  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering")
 
 (def tag-relationships
   :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fpackage%2F2006%2Frelationships/Relationships)
@@ -124,11 +128,15 @@
 
         main-document-rels (->rels main-document)
 
+        main-numbering-path (some #(when (= rel-type-numbering (::type %))
+                                     (unix-path (file (.getParentFile (file main-document)) (::target %))))
+                                  (vals (:parsed main-document-rels)))
         main-style-path (some #(when (= rel-type-style (::type %))
                                  (unix-path (file (.getParentFile (file main-document)) (::target %))))
                               (vals (:parsed main-document-rels)))
         ->exec (binding [merger/*only-includes* (boolean (:only-includes options-map))]
                  (bound-fn* ->exec))]
+    (println "Main numbering path: " main-numbering-path)
     {:content-types (parse-content-types (file dir "[Content_Types].xml"))
      :source-folder dir
      :relations     {::path (unix-path (file "_rels" ".rels"))
@@ -137,6 +145,10 @@
      :main          {::path       main-document
                      :source-file (file dir main-document)
                      :executable  (->exec (file dir main-document))
+                     :numbering (when main-numbering-path
+                                  {::path       main-numbering-path
+                                   :source-file (file dir main-numbering-path)
+                                   :parsed      (numbering/parse (file dir main-numbering-path))})
                      :style (when main-style-path
                               {::path       main-style-path
                                :source-file (file dir main-style-path)
