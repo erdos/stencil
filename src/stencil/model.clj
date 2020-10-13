@@ -9,7 +9,6 @@
             [clojure.data.xml.pu-map :as pu]
             [clojure.java.io :as io :refer [file]]
             [clojure.walk :refer [postwalk]]
-            [stencil.ooxml :as ooxml]
             [stencil.eval :as eval]
             [stencil.merger :as merger]
             [stencil.tree-postprocess :as tree-postprocess]
@@ -36,14 +35,6 @@
 
 (def rel-type-slide
   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide")
-
-(def rel-type-image
-  "Relationship type of image files in .rels files."
-  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image")
-
-(def rel-type-hyperlink
-    "Relationship type of hyperlinks in .rels files."
-    "http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink")
 
 ;; all insertable fragments. map of id to frag def.
 (def ^:private ^:dynamic *all-fragments* nil)
@@ -244,43 +235,6 @@
      elem)))
 
 
-(defn- map-rename-relation-ids [item id-rename]
-  (-> item
-      ;; Image relation ids are being renamed here.
-      (update-some [:attrs ooxml/r-embed] id-rename)
-      ;; Hyperlink relation ids are being renamed here
-      (update-some [:attrs ooxml/r-id] id-rename)))
-
-
-(defn- xml-rename-relation-ids [id-rename xml-tree]
-  (if (map? xml-tree)
-    (-> xml-tree
-        (map-rename-relation-ids id-rename)
-        (update :content (partial map (partial xml-rename-relation-ids id-rename))))
-    xml-tree))
-
-;; generates a random relation id
-(defn- ->relation-id [] (str (gensym "stencilRelId")))
-
-
-(defn- relation-ids-rename [model fragment-name]
-  (doall
-   (for [[old-rel-id m] (-> model :main :relations :parsed (doto assert))
-         :when (#{rel-type-image rel-type-hyperlink} (::type m))
-         :let [new-id       (->relation-id)
-               new-path     (if (= "External" (::mode m))
-                              (::target m)
-                              (str new-id "." (last (.split (str (::target m)) "\\."))))]]
-     {::type       (::type m)
-      ::mode       (::mode m)
-      ::target     new-path
-      :fragment-name fragment-name
-      :new-id      new-id
-      :old-id      old-rel-id
-      :source-file (file (-> model :main :source-file file .getParentFile) (::target m))
-      ::path       new-path})))
-
-
 (defmethod eval/eval-step :cmd/include [f local-data-map {frag-name :name}]
   (assert (map? local-data-map))
   (assert (string? frag-name))
@@ -289,19 +243,18 @@
      (let [;; merge style definitions from fragment
            style-ids-rename (-> fragment-model :main :style :parsed (doto assert) (style/insert-styles!))
 
-           relation-ids-rename (relation-ids-rename fragment-model frag-name)
+           relation-ids-rename (relations/ids-rename fragment-model frag-name)
            relation-rename-map (into {} (map (juxt :old-id :new-id) relation-ids-rename))
 
            ;; evaluate
            evaled (eval-template-model fragment-model local-data-map {} {})
-
 
            ;; write back
            get-xml      (fn [x] (or (:xml x) @(:xml-delay x)))
            evaled-parts (->> evaled :main :result
                              (get-xml)
                              (extract-body-parts)
-                             (map (partial xml-rename-relation-ids relation-rename-map))
+                             (map (partial relations/xml-rename-relation-ids relation-rename-map))
                              (map (partial style/xml-rename-style-ids style-ids-rename)))]
        (swap! *inserted-fragments* conj frag-name)
        (swap! *extra-files* into relation-ids-rename)
