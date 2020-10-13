@@ -2,8 +2,7 @@
   "Handling the meta-model of OOXML documents.
    See: http://officeopenxml.com/anatomyofOOXML.php
   "
-  (:import [java.io File]
-           [io.github.erdos.stencil.impl FileHelper])
+  (:import [java.io File])
   (:require [clojure.data.xml :as xml]
             [clojure.java.io :as io :refer [file]]
             [stencil.eval :as eval]
@@ -42,10 +41,6 @@
 (def ^:private ^:dynamic *extra-files* nil)
 
 
-(defn- unix-path [^File f]
-  (some-> f .toPath FileHelper/toUnixSeparatedString))
-
-
 (defn- parse-content-types [^File cts]
   (assert (.exists cts))
   (assert (.isFile cts))
@@ -76,9 +71,6 @@
 
         main-document-rels (->rels main-document)
 
-        main-style-path (some #(when (= style/rel-type (::type %))
-                                 (unix-path (file (.getParentFile (file main-document)) (::target %))))
-                              (vals (:parsed main-document-rels)))
         ->exec (binding [merger/*only-includes* (boolean (:only-includes options-map))]
                  (bound-fn* ->exec))]
     {:content-types (parse-content-types (file dir "[Content_Types].xml"))
@@ -89,10 +81,7 @@
      :main          {::path       main-document
                      :source-file (file dir main-document)
                      :executable  (->exec (file dir main-document))
-                     :style (when main-style-path
-                              {::path       main-style-path
-                               :source-file (file dir main-style-path)
-                               :parsed      (style/parse (file dir main-style-path))})
+                     :style       (style/main-style-item dir main-document main-document-rels)
                      :relations main-document-rels
                      :headers+footers (doall
                                        (for [[id m] (:parsed main-document-rels)
