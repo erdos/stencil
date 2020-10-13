@@ -1,5 +1,6 @@
 (ns stencil.model.common
   (:import [java.nio.file Files]
+           [java.io File]
            [io.github.erdos.stencil.impl FileHelper])
   (:require [clojure.data.xml :as xml]
             [clojure.java.io :as io]
@@ -23,3 +24,6 @@
        (Files/copy (.toPath (io/file (:source-file x))) stream)
        (.flush stream)
        nil))))
+
+(defn unix-path [^File f]
+  (some-> f .toPath FileHelper/toUnixSeparatedString))

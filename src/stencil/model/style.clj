@@ -21,7 +21,7 @@
 (defmacro expect-fragment-context! [& bodies] `(do (assert *current-styles*) ~@bodies))
 
 
-(defn parse
+(defn- parse
   "Returns a map where key is style id and value is style definition."
   [style-file]
   (assert style-file)
@@ -86,3 +86,14 @@
       (update-some xml-tree [:attrs ooxml/val] style-id-renames)
       (update xml-tree :content (partial map (partial xml-rename-style-ids style-id-renames))))
     xml-tree))
+
+
+(defn main-style-item [^File dir main-document main-document-rels]
+  (when-let [main-style (some #(when (= rel-type (:stencil.model/type %)) %)
+                              (vals (:parsed main-document-rels)))]
+    (let [main-style-file (io/file (.getParentFile (io/file main-document))
+                                   (:stencil.model/target main-style))
+          main-style-abs  (io/file dir main-style-file)]
+      {:stencil.model/path (unix-path main-style-file)
+       :source-file        main-style-abs
+       :parsed             (parse main-style-abs)})))
