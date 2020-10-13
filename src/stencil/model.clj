@@ -3,18 +3,14 @@
    See: http://officeopenxml.com/anatomyofOOXML.php
   "
   (:import [java.io File]
-           [java.nio.file Files]
            [io.github.erdos.stencil.impl FileHelper])
   (:require [clojure.data.xml :as xml]
-            [clojure.data.xml.pu-map :as pu]
             [clojure.java.io :as io :refer [file]]
-            [clojure.walk :refer [postwalk]]
             [stencil.eval :as eval]
             [stencil.merger :as merger]
             [stencil.tree-postprocess :as tree-postprocess]
             [stencil.types :refer [->FragmentInvoke]]
             [stencil.util :refer :all]
-
             [stencil.model.relations :as relations]
             [stencil.model.common :refer :all]
             [stencil.model.style :as style
