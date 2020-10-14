@@ -1,21 +1,43 @@
 (ns stencil.postprocess.list-ref
   (:require [stencil.util :refer :all]
             [stencil.ooxml :as ooxml]
+            [stencil.zap :refer [zap]]
             ; [stencil.model :as model]
             [clojure.zip :as zip]))
 
 (set! *warn-on-reflection* true)
+
+(def attr-fld-char-type
+  :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/fldCharType)
 
 ;; see val for numbering:
 ;; http://officeopenxml.com/WPnumbering-numFmt.php
 (defmulti render-number (fn [style number] style))
 (defmethod render-number :default [_ nr] (str nr))
 
-(defmethod render-number "lowerRoman" [_ number]
-  (assert false))
+(def ^:private roman-digits
+  [[1000 "M"] [900 "CM"]
+   [500  "D"] [400 "CD"]
+   [100  "C"] [90  "XC"]
+   [50   "L"] [40  "XL"]
+   [10   "X"] [9   "IX"]
+   [5    "V"] [4   "IV"]
+   [1    "I"]])
+
+(defn- num-to-roman [n]
+  (assert (integer? n))
+  (assert (pos? n))
+  (loop [buf [], n n]
+    (if (zero? n)
+      (apply str buf)
+      (let [[value romnum] (some #(if (>= n (first %)) %) roman-digits)]
+        (recur (conj buf romnum) (- n value))))))
 
 (defmethod render-number "upperRoman" [_ number]
-  (.toUpperCase (str (render-number "lowerRoman" number))))
+  (num-to-roman number))
+
+(defmethod render-number "lowerRoman" [_ number]
+  (.toLowerCase (str (render-number "lowerRoman" number))))
 
 (defmethod render-number "decimal" [_ number] (str (int number)))
 (defmethod render-number "decimalZero" [_ number]
@@ -60,7 +82,8 @@
   (when (map? node)
     (when (= :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/instrText
              (:tag node))
-      (first (:contents node)))))
+      (println ">>>>")
+      (first (:content node)))))
 
 ;; returns node if it is an fldChar node
 (defn fld-char [node]
@@ -94,6 +117,17 @@
   (assert (zipper? loc))
   (assert (string? tag-name))
   (find-first-child (partial tag-matches? tag-name) loc))
+
+;; loc points to the run which contains <fldChar w:fldCharType="begin"/>
+(defn replace-ref-text [loc]
+  (assert (zipper? loc))
+  ;; loc points
+  (assert (-> loc zip/node :tag name (= "r")))
+
+  ;; go right, find <fldChar fldCharType="end"/>
+  nil
+
+  )
 
 (defn fix-list-dirty-refs [xml-tree]
   (let [xml-tree (atom xml-tree)
@@ -148,39 +182,51 @@
          zipper)))
     (println "Bookmark meta: " @bookmark->meta)
 
-    ;; step 3:
-    ;;
-    ;; - for all reference
-    ;; - find bookmark meta in global atom
-    ;; - re-calculate rendered cross-ref data
 
+    ;; find
 
-    ;; TODO: make sure numbering relationship file is added (also for fragments!)
-    ;; TODO: make sure we have access to numbering definition
-    ;; TODO: read numbering definition, transform it to acceptable form
-    ;; TODO: do the rendering based on style def
+    (dfs-walk-xml-node
+     @xml-tree
+     instr-text-ref ;; if it is a ref node
+     (fn [loc]
+       ;; go right, find text node between seaprate and end.
+       ;; we can replace text with a rendered value.
+       (-> loc
+           (zip/up) ;; run
+           (zip/right) ;; run
+           ((fn [loc] ;; check if it is a separator
+              (when (find-first-in-tree
+                     (fn [node]
+                       (and (map? node)
+                            (= "separate" (attr-fld-char-type (:attrs node)))))
+                     loc)
+                loc)))
+           (zip/right)
+           ((fn [loc]
+              (when-let [txt (->> loc
+                                  (find-first-in-tree
+                                   (fn [node] (and (map? node) (= ooxml/t (:tag node))))))]
+                (let [current-text (-> txt zip/node :content first)]
+                  (println "current text was: " current-text))
+                (-> txt
+                    (zip/edit assoc :content ["XXX"])
+                    (zip/up)))))
+           (zip/right)
 
-    @xml-tree)
+           ((fn [loc] ;; check if it is a separator
+              (when (find-first-in-tree
+                     (fn [node]
+                       (and (map? node)
+                            (= "end" (attr-fld-char-type (:attrs node)))))
+                     loc)
+                (println "End node!")
+                loc)))
+           (doto (-> some? assert))
+           (or loc))))))
 
-  #_
-  (let [bookmark-nodes (atom {})]
-    (dfs-walk-xml-node xml-tree
-                       (fn [node] (and (map? node) (= (:tag node) ooxml/bookmark-start)))
-                       (fn [zipper]
-                         (let [id (-> zipper zip/node :attrs ooxml/name)
-                               nr-id (->> zipper
-                                          zip/up
-                                          (find-first-in-tree (fn [node] (= tag-num-id (:tag node))))
-                                          zip/node
-                                          :attrs
-                                          attr-val)
-
-                               ;; go left from node, find
-                               nr-idx nil]
-                           (swap! bookmark-nodes assoc id [nr-id nr-idx]))
-                         zipper))
-    (println "!!!")
-    (println @bookmark-nodes)
-    xml-tree)
-  xml-tree
-  )
+(defn parse-instr-text [^String s]
+  (assert (string? s))
+  (let [[type id & flags] (vec (.split (.trim s) "\\s\\\\?+"))]
+    (when (= "REF" type)
+      {:id id
+       :flags (set (map keyword flags))})))

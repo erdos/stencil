@@ -21,6 +21,11 @@
   (is (= "AB" (render-number "upperLetter" 28)))
   (is (= "ab" (render-number "lowerLetter" 28))))
 
+(deftest render-number-upper-roman
+  (is (= "I" (render-number "upperRoman" 1)))
+  (is (= "IX" (render-number "upperRoman" 9)))
+  (is (= "LVI" (render-number "upperRoman" 56))))
+
 (deftest render-list-sanity
   (is (= "2(5)" (render-list
                 [{:start 1 :num-fmt "decimal" :lvl-text "%1."}
@@ -33,3 +38,9 @@
   (is (= " REF __RefNumPara__1_1003916714 \\w \\h "
          (instr-text-ref {:tag :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/instrText
                           :contents [" REF __RefNumPara__1_1003916714 \\w \\h "]}))))
+
+(deftest test-parse-instr-text
+  (is (=
+       {:flags #{:w :h}
+        :id "__RefNumPara__1_1003916714"}
+       (parse-instr-text " REF __RefNumPara__1_1003916714 \\w \\h "))))
