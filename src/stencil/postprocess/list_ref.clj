@@ -191,38 +191,39 @@
      (fn [loc]
        ;; go right, find text node between seaprate and end.
        ;; we can replace text with a rendered value.
-       (-> loc
-           (zip/up) ;; run
-           (zip/right) ;; run
-           ((fn [loc] ;; check if it is a separator
-              (when (find-first-in-tree
-                     (fn [node]
-                       (and (map? node)
-                            (= "separate" (attr-fld-char-type (:attrs node)))))
-                     loc)
-                loc)))
-           (zip/right)
-           ((fn [loc]
-              (when-let [txt (->> loc
-                                  (find-first-in-tree
-                                   (fn [node] (and (map? node) (= ooxml/t (:tag node))))))]
-                (let [current-text (-> txt zip/node :content first)]
-                  (println "current text was: " current-text))
-                (-> txt
-                    (zip/edit assoc :content ["XXX"])
-                    (zip/up)))))
-           (zip/right)
+       (let [text (instr-text-ref (zip/node loc))]
+         (-> loc
+             (zip/up) ;; run
+             (zip/right) ;; run
+             ((fn [loc] ;; check if it is a separator
+                (when (find-first-in-tree
+                       (fn [node]
+                         (and (map? node)
+                              (= "separate" (attr-fld-char-type (:attrs node)))))
+                       loc)
+                  loc)))
+             (zip/right)
+             ((fn [loc]
+                (when-let [txt (->> loc
+                                    (find-first-in-tree
+                                     (fn [node] (and (map? node) (= ooxml/t (:tag node))))))]
+                  (let [current-text (-> txt zip/node :content first)]
+                    (println "current text was: " current-text "for" text))
+                  (-> txt
+                      (zip/edit assoc :content ["XXX"])
+                      (zip/up)))))
+             (zip/right)
 
-           ((fn [loc] ;; check if it is a separator
-              (when (find-first-in-tree
-                     (fn [node]
-                       (and (map? node)
-                            (= "end" (attr-fld-char-type (:attrs node)))))
-                     loc)
-                (println "End node!")
-                loc)))
-           (doto (-> some? assert))
-           (or loc))))))
+             ((fn [loc] ;; check if it is a separator
+                (when (find-first-in-tree
+                       (fn [node]
+                         (and (map? node)
+                              (= "end" (attr-fld-char-type (:attrs node)))))
+                       loc)
+                  (println "End node!")
+                  loc)))
+             (doto (-> some? assert))
+             (or loc)))))))
 
 (defn parse-instr-text [^String s]
   (assert (string? s))
