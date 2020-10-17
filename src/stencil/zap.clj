@@ -19,7 +19,7 @@
               :else (assert false))
         (reduced nil))) xml filters)))
 
-(defmacro zap [xml & filters] `(zap* xml ~@(for [f filters] (list 'quote f))))
+(defmacro zap [xml & filters] `(zap* ~xml ~@(for [f filters] (list 'quote f))))
 
 (comment
 

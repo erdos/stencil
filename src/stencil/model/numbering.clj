@@ -29,6 +29,8 @@
 (def attr-ilvl
   :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/ilvl)
 
+(def ^:dynamic *numbering* nil)
+
 (defn- find-first-in-tree [pred tree]
   (assert (zipper? tree))
   (assert (fn? pred))
@@ -64,7 +66,7 @@
 (defn- get-id-style-xml [tree id level]
   (assert (integer? level))
   (assert (string? id))
-  (assert (map? tree))
+  (assert (map? tree) (str "Not a map: " (pr-str (type tree))))
   (let [def1 (find-node tree
                        (fn [node]
                          (and (map? node)
@@ -83,7 +85,7 @@
 (defn- xml-lvl-parse [tree]
   {:lvl-text (-> (find-node tree (fn [node] (-> node :tag name #{"lvlText"}))) :attrs ooxml/val)
    :num-fmt  (-> (find-node tree (fn [node] (-> node :tag name #{"numFmt"}))) :attrs ooxml/val)
-   :start    (-> (find-node tree (fn [node] (-> node :tag name #{"start"}))) :attrs ooxml/val)})
+   :start    (-> (find-node tree (fn [node] (-> node :tag name #{"start"}))) :attrs ooxml/val ->int)})
 
 (defn- parse [numbering-file]
   (assert numbering-file)
@@ -104,3 +106,10 @@
     {:stencil.model/path       main-numbering-path
      :source-file              (io/file dir main-numbering-path)
      :parsed                   (parse (file dir main-numbering-path))}))
+
+(defn style-def-for [id lvl]
+  (assert (string? id))
+  (assert (integer? lvl))
+  (-> (:parsed *numbering*)
+      (get-id-style-xml id lvl)
+      (xml-lvl-parse)))

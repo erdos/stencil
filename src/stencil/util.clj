@@ -108,5 +108,12 @@
   (assert (fn? edit-fn))
   (dfs-walk-xml-node xml-tree predicate #(clojure.zip/edit % edit-fn)))
 
+(defmacro having-> [x & clauses]
+  `(let [x# ~x]
+     (or (some-> ~@clauses) x#)))
+
+(defmacro when-pred [pred body]
+  `(let [b# ~body]
+     (when (~pred b#) b#)))
 
 :OK

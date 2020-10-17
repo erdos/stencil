@@ -2,7 +2,7 @@
   (:require [stencil.util :refer :all]
             [stencil.ooxml :as ooxml]
             [stencil.zap :refer [zap]]
-            ; [stencil.model :as model]
+            [stencil.model.numbering :as numbering]
             [clojure.zip :as zip]))
 
 (set! *warn-on-reflection* true)
@@ -64,21 +64,35 @@
 (defmethod render-number "lowerLetter" [_ number]
   (.toLowerCase (str (render-number "upperLetter" number))))
 
-;; style: decimal
+;;
+;; flags:
+;;
+;;
+;;
+;;
+;;
 (defn render-list [styles levels flags]
   (assert (sequential? styles))
   (assert (sequential? levels))
   (assert (<= (count levels) (count styles)))
   (assert (set? flags))
-  (reduce-kv (fn [pattern idx item] (.replace (str pattern) (str "%" (inc idx)) (str item)))
-             (str (:lvl-text (nth styles (dec (count levels)))))
-             (mapv (fn [style level] (render-number (:num-fmt style) (+ (:start style) level -1))) styles levels)))
+  (let [pattern (str (:lvl-text (nth styles (dec (count levels)))))
+        pattern (if-not (.startsWith pattern "%")
+                  pattern
+                  (let [last-pattern (str "%" (count levels))
+                        idx          (.lastIndexOf pattern last-pattern)]
+                    (.substring pattern 0 (+ idx (count last-pattern)))))]
+    (reduce-kv (fn [pattern idx item] (.replace (str pattern) (str "%" (inc idx)) (str item)))
+               pattern
+               (mapv (fn [style level] (render-number (:num-fmt style) (+ (:start style) level -1)))
+                     styles levels))))
 
 (defn node-instr-ref? [node]
   ;; returns true iff node is a paragraph number reference
   nil)
 
 (defn instr-text-ref [node]
+  (assert (not (zipper? node)))
   (when (map? node)
     (when (= :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/instrText
              (:tag node))
@@ -91,10 +105,15 @@
     (when (= ooxml/fld-char (:tag node))
       node)))
 
-(defn- find-first-in-tree [pred tree]
+;; (find-elem zipper :tag "ala")
+;; (find-elem zipper :attr "x" "1")
+(defn find-elem [tree prop & [a b]]
   (assert (zipper? tree))
-  (assert (fn? pred))
-  (find-first (comp pred zip/node) (take-while (complement zip/end?) (iterate zip/next tree))))
+  (assert (keyword? a))
+  (let [items (take-while (comp complement #{(zip/node tree)} zip/node) (iterate zip/next tree))]
+    (case prop
+      :tag  (find-first (comp #{a} :tag zip/node) items)
+      :attr (find-first (comp #{b} a :attrs zip/node) items))))
 
 (defn parse-num-pr [node]
   (assert (= ooxml/num-pr (:tag node)))
@@ -128,6 +147,13 @@
   nil
 
   )
+
+(defn parse-instr-text [^String s]
+  (assert (string? s))
+  (let [[type id & flags] (vec (.split (.trim s) "\\s\\\\?+"))]
+    (when (= "REF" type)
+      {:id id
+       :flags (set (map keyword flags))})))
 
 (defn fix-list-dirty-refs [xml-tree]
   (let [xml-tree (atom xml-tree)
@@ -182,9 +208,6 @@
          zipper)))
     (println "Bookmark meta: " @bookmark->meta)
 
-
-    ;; find
-
     (dfs-walk-xml-node
      @xml-tree
      instr-text-ref ;; if it is a ref node
@@ -192,42 +215,29 @@
        ;; go right, find text node between seaprate and end.
        ;; we can replace text with a rendered value.
        (let [text (instr-text-ref (zip/node loc))]
-         (-> loc
+         (->
+          (some-> loc
              (zip/up) ;; run
              (zip/right) ;; run
-             ((fn [loc] ;; check if it is a separator
-                (when (find-first-in-tree
-                       (fn [node]
-                         (and (map? node)
-                              (= "separate" (attr-fld-char-type (:attrs node)))))
-                       loc)
-                  loc)))
+             (->> (when-pred #(find-elem % :attr attr-fld-char-type "separate")))
              (zip/right)
              ((fn [loc]
-                (when-let [txt (->> loc
-                                    (find-first-in-tree
-                                     (fn [node] (and (map? node) (= ooxml/t (:tag node))))))]
-                  (let [current-text (-> txt zip/node :content first)]
-                    (println "current text was: " current-text "for" text))
-                  (-> txt
-                      (zip/edit assoc :content ["XXX"])
-                      (zip/up)))))
+                (when-let [txt (find-elem loc :tag ooxml/t)]
+                  (let [current-text (-> txt zip/node :content first)
+                        parsed-ref (parse-instr-text text)
+                        {:keys [num-id ilvl stack]} (get @bookmark->meta (:id parsed-ref))
+                        definitions (doall (for [i (range (inc ilvl))]
+                                             (numbering/style-def-for num-id i)))
+                        replacement (render-list definitions stack #{})
+                        ]
+                    ;; (println "current text was: " current-text "for" text)
+                    ;; (println " - parsed is " parsed-ref)
+                    ;; (println " - meta is " num-id "/" ilvl ":" (pr-str stack))
+                    ;; (println " - definitions are: " (pr-str definitions))
+                    ;; (println " - replacement is " replacement)
+                    (-> txt
+                        (zip/edit assoc :content [replacement])
+                        (zip/up))))))
              (zip/right)
-
-             ((fn [loc] ;; check if it is a separator
-                (when (find-first-in-tree
-                       (fn [node]
-                         (and (map? node)
-                              (= "end" (attr-fld-char-type (:attrs node)))))
-                       loc)
-                  (println "End node!")
-                  loc)))
-             (doto (-> some? assert))
-             (or loc)))))))
-
-(defn parse-instr-text [^String s]
-  (assert (string? s))
-  (let [[type id & flags] (vec (.split (.trim s) "\\s\\\\?+"))]
-    (when (= "REF" type)
-      {:id id
-       :flags (set (map keyword flags))})))
+             (->> (when-pred #(find-elem % :attr attr-fld-char-type "end"))))
+          (or loc)))))))
