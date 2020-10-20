@@ -1,7 +1,7 @@
 (ns stencil.service.core
   (:gen-class)
   (:import [java.io File])
-  (:require [org.httpkit.server :refer [run-server]]
+  (:require [ring.adapter.jetty :as jetty]
             [stencil.api :as api]
             [clojure.data :refer [diff]]
             [clojure.java.io :refer [file]]
@@ -105,10 +105,13 @@
 
 (defn -main [& args]
   (let [http-port    (get-http-port)
-        template-dir ^File (get-template-dir)
-        server (run-server app {:port http-port})]
-    (log/info "Started listening on" http-port "serving" (str template-dir))
+        template-dir ^File (get-template-dir)]
+    (log/info "Starting listening on" http-port "serving" (str template-dir))
     (log/info "Available template files: ")
     (doseq [^File line (tree-seq #(.isDirectory ^File %) (comp next file-seq) template-dir)
             :when (.isFile line)]
-      (log/info (str (.relativize (.toPath template-dir) (.toPath line)))))))
+      (log/info (str (.relativize (.toPath template-dir) (.toPath line)))))
+    (jetty/run-jetty app
+                     {:port http-port
+                      :daemon? false
+                      :join? true})))
