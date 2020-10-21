@@ -78,7 +78,7 @@
 
 
 (defn cleanup! [template]
-  (cond (instance? PreparedTemplate template) (.cleanup ^PreparedTemplate template)
+  (cond (instance? PreparedTemplate template) (.cqleanup ^PreparedTemplate template)
         (instance? PreparedFragment template) (.cleanup ^PreparedFragment template)
         :else (throw (ex-info "Unexpected object to clean up!" {:template template})))
   template)

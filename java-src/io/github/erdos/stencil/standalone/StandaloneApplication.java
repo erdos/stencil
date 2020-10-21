@@ -161,7 +161,7 @@ public class StandaloneApplication {
     }
 
     private void displayVersionInfo() {
-        RT.var("clojure.core", "require").invoke(Symbol.intern("stencil.api"));
-        System.out.println(RT.var("stencil.api", "version").deref().toString());
+        // RT.var("clojure.core", "require").invoke(Symbol.intern("stencil.api"));
+        // System.out.println(RT.var("stencil.api", "version").deref().toString());
     }
 }
