@@ -19,6 +19,8 @@ WORKDIR /app
 
 RUN native-image --no-fallback --report-unsupported-elements-at-runtime --initialize-at-build-time -jar app-standalone.jar
 
+# RUN native-image --no-fallback --initialize-at-build-time -jar app-standalone.jar
+
 FROM alpine:latest
 
 ENV STENCIL_HTTP_PORT=8080
