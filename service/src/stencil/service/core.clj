@@ -108,7 +108,7 @@
         template-dir ^File (get-template-dir)
         server (run-server app {:port http-port})]
     (log/info "Started listening on" http-port "serving" (str template-dir))
-    (log/info "Available template files in " template-dir)
+    (log/info "Available template files: ")
     (doseq [^File line (tree-seq #(.isDirectory ^File %) (comp next file-seq) template-dir)
             :when (.isFile line)]
       (log/info (str (.relativize (.toPath template-dir) (.toPath line)))))))
