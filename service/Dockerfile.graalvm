@@ -17,19 +17,15 @@ RUN gu install native-image
 COPY --from=CLJ /app/app-standalone.jar /app/app-standalone.jar
 WORKDIR /app
 
-# RUN native-image --no-fallback --report-unsupported-elements-at-runtime --initialize-at-build-time -jar app-standalone.jar
+RUN native-image --no-fallback --report-unsupported-elements-at-runtime --initialize-at-build-time -jar app-standalone.jar
 
-RUN native-image --no-fallback --initialize-at-build-time -jar app-standalone.jar
-
-FROM alpine:latest
+FROM alpine:3.12.1
 
 ENV STENCIL_HTTP_PORT=8080
 ENV STENCIL_TEMPLATE_DIR=/templates
 ENV STENCIL_JAVA_OPTIONS=-XX:+PrintFlagsFinal
 
 VOLUME /templates
-
-# used to wrap app
 
 COPY --from=BASE /lib64/libc.so.6 /lib64/libc.so.6
 COPY --from=BASE /lib64/libdl.so.2 /lib64/libdl.so.2
