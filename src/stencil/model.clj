@@ -132,7 +132,6 @@
 (defn- eval-template-model [template-model data functions fragments]
   (assert (:main template-model) "Should be a result of load-template-model call!")
   (assert (some? fragments))
-  (println ">>>>>> ------- " (keys (:main template-model)))
   (binding [*current-styles*     (atom (:parsed (:style (:main template-model))))
             numbering/*numbering*   (or numbering/*numbering*
                                         (:numbering (:main template-model))

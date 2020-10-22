@@ -91,8 +91,6 @@
   (assert numbering-file)
   (with-open [r (io/input-stream (file numbering-file))]
     (let [tree (xml/parse r)]
-      (println "Definition for level: " (xml-lvl-parse (get-id-style-xml tree "1" 0)))
-
       tree)))
 
 
@@ -102,7 +100,6 @@
                       (unix-path (file (.getParentFile (file main-document))
                                        (:stencil.model/target %))))
                    (vals (:parsed main-document-rels)))]
-    (println "Main numbering path: " main-numbering-path)
     {:stencil.model/path       main-numbering-path
      :source-file              (io/file dir main-numbering-path)
      :parsed                   (parse (file dir main-numbering-path))}))

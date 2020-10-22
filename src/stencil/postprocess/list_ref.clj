@@ -95,7 +95,6 @@
   (when (map? node)
     (when (= :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/instrText
              (:tag node))
-      (println ">>>>")
       (first (:content node)))))
 
 ;; returns node if it is an fldChar node
@@ -205,8 +204,6 @@
                   (::enumeration)
                   (vswap! bookmark->meta assoc bookmark-id))
          zipper)))
-    (println "Bookmark meta: " @bookmark->meta)
-
     (dfs-walk-xml-node
      @xml-tree
      instr-text-ref ;; if it is a ref node
@@ -229,11 +226,6 @@
                                              (numbering/style-def-for num-id i)))
                         replacement (render-list definitions stack #{})
                         ]
-                    ;; (println "current text was: " current-text "for" text)
-                    ;; (println " - parsed is " parsed-ref)
-                    ;; (println " - meta is " num-id "/" ilvl ":" (pr-str stack))
-                    ;; (println " - definitions are: " (pr-str definitions))
-                    ;; (println " - replacement is " replacement)
                     (-> txt
                         (zip/edit assoc :content [replacement])
                         (zip/up))))))
