@@ -1,7 +1,6 @@
 (ns stencil.postprocess.list-ref
   (:require [stencil.util :refer :all]
             [stencil.ooxml :as ooxml]
-            [stencil.zap :refer [zap]]
             [stencil.model.numbering :as numbering]
             [clojure.zip :as zip]))
 
