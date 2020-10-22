@@ -1,0 +1,41 @@
+FROM clojure:openjdk-8-lein-2.9.3-slim-buster AS CLJ
+
+# prefetch dependencies so we will not have to download them every single time.
+COPY project.clj .
+RUN lein deps
+
+COPY . /app
+
+WORKDIR /app
+
+RUN mv "$(lein uberjar | sed -n 's/^Created \(.*standalone\.jar\)/\1/p')" app-standalone.jar
+
+FROM oracle/graalvm-ce:20.2.0-java8 AS BASE
+
+RUN gu install native-image
+
+COPY --from=CLJ /app/app-standalone.jar /app/app-standalone.jar
+WORKDIR /app
+
+RUN native-image --no-fallback --report-unsupported-elements-at-runtime --initialize-at-build-time -jar app-standalone.jar
+
+FROM alpine:3.12.1
+
+ENV STENCIL_HTTP_PORT=8080
+ENV STENCIL_TEMPLATE_DIR=/templates
+ENV STENCIL_JAVA_OPTIONS=-XX:+PrintFlagsFinal
+
+VOLUME /templates
+
+COPY --from=BASE /lib64/libc.so.6 /lib64/libc.so.6
+COPY --from=BASE /lib64/libdl.so.2 /lib64/libdl.so.2
+COPY --from=BASE /lib64/libpthread.so.0 /lib64/libpthread.so.0
+COPY --from=BASE /lib64/libz.so.1 /lib64/libz.so.1
+COPY --from=BASE /lib64/librt.so.1 /lib64/librt.so.1
+COPY --from=BASE /lib64/libcrypt.so.1 /lib64/libcrypt.so.1
+COPY --from=BASE /lib64/ld-linux-x86-64.so.2 /lib64/ld-linux-x86-64.so.2
+COPY --from=BASE /lib64/libfreebl3.so /lib64/libfreebl3.so
+
+COPY --from=BASE /app/app-standalone /
+
+CMD ["/app-standalone"]

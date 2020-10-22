@@ -111,5 +111,4 @@
     (log/info "Available template files: ")
     (doseq [^File line (tree-seq #(.isDirectory ^File %) (comp next file-seq) template-dir)
             :when (.isFile line)]
-      (log/info (str (.relativize (.toPath template-dir) (.toPath line)))))
-    (while true (read-line))))
+      (log/info (str (.relativize (.toPath template-dir) (.toPath line)))))))
