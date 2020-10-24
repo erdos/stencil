@@ -83,7 +83,7 @@
     (reduce-kv (fn [pattern idx item] (.replace (str pattern) (str "%" (inc idx)) (str item)))
                pattern
                (mapv (fn [style level] (render-number (:num-fmt style) (+ (:start style) level -1)))
-                     styles levels))))
+                     styles (reverse levels)))))
 
 (defn- render-list-one [styles levels]
   (let [pattern (str (:lvl-text (nth styles (dec (count levels)))))
@@ -91,7 +91,7 @@
     (reduce-kv (fn [pattern idx item] (.replace (str pattern) (str "%" (inc idx)) (str item)))
                pattern
                (mapv (fn [style level] (render-number (:num-fmt style) (+ (:start style) level -1)))
-                     styles levels))))
+                     styles (reverse levels)))))
 
 (defn- render-list-relative [styles levels current-stack]
   ;; TODO!
@@ -252,7 +252,10 @@
                                                    (zip/node)
                                                    (::enumeration)
                                                    (:stack))
-                            replacement (render-list definitions stack #{} (or current-stack ()))]
+                            replacement (render-list definitions stack (:flags parsed-ref) (or current-stack ()))
+                            old-content (-> txt zip/node :content first)]
+                        ;; TODO: debug logging here!
+                        (println "Replacing" old-content "with" replacement)
                         (-> txt
                             (zip/edit assoc :content [replacement])
                             (zip/up))))))))
