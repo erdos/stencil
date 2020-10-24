@@ -2,6 +2,7 @@
   (:require [stencil.util :refer :all]
             [stencil.ooxml :as ooxml]
             [stencil.model.numbering :as numbering]
+            [clojure.tools.logging :as log]
             [clojure.zip :as zip]))
 
 (set! *warn-on-reflection* true)
@@ -176,8 +177,7 @@
                                      (:stack))
               replacement (render-list definitions stack (:flags parsed-ref) (or current-stack ()))
               old-content (-> txt zip/node :content first)]
-          ;; TODO: debug logging here!
-          (println "Replacing" old-content "with" replacement)
+          (log/debug "Replacing" old-content "with" replacement)
           (-> txt
               (zip/edit assoc :content [replacement])
               (zip/up)))))))
@@ -213,7 +213,6 @@
                         {:ilvl ilvl
                          :num-id num-id
                          :stack (get @nr->stack num-id)})))))
-
 
 
     ;; step 2:
