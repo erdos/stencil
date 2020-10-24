@@ -78,15 +78,17 @@
 ;; - r:
 ;; - n:
 ;;
-;;
 
 ;; full context is joining of patterns.
 (defn- render-list-full-context [styles levels]
-  (let [depth (count levels)
-        pattern (apply str
-                       (map (comp pattern-rm-prefix-if-no-suffix :lvl-text)
-                            (take depth styles)))
-        pattern (pattern-rm-prefix-if-no-suffix pattern)]
+  (let [pattern (let [patterns (mapv :lvl-text (take (count levels) styles))]
+                  (loop [i (dec (count patterns))]
+                    (if (neg? i)
+                      (apply str patterns)
+                      (let [cleaned (pattern-rm-prefix-if-no-suffix (nth patterns i))]
+                        (if (= (nth patterns i) cleaned)
+                          (recur (dec i))
+                          (str (apply str (take i patterns)) cleaned (apply str (drop (inc i) patterns))))))))]
     (reduce-kv (fn [pattern idx item] (.replace (str pattern) (str "%" (inc idx)) (str item)))
                pattern
                (mapv (fn [style level] (render-number (:num-fmt style) (+ (:start style) level -1)))
@@ -107,8 +109,7 @@
   (assert (set? flags))
   (cond (:w flags) (render-list-full-context styles levels)
         (:r flags) (render-list-one styles levels)
-        (:n flags) (render-list-one styles levels)
-        :else      nil))
+        (:n flags) (render-list-one styles levels)))
 
 (defn node-instr-ref? [node]
   ;; returns true iff node is a paragraph number reference
