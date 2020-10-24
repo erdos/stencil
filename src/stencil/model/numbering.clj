@@ -11,26 +11,9 @@
 (def ^:private rel-type-numbering
   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering")
 
+
 (def ^:dynamic *numbering* nil)
 
-(defn- find-first-in-tree [pred tree]
-  (assert (zipper? tree))
-  (assert (fn? pred))
-  (find-first (comp pred zip/node) (take-while (complement zip/end?) (iterate zip/next tree))))
-
-(defn- find-first-child
-  "Returns zipper of first child where predicate holds for the node or nil when not found."
-  [pred loc]
-  (assert (ifn? pred))
-  (assert (zipper? loc))
-  (find-first (comp pred zip/node) (take-while some? (iterations zip/right (zip/down loc)))))
-
-(defn- tag-matches? [tag elem] (and (map? elem) (some-> elem :tag name #{tag})))
-
-(defn- child-of-tag [tag-name loc]
-  (assert (zipper? loc))
-  (assert (string? tag-name))
-  (find-first-child (partial tag-matches? tag-name) loc))
 
 (defn- find-node [tree predicate]
   (when (map? tree)
@@ -38,12 +21,14 @@
       tree
       (some #(find-node % predicate) (:content tree)))))
 
+
 (defn find-lvl [tree level]
   (find-node tree
              (fn [node]
                (and (map? node)
                     (= (:tag node) ooxml/tag-lvl)
                     (= (str level) (-> node :attrs ooxml/attr-ilvl str))))))
+
 
 (defn- get-id-style-xml [tree id level]
   (assert (integer? level))
@@ -64,10 +49,12 @@
                                          (= abstract-id (-> node :attrs ooxml/xml-abstract-num-id)))))]
           (find-lvl abstract level)))))
 
+
 (defn- xml-lvl-parse [tree]
   {:lvl-text (-> (find-node tree (fn [node] (-> node :tag name #{"lvlText"}))) :attrs ooxml/val)
    :num-fmt  (-> (find-node tree (fn [node] (-> node :tag name #{"numFmt"}))) :attrs ooxml/val)
    :start    (-> (find-node tree (fn [node] (-> node :tag name #{"start"}))) :attrs ooxml/val ->int)})
+
 
 (defn- parse [numbering-file]
   (assert numbering-file)
@@ -85,6 +72,7 @@
     {:stencil.model/path       main-numbering-path
      :source-file              (io/file dir main-numbering-path)
      :parsed                   (parse (file dir main-numbering-path))}))
+
 
 (defn style-def-for [id lvl]
   (assert (string? id))
