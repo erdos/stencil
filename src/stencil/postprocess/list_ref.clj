@@ -36,7 +36,7 @@
   (num-to-roman number))
 
 (defmethod render-number "lowerRoman" [_ number]
-  (.toLowerCase (str (render-number "lowerRoman" number))))
+  (.toLowerCase (str (render-number "upperRoman" number))))
 
 (defmethod render-number "decimal" [_ number] (str (int number)))
 (defmethod render-number "decimalZero" [_ number]
@@ -63,11 +63,22 @@
 (defmethod render-number "lowerLetter" [_ number]
   (.toLowerCase (str (render-number "upperLetter" number))))
 
+;; ".%1/%2." -> ".%1/%2."
+;; "%1/%2."  -> "%1/%2"
+;; "%1/%2"   -> "%1/%2"
+(defn pattern-rm-prefix-if-no-suffix [^String pattern levels]
+  (if-not (.startsWith pattern "%")
+    pattern
+    (let [last-pattern (str "%" (count levels))
+          idx          (.lastIndexOf pattern last-pattern)]
+      (.substring pattern 0 (+ idx (count last-pattern))))))
+
 ;;
+;; reference: https://c-rex.net/projects/samples/ooxml/e1/Part4/OOXML_P4_DOCX_REFREF_topic_ID0ESRL1.html#topic_ID0ESRL1
 ;; flags:
-;;
-;;
-;;
+;; - w: full context
+;; - r:
+;; - n:
 ;;
 ;;
 (defn render-list [styles levels flags]
@@ -76,11 +87,7 @@
   (assert (<= (count levels) (count styles)))
   (assert (set? flags))
   (let [pattern (str (:lvl-text (nth styles (dec (count levels)))))
-        pattern (if-not (.startsWith pattern "%")
-                  pattern
-                  (let [last-pattern (str "%" (count levels))
-                        idx          (.lastIndexOf pattern last-pattern)]
-                    (.substring pattern 0 (+ idx (count last-pattern)))))]
+        pattern' (pattern-rm-prefix-if-no-suffix pattern levels)]
     (reduce-kv (fn [pattern idx item] (.replace (str pattern) (str "%" (inc idx)) (str item)))
                pattern
                (mapv (fn [style level] (render-number (:num-fmt style) (+ (:start style) level -1)))

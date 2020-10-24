@@ -27,12 +27,27 @@
   (is (= "IX" (render-number "upperRoman" 9)))
   (is (= "LVI" (render-number "upperRoman" 56))))
 
+#_
 (deftest render-list-sanity
   (is (= "2(5)" (render-list
-                [{:start 1 :num-fmt "decimal" :lvl-text "%1."}
-                 {:start 1 :num-fmt "decimal" :lvl-text "%1(%2)"}]
-                [2 5]
-                #{:r :h}))))
+                 [{:start 1 :num-fmt "decimal" :lvl-text "%1."}
+                  {:start 1 :num-fmt "decimal" :lvl-text "%1(%2)"}]
+                 [2 5]
+                 #{:r :h}))))
+
+;; flag h only: text content
+;; flag p: only "above" or "below"
+;; flag r: "Number", without dot
+;; flag n: "Number (No Context)", no dot
+;; flag w: "Number (Full Context)", no dot
+(deftest render-list-sanity
+  (let [styles [{:start 1 :num-fmt "decimal" :lvl-text "%1."}
+                {:start 1 :num-fmt "lowerRoman" :lvl-text "%2."}
+                {:start 1 :num-fmt "upperLetter" :lvl-text "%3."}]]
+    (is (= "C" (render-list styles [1 1 3] #{:r :h})))
+    (is (= "C" (render-list styles [1 1 3] #{:n :h})))
+    (is (= "1.i.C" (render-list styles [1 1 3] #{:w :h})))))
+
 
 #_
 (deftest
