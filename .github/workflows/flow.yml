@@ -7,27 +7,29 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v2
     - name: Install dependencies
       run: lein deps
     - name: Run tests
       run: lein test
-    - name: Release
+  clojars_push:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install dependencies
+      run: lein deps
+    - name: Release Clojars
       env:
         CLOJARS_USER: ${{ secrets.CLOJARS_USER }}
         CLOJARS_PASS: ${{ secrets.CLOJARS_PASS }}
       run: lein deploy snapshots
-
-  push:
+  docker_push:
     needs: build
-
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
-
     steps:
       - uses: actions/checkout@v2
       - name: Build image
