@@ -11,24 +11,6 @@
 (def ^:private rel-type-numbering
   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering")
 
-(def tag-num
-  :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/num)
-
-(def tag-lvl
-  :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/lvl)
-
-(def xml-abstract-num-id
-  :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/abstractNumId)
-
-(def tag-abstract-num
-  :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/abstractNum)
-
-(def attr-numId
-  :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/numId)
-
-(def attr-ilvl
-  :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/ilvl)
-
 (def ^:dynamic *numbering* nil)
 
 (defn- find-first-in-tree [pred tree]
@@ -60,8 +42,8 @@
   (find-node tree
              (fn [node]
                (and (map? node)
-                    (= (:tag node) tag-lvl)
-                    (= (str level) (-> node :attrs attr-ilvl str))))))
+                    (= (:tag node) ooxml/tag-lvl)
+                    (= (str level) (-> node :attrs ooxml/attr-ilvl str))))))
 
 (defn- get-id-style-xml [tree id level]
   (assert (integer? level))
@@ -70,16 +52,16 @@
   (let [def1 (find-node tree
                        (fn [node]
                          (and (map? node)
-                              (= (:tag node) tag-num)
-                              (= id (-> node :attrs attr-numId)))))]
+                              (= (:tag node) ooxml/tag-num)
+                              (= id (-> node :attrs ooxml/attr-numId)))))]
     (or (find-lvl def1 level) ;; find in override
 
         ;; find abstract definition
-        (let [abstract-id (-> (find-node def1 (fn [node] (= (:tag node) xml-abstract-num-id ))) :attrs ooxml/val)
+        (let [abstract-id (-> (find-node def1 (fn [node] (= (:tag node) ooxml/xml-abstract-num-id ))) :attrs ooxml/val)
               abstract (find-node tree
                                   (fn [node]
-                                    (and (= (:tag node) tag-abstract-num)
-                                         (= abstract-id (-> node :attrs xml-abstract-num-id)))))]
+                                    (and (= (:tag node) ooxml/tag-abstract-num)
+                                         (= abstract-id (-> node :attrs ooxml/xml-abstract-num-id)))))]
           (find-lvl abstract level)))))
 
 (defn- xml-lvl-parse [tree]
