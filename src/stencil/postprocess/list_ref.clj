@@ -71,15 +71,19 @@
     (.substring pattern 0 (+ 2 (.lastIndexOf pattern "%")))))
 
 ;; full context is joining of patterns.
-(defn- render-list-full-context [styles levels]
+(defn- render-list-full-context [styles levels drop-start]
+  (assert (not (neg? drop-start)))
   (let [pattern (let [patterns (mapv :lvl-text (take (count levels) styles))]
-                  (loop [i (dec (count patterns))]
-                    (if (neg? i)
-                      (apply str patterns)
-                      (let [cleaned (pattern-rm-prefix-if-no-suffix (nth patterns i))]
-                        (if (= (nth patterns i) cleaned)
-                          (recur (dec i))
-                          (str (apply str (take i patterns)) cleaned (apply str (drop (inc i) patterns))))))))]
+                  (->>
+                   (loop [i (dec (count patterns))]
+                     (if (neg? i)
+                       patterns
+                       (let [cleaned (pattern-rm-prefix-if-no-suffix (nth patterns i))]
+                         (if (= (nth patterns i) cleaned)
+                           (recur (dec i))
+                           (concat (take i patterns) [cleaned] (drop (inc i) patterns))))))
+                   (drop (min drop-start (dec (count levels))))
+                   (apply str)))]
     (reduce-kv (fn [pattern idx item] (.replace (str pattern) (str "%" (inc idx)) (str item)))
                pattern
                (mapv (fn [style level] (render-number (:num-fmt style) (+ (:start style) level -1)))
@@ -94,8 +98,8 @@
                      styles (reverse levels)))))
 
 (defn- render-list-relative [styles levels current-stack]
-  ;; TODO!
-  (render-list-one styles levels))
+  (let [common-suffix (count (take-while true? (map = (reverse levels) (reverse current-stack))))]
+    (render-list-full-context styles levels common-suffix)))
 
 ;; returns "below" or "above" or nil
 (defn- render-list-position [styles levels current-stack]
@@ -107,7 +111,7 @@
   (assert (sequential? current-stack))
   (assert (<= (count levels) (count styles)))
   (assert (set? flags))
-  (-> (cond (:w flags) (render-list-full-context styles levels)
+  (-> (cond (:w flags) (render-list-full-context styles levels 0)
             (:r flags) (render-list-relative styles levels current-stack)
             (:n flags) (render-list-one styles levels))
       (cond-> (:p flags) (-> (some-> (str " ")) (str (render-list-position styles levels current-stack))))))
