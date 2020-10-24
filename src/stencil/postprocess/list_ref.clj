@@ -93,14 +93,23 @@
                (mapv (fn [style level] (render-number (:num-fmt style) (+ (:start style) level -1)))
                      styles levels))))
 
+(defn- render-list-relative [styles levels]
+  ;; TODO!
+  (render-list-one styles levels))
+
+;; returns "below" or "above" or nil
+(defn- render-list-position [styles levels]
+  nil)
+
 (defn render-list [styles levels flags]
   (assert (sequential? styles))
   (assert (sequential? levels))
   (assert (<= (count levels) (count styles)))
   (assert (set? flags))
-  (cond (:w flags) (render-list-full-context styles levels)
-        (:r flags) (render-list-one styles levels) ;; TODO
-        (:n flags) (render-list-one styles levels)))
+  (-> (cond (:w flags) (render-list-full-context styles levels)
+            (:r flags) (render-list-relative styles levels)
+            (:n flags) (render-list-one styles levels))
+      (cond-> (:p flags) (-> (some-> (str " ")) (str (render-list-position styles levels))))))
 
 (defn instr-text-ref [node]
   (assert (not (zipper? node)))
