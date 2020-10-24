@@ -124,9 +124,8 @@
 
 ;; returns node if it is an fldChar node
 (defn fld-char [node]
-  (when (map? node)
-    (when (= ooxml/fld-char (:tag node))
-      node)))
+  (when (and (map? node) (= ooxml/fld-char (:tag node)))
+    node))
 
 ;; (find-elem zipper :tag "ala")
 ;; (find-elem zipper :attr "x" "1")
@@ -146,30 +145,11 @@
               "numId" (assoc m :num-id (-> node :attrs ooxml/val))
               m)) {} (:content node)))
 
-(defn- find-first-child
-  "Returns zipper of first child where predicate holds for the node or nil when not found."
-  [pred loc]
-  (assert (ifn? pred))
-  (assert (zipper? loc))
-  (find-first (comp pred zip/node) (take-while some? (iterations zip/right (zip/down loc)))))
-
-(defn- tag-matches? [tag elem] (and (map? elem) (some-> elem :tag name #{tag})))
-
 (defn- child-of-tag [tag-name loc]
   (assert (zipper? loc))
   (assert (string? tag-name))
-  (find-first-child (partial tag-matches? tag-name) loc))
-
-;; loc points to the run which contains <fldChar w:fldCharType="begin"/>
-(defn replace-ref-text [loc]
-  (assert (zipper? loc))
-  ;; loc points
-  (assert (-> loc zip/node :tag name (= "r")))
-
-  ;; go right, find <fldChar fldCharType="end"/>
-  nil
-
-  )
+  (find-first (comp (fn [elem] (and (map? elem) (some-> elem :tag name #{tag-name}))) zip/node)
+              (take-while some? (iterations zip/right (zip/down loc)))))
 
 (defn parse-instr-text [^String s]
   (assert (string? s))
