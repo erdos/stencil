@@ -103,6 +103,7 @@
 
 ;; returns "below" or "above" or nil
 (defn- render-list-position [styles levels current-stack]
+  ;; TODO: implement this
   nil)
 
 (defn render-list [styles levels flags current-stack]
@@ -157,6 +158,30 @@
     (when (= "REF" type)
       {:id id
        :flags (set (map keyword flags))})))
+
+
+(defn- fill-crossref-content [loc text bookmark->meta]
+  (when-let [txt (find-elem loc :tag ooxml/t)]
+    (let [current-text (-> txt zip/node :content first)
+          parsed-ref   (parse-instr-text text)]
+      (when-let [{:keys [num-id ilvl stack]} (get bookmark->meta (:id parsed-ref))]
+        (let [definitions (doall (for [i (range (inc ilvl))]
+                                   (numbering/style-def-for num-id i)))
+              current-stack (some->> (iterations zip/up loc)
+                                     (find-first (comp #{ooxml/p} :tag zip/node) )
+                                     (child-of-tag "pPr")
+                                     (child-of-tag "numPr")
+                                     (zip/node)
+                                     (::enumeration)
+                                     (:stack))
+              replacement (render-list definitions stack (:flags parsed-ref) (or current-stack ()))
+              old-content (-> txt zip/node :content first)]
+          ;; TODO: debug logging here!
+          (println "Replacing" old-content "with" replacement)
+          (-> txt
+              (zip/edit assoc :content [replacement])
+              (zip/up)))))))
+
 
 (defn fix-list-dirty-refs [xml-tree]
   (let [xml-tree (atom xml-tree)
@@ -222,27 +247,7 @@
              (zip/right) ;; run
              (->> (when-pred #(find-elem % :attr ooxml/fld-char-type "separate")))
              (zip/right)
-             ((fn [loc]
-                (when-let [txt (find-elem loc :tag ooxml/t)]
-                  (let [current-text (-> txt zip/node :content first)
-                        parsed-ref   (parse-instr-text text)]
-                    (when-let [{:keys [num-id ilvl stack]} (get @bookmark->meta (:id parsed-ref))]
-                      (let [definitions (doall (for [i (range (inc ilvl))]
-                                                 (numbering/style-def-for num-id i)))
-                            current-stack (some->> (iterations zip/up loc)
-                                                   (find-first (comp #{ooxml/p} :tag zip/node) )
-                                                   (child-of-tag "pPr")
-                                                   (child-of-tag "numPr")
-                                                   (zip/node)
-                                                   (::enumeration)
-                                                   (:stack))
-                            replacement (render-list definitions stack (:flags parsed-ref) (or current-stack ()))
-                            old-content (-> txt zip/node :content first)]
-                        ;; TODO: debug logging here!
-                        (println "Replacing" old-content "with" replacement)
-                        (-> txt
-                            (zip/edit assoc :content [replacement])
-                            (zip/up))))))))
+             (fill-crossref-content text @bookmark->meta)
              (zip/right)
              (->> (when-pred #(find-elem % :attr ooxml/fld-char-type "end"))))
           (or loc)))))))
