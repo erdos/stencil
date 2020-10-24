@@ -66,10 +66,10 @@
 ;; ".%1/%2." -> ".%1/%2."
 ;; "%1/%2."  -> "%1/%2"
 ;; "%1/%2"   -> "%1/%2"
-(defn pattern-rm-prefix-if-no-suffix [^String pattern levels]
+(defn pattern-rm-prefix-if-no-suffix [^String pattern]
   (if-not (.startsWith pattern "%")
     pattern
-    (let [last-pattern (str "%" (count levels))
+    (let [last-pattern (str "%" 2)
           idx          (.lastIndexOf pattern last-pattern)]
       (.substring pattern 0 (+ idx (count last-pattern))))))
 
@@ -81,17 +81,36 @@
 ;; - n:
 ;;
 ;;
+
+;; full context is joining of patterns.
+(defn- render-list-full-context [styles levels]
+  (let [depth (count levels)
+        pattern (apply str
+                       (map (comp pattern-rm-prefix-if-no-suffix :lvl-text)
+                            (take depth styles)))
+        pattern (pattern-rm-prefix-if-no-suffix pattern)]
+    (reduce-kv (fn [pattern idx item] (.replace (str pattern) (str "%" (inc idx)) (str item)))
+               pattern
+               (mapv (fn [style level] (render-number (:num-fmt style) (+ (:start style) level -1)))
+                     styles levels))))
+
+(defn- render-list-one [styles levels]
+  (let [pattern (str (:lvl-text (nth styles (dec (count levels)))))
+        pattern (pattern-rm-prefix-if-no-suffix pattern)]
+    (reduce-kv (fn [pattern idx item] (.replace (str pattern) (str "%" (inc idx)) (str item)))
+               pattern
+               (mapv (fn [style level] (render-number (:num-fmt style) (+ (:start style) level -1)))
+                     styles levels))))
+
 (defn render-list [styles levels flags]
   (assert (sequential? styles))
   (assert (sequential? levels))
   (assert (<= (count levels) (count styles)))
   (assert (set? flags))
-  (let [pattern (str (:lvl-text (nth styles (dec (count levels)))))
-        pattern' (pattern-rm-prefix-if-no-suffix pattern levels)]
-    (reduce-kv (fn [pattern idx item] (.replace (str pattern) (str "%" (inc idx)) (str item)))
-               pattern
-               (mapv (fn [style level] (render-number (:num-fmt style) (+ (:start style) level -1)))
-                     styles levels))))
+  (cond (:w flags) (render-list-full-context styles levels)
+        (:r flags) (render-list-one styles levels)
+        (:n flags) (render-list-one styles levels)
+        :else      nil))
 
 (defn node-instr-ref? [node]
   ;; returns true iff node is a paragraph number reference

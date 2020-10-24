@@ -27,6 +27,11 @@
   (is (= "IX" (render-number "upperRoman" 9)))
   (is (= "LVI" (render-number "upperRoman" 56))))
 
+(deftest test-pattern-rm-prefix-if-no-suffix
+  (is (= ".%1/%2/%3." (pattern-rm-prefix-if-no-suffix ".%1/%2/%3.")))
+  (is (= "%1/%2/%3"   (pattern-rm-prefix-if-no-suffix "%1/%2/%3.")))
+  (is (= "%1/%2/%3"   (pattern-rm-prefix-if-no-suffix "%1/%2/%3"))))
+
 #_
 (deftest render-list-sanity
   (is (= "2(5)" (render-list
