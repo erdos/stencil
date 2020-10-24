@@ -227,15 +227,14 @@
              ((fn [loc]
                 (when-let [txt (find-elem loc :tag ooxml/t)]
                   (let [current-text (-> txt zip/node :content first)
-                        parsed-ref (parse-instr-text text)
-                        {:keys [num-id ilvl stack]} (get @bookmark->meta (:id parsed-ref))
-                        definitions (doall (for [i (range (inc ilvl))]
-                                             (numbering/style-def-for num-id i)))
-                        replacement (render-list definitions stack #{})
-                        ]
-                    (-> txt
-                        (zip/edit assoc :content [replacement])
-                        (zip/up))))))
+                        parsed-ref   (parse-instr-text text)]
+                    (when-let [{:keys [num-id ilvl stack]} (get @bookmark->meta (:id parsed-ref))]
+                      (let [definitions (doall (for [i (range (inc ilvl))]
+                                                 (numbering/style-def-for num-id i)))
+                            replacement (render-list definitions stack #{})]
+                        (-> txt
+                            (zip/edit assoc :content [replacement])
+                            (zip/up))))))))
              (zip/right)
              (->> (when-pred #(find-elem % :attr attr-fld-char-type "end"))))
           (or loc)))))))

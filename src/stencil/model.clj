@@ -135,7 +135,7 @@
   (binding [*current-styles*     (atom (:parsed (:style (:main template-model))))
             numbering/*numbering*   (or numbering/*numbering*
                                         (:numbering (:main template-model))
-                                        (assert false "Missing numbering!") ;; TODO: remove this assert
+                                        ; (assert false "Missing numbering!") ;; TODO: remove this assert
                                         ;; because it is perfectly possible that the numbering would be missing
 
                                         )

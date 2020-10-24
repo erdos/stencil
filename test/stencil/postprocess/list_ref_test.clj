@@ -53,7 +53,18 @@
                 {:start 1 :num-fmt "upperLetter" :lvl-text ".%3."}]]
     (is (= ".C." (render-list styles [1 1 3] #{:r :h})))
     (is (= ".C." (render-list styles [1 1 3] #{:n :h})))
-    (is (= "1-i.C." (render-list styles [1 1 3] #{:w :h})))))
+    (is (= "1-i.C." (render-list styles [1 1 3] #{:w :h}))))
+
+  (let [styles [{:start 1 :num-fmt "decimal" :lvl-text "-%1-"}
+                {:start 1 :num-fmt "lowerRoman" :lvl-text "%2/"}
+                {:start 1 :num-fmt "upperLetter" :lvl-text ".%3."}]]
+    (is (= "-1-i.C." (render-list styles [1 1 3] #{:w :h}))))
+
+  (let [styles [{:start 1 :num-fmt "decimal" :lvl-text "-%1-"}
+                {:start 1 :num-fmt "lowerRoman" :lvl-text "/%2/"}
+                {:start 1 :num-fmt "upperLetter" :lvl-text ".%3."}]]
+    (is (= "-1-/i/.C." (render-list styles [1 1 3] #{:w :h}))))
+  :ok)
 
 
 #_
