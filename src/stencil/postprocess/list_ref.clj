@@ -93,23 +93,24 @@
                (mapv (fn [style level] (render-number (:num-fmt style) (+ (:start style) level -1)))
                      styles levels))))
 
-(defn- render-list-relative [styles levels]
+(defn- render-list-relative [styles levels current-stack]
   ;; TODO!
   (render-list-one styles levels))
 
 ;; returns "below" or "above" or nil
-(defn- render-list-position [styles levels]
+(defn- render-list-position [styles levels current-stack]
   nil)
 
-(defn render-list [styles levels flags]
+(defn render-list [styles levels flags current-stack]
   (assert (sequential? styles))
   (assert (sequential? levels))
+  (assert (sequential? current-stack))
   (assert (<= (count levels) (count styles)))
   (assert (set? flags))
   (-> (cond (:w flags) (render-list-full-context styles levels)
-            (:r flags) (render-list-relative styles levels)
+            (:r flags) (render-list-relative styles levels current-stack)
             (:n flags) (render-list-one styles levels))
-      (cond-> (:p flags) (-> (some-> (str " ")) (str (render-list-position styles levels))))))
+      (cond-> (:p flags) (-> (some-> (str " ")) (str (render-list-position styles levels current-stack))))))
 
 (defn instr-text-ref [node]
   (assert (not (zipper? node)))
@@ -244,7 +245,14 @@
                     (when-let [{:keys [num-id ilvl stack]} (get @bookmark->meta (:id parsed-ref))]
                       (let [definitions (doall (for [i (range (inc ilvl))]
                                                  (numbering/style-def-for num-id i)))
-                            replacement (render-list definitions stack #{})]
+                            current-stack (some->> (iterations zip/up loc)
+                                                   (find-first (comp #{ooxml/p} :tag zip/node) )
+                                                   (child-of-tag "pPr")
+                                                   (child-of-tag "numPr")
+                                                   (zip/node)
+                                                   (::enumeration)
+                                                   (:stack))
+                            replacement (render-list definitions stack #{} (or current-stack ()))]
                         (-> txt
                             (zip/edit assoc :content [replacement])
                             (zip/up))))))))
