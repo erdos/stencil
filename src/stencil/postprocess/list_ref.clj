@@ -69,9 +69,7 @@
 (defn pattern-rm-prefix-if-no-suffix [^String pattern]
   (if-not (.startsWith pattern "%")
     pattern
-    (let [last-pattern (str "%" 2)
-          idx          (.lastIndexOf pattern last-pattern)]
-      (.substring pattern 0 (+ idx (count last-pattern))))))
+    (.substring pattern 0 (+ 2 (.lastIndexOf pattern "%")))))
 
 ;;
 ;; reference: https://c-rex.net/projects/samples/ooxml/e1/Part4/OOXML_P4_DOCX_REFREF_topic_ID0ESRL1.html#topic_ID0ESRL1
