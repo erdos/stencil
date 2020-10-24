@@ -6,9 +6,6 @@
 
 (set! *warn-on-reflection* true)
 
-(def attr-fld-char-type
-  :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/fldCharType)
-
 ;; see val for numbering:
 ;; http://officeopenxml.com/WPnumbering-numFmt.php
 (defmulti render-number (fn [style number] style))
@@ -63,6 +60,8 @@
 (defmethod render-number "lowerLetter" [_ number]
   (.toLowerCase (str (render-number "upperLetter" number))))
 
+;; reference: https://c-rex.net/projects/samples/ooxml/e1/Part4/OOXML_P4_DOCX_REFREF_topic_ID0ESRL1.html#topic_ID0ESRL1
+
 ;; ".%1/%2." -> ".%1/%2."
 ;; "%1/%2."  -> "%1/%2"
 ;; "%1/%2"   -> "%1/%2"
@@ -70,14 +69,6 @@
   (if-not (.startsWith pattern "%")
     pattern
     (.substring pattern 0 (+ 2 (.lastIndexOf pattern "%")))))
-
-;;
-;; reference: https://c-rex.net/projects/samples/ooxml/e1/Part4/OOXML_P4_DOCX_REFREF_topic_ID0ESRL1.html#topic_ID0ESRL1
-;; flags:
-;; - w: full context
-;; - r:
-;; - n:
-;;
 
 ;; full context is joining of patterns.
 (defn- render-list-full-context [styles levels]
@@ -108,18 +99,13 @@
   (assert (<= (count levels) (count styles)))
   (assert (set? flags))
   (cond (:w flags) (render-list-full-context styles levels)
-        (:r flags) (render-list-one styles levels)
+        (:r flags) (render-list-one styles levels) ;; TODO
         (:n flags) (render-list-one styles levels)))
-
-(defn node-instr-ref? [node]
-  ;; returns true iff node is a paragraph number reference
-  nil)
 
 (defn instr-text-ref [node]
   (assert (not (zipper? node)))
   (when (map? node)
-    (when (= :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/instrText
-             (:tag node))
+    (when (= ooxml/tag-instr-text (:tag node))
       (first (:content node)))))
 
 ;; returns node if it is an fldChar node
@@ -240,7 +226,7 @@
           (some-> loc
              (zip/up) ;; run
              (zip/right) ;; run
-             (->> (when-pred #(find-elem % :attr attr-fld-char-type "separate")))
+             (->> (when-pred #(find-elem % :attr ooxml/fld-char-type "separate")))
              (zip/right)
              ((fn [loc]
                 (when-let [txt (find-elem loc :tag ooxml/t)]
@@ -254,5 +240,5 @@
                             (zip/edit assoc :content [replacement])
                             (zip/up))))))))
              (zip/right)
-             (->> (when-pred #(find-elem % :attr attr-fld-char-type "end"))))
+             (->> (when-pred #(find-elem % :attr ooxml/fld-char-type "end"))))
           (or loc)))))))
