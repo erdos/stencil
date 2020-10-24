@@ -9,7 +9,7 @@
   :dependencies [[org.clojure/clojure "1.8.0"]
                  [org.clojure/data.xml "0.2.0-alpha5"]
                  [org.clojure/tools.logging "1.1.0"]
-                 [org.slf4j/slf4j-api "1.8.0-beta2"]]
+                 [org.slf4j/slf4j-api "2.0.0-alpha1"]]
   :pom-addition ([:properties ["maven.compiler.source" "8"] ["maven.compiler.target" "8"]])
   :pom-plugins [[org.apache.maven.plugins/maven-surefire-plugin "2.20"]]
   :main io.github.erdos.stencil.Main
@@ -28,11 +28,13 @@
                                :password :env/clojars_pass
                                :sign-releases false}]]
   :profiles {:uberjar {:aot :all}
-             :dev {:aot :all}
+             :dev {:aot :all
+                   :dependencies [[org.slf4j/slf4j-simple "2.0.0-alpha1"]]
+                   :jvm-opts ["-Dorg.slf4j.simpleLogger.defaultLogLevel=debug"]}
              :test {:aot :all
                     :dependencies [[junit/junit "4.12"]
                                    [org.xmlunit/xmlunit-core "2.5.1"]
                                    [hiccup "1.0.5"]]
                     :resource-paths    ["test-resources"]
                     :test-paths ["java-test"]
-                    :java-source-paths ["java-src"]}})
+                    }})
