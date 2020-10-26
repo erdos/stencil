@@ -19,7 +19,7 @@ WORKDIR /app
 
 RUN native-image --no-fallback --report-unsupported-elements-at-runtime --initialize-at-build-time -jar app-standalone.jar
 
-FROM alpine:3.12.1
+FROM scratch
 
 ENV STENCIL_HTTP_PORT=8080
 ENV STENCIL_TEMPLATE_DIR=/templates
