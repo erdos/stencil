@@ -82,7 +82,6 @@
      :main          {::path       main-document
                      :source-file (file dir main-document)
                      :executable  (->exec (file dir main-document))
-
                      :numbering   (numbering/main-numbering dir main-document main-document-rels)
                      :style       (style/main-style-item dir main-document main-document-rels)
                      :relations main-document-rels
