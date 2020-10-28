@@ -22,7 +22,7 @@
       (some #(find-node % predicate) (:content tree)))))
 
 
-(defn find-lvl [tree level]
+(defn- find-lvl [tree level]
   (find-node tree
              (fn [node]
                (and (map? node)
