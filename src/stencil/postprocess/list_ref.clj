@@ -21,17 +21,13 @@
    [5    "V"] [4   "IV"]
    [1    "I"]])
 
-(defn- num-to-roman [n]
-  (assert (integer? n))
-  (assert (pos? n))
-  (loop [buf [], n n]
+(defmethod render-number "upperRoman" [_ number]
+  (assert (pos? number))
+  (loop [buf [], n number]
     (if (zero? n)
       (apply str buf)
       (let [[value romnum] (some #(if (>= n (first %)) %) roman-digits)]
         (recur (conj buf romnum) (- n value))))))
-
-(defmethod render-number "upperRoman" [_ number]
-  (num-to-roman number))
 
 (defmethod render-number "lowerRoman" [_ number]
   (.toLowerCase (str (render-number "upperRoman" number))))
