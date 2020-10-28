@@ -133,12 +133,7 @@
   (assert (:main template-model) "Should be a result of load-template-model call!")
   (assert (some? fragments))
   (binding [*current-styles*     (atom (:parsed (:style (:main template-model))))
-            numbering/*numbering*   (or numbering/*numbering*
-                                        (:numbering (:main template-model))
-                                        ; (assert false "Missing numbering!") ;; TODO: remove this assert
-                                        ;; because it is perfectly possible that the numbering would be missing
-
-                                        )
+            numbering/*numbering* (:numbering (:main template-model))
             *inserted-fragments* (atom #{})
             *extra-files*        (atom #{})
             *all-fragments*      (into {} fragments)]
