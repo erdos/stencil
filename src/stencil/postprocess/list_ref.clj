@@ -61,6 +61,9 @@
 (defmethod render-number "lowerLetter" [_ number]
   (.toLowerCase (str (render-number "upperLetter" number))))
 
+(defmethod render-number "none" [_ number] "")
+(defmethod render-number "bullet" [_ number] "")
+
 ;; reference: https://c-rex.net/projects/samples/ooxml/e1/Part4/OOXML_P4_DOCX_REFREF_topic_ID0ESRL1.html#topic_ID0ESRL1
 
 ;; ".%1/%2." -> ".%1/%2."
@@ -105,7 +108,7 @@
 ;; returns "below" or "above" or nil
 (defn- render-list-position [styles levels current-stack]
   ;; TODO: implement this
-  nil)
+  "below")
 
 (defn render-list [styles levels flags current-stack]
   (assert (sequential? styles))
