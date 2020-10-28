@@ -4,9 +4,9 @@
             [stencil.postprocess.table :refer :all]
             [stencil.postprocess.whitespaces :refer :all]
             [stencil.postprocess.ignored-tag :refer :all]
+            [stencil.postprocess.list-ref :refer :all]
             [stencil.postprocess.fragments :refer :all]
-            [stencil.postprocess.html :refer :all]
-            [stencil.postprocess.list-ref :refer :all]))
+            [stencil.postprocess.html :refer :all]))
 
 ;; calls postprocess
 (def postprocess
