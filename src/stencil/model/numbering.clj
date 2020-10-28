@@ -1,8 +1,7 @@
 (ns stencil.model.numbering
   (:import [java.io File])
   (:require [clojure.data.xml :as xml]
-            [clojure.java.io :as io :refer [file]]
-            [clojure.zip :as zip]
+            [clojure.java.io :as io]
             [stencil.ooxml :as ooxml]
             [stencil.util :refer :all]
             [stencil.model.common :refer :all]))
@@ -42,7 +41,7 @@
     (or (find-lvl def1 level) ;; find in override
 
         ;; find abstract definition
-        (let [abstract-id (-> (find-node def1 (fn [node] (= (:tag node) ooxml/xml-abstract-num-id ))) :attrs ooxml/val)
+        (let [abstract-id (-> (find-node def1 (comp #{ooxml/xml-abstract-num-id} :tag)) :attrs ooxml/val)
               abstract (find-node tree
                                   (fn [node]
                                     (and (= (:tag node) ooxml/tag-abstract-num)
@@ -51,14 +50,15 @@
 
 
 (defn- xml-lvl-parse [tree]
-  {:lvl-text (-> (find-node tree (fn [node] (-> node :tag name #{"lvlText"}))) :attrs ooxml/val)
-   :num-fmt  (-> (find-node tree (fn [node] (-> node :tag name #{"numFmt"}))) :attrs ooxml/val)
-   :start    (-> (find-node tree (fn [node] (-> node :tag name #{"start"}))) :attrs ooxml/val ->int)})
+  (letfn [(node-attr [tag] (-> tree (find-node (comp #{tag} name :tag)) :attrs ooxml/val))]
+    {:lvl-text (node-attr "lvlText")
+     :num-fmt  (node-attr "numFmt")
+     :start    (->int (node-attr "start"))}))
 
 
 (defn- parse [numbering-file]
   (assert numbering-file)
-  (with-open [r (io/input-stream (file numbering-file))]
+  (with-open [r (io/input-stream (io/file numbering-file))]
     (let [tree (xml/parse r)]
       tree)))
 
@@ -66,12 +66,12 @@
 (defn main-numbering [dir main-document main-document-rels]
   (when-let [main-numbering-path
              (some #(when (= rel-type-numbering (:stencil.model/type %))
-                      (unix-path (file (.getParentFile (file main-document))
+                      (unix-path (io/file (.getParentFile (io/file main-document))
                                        (:stencil.model/target %))))
                    (vals (:parsed main-document-rels)))]
     {:stencil.model/path       main-numbering-path
      :source-file              (io/file dir main-numbering-path)
-     :parsed                   (parse (file dir main-numbering-path))}))
+     :parsed                   (parse (io/file dir main-numbering-path))}))
 
 
 (defn style-def-for [id lvl]
