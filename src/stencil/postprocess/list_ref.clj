@@ -9,6 +9,7 @@
 
 ;; see val for numbering:
 ;; http://officeopenxml.com/WPnumbering-numFmt.php
+;; TODO: cardinalText, ordinal, ordinalText, ...
 (defmulti render-number (fn [style number] style))
 (defmethod render-number :default [_ nr] (str nr))
 
