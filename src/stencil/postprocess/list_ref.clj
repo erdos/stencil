@@ -134,7 +134,7 @@
       :tag  (find-first (comp #{a} :tag zip/node) items)
       :attr (find-first (comp #{b} a :attrs zip/node) items))))
 
-(defn parse-num-pr [node]
+(defn- parse-num-pr [node]
   (assert (= ooxml/num-pr (:tag node)))
   (reduce (fn [m node]
             (case (some-> node :tag name)
