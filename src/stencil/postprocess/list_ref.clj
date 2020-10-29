@@ -124,14 +124,9 @@
     (when (= ooxml/tag-instr-text (:tag node))
       (first (:content node)))))
 
-;; returns node if it is an fldChar node
-(defn fld-char [node]
-  (when (and (map? node) (= ooxml/fld-char (:tag node)))
-    node))
-
 ;; (find-elem zipper :tag "ala")
 ;; (find-elem zipper :attr "x" "1")
-(defn find-elem [tree prop & [a b]]
+(defn- find-elem [tree prop & [a b]]
   (assert (zipper? tree))
   (assert (keyword? a))
   (let [items (take-while (comp complement #{(zip/node tree)} zip/node) (iterate zip/next tree))]
