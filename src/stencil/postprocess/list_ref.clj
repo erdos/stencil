@@ -118,12 +118,6 @@
             (:n flags) (render-list-one styles levels))
       (cond-> (:p flags) (-> (some-> (str " ")) (str (render-list-position styles levels current-stack))))))
 
-(defn instr-text-ref [node]
-  (assert (not (zipper? node)))
-  (when (map? node)
-    (when (= ooxml/tag-instr-text (:tag node))
-      (first (:content node)))))
-
 ;; (find-elem zipper :tag "ala")
 ;; (find-elem zipper :attr "x" "1")
 (defn- find-elem [tree prop & [a b]]
@@ -177,19 +171,15 @@
               (zip/edit assoc :content [replacement])
               (zip/up)))))))
 
-
-(defn fix-list-dirty-refs [xml-tree]
-  (let [xml-tree (atom xml-tree)
-        bookmark->meta (volatile! {})]
-
-    ;; step 1: add meta data to all numPr elements
-    (let [nr->stack (volatile! {})]
-      (swap! xml-tree
-             dfs-walk-xml
-             (fn [node] (and (map? node) (= (:tag node) ooxml/num-pr)))
-             (fn [node]
-               (let [{:keys [ilvl num-id]} (parse-num-pr node)]
-                 (vswap! nr->stack
+;; adds mta data to all numPr elements
+(defn- enrich-dirty-refs-meta [xml-tree]
+  (let [nr->stack (volatile! {})]
+    (dfs-walk-xml
+     xml-tree
+     (fn [node] (and (map? node) (= (:tag node) ooxml/num-pr)))
+     (fn [node]
+       (let [{:keys [ilvl num-id]} (parse-num-pr node)]
+         (vswap! nr->stack
                          update
                          num-id
                          (fnil
@@ -207,16 +197,12 @@
                  (assoc node ::enumeration
                         {:ilvl ilvl
                          :num-id num-id
-                         :stack (get @nr->stack num-id)})))))
+                         :stack (get @nr->stack num-id)}))))))
 
-
-    ;; step 2:
-    ;;
-    ;; - for all bookmark node
-    ;; - find their position and stack snapshot
-    ;; - save it to global atom
+(defn- get-bookmark-meta [xml-tree]
+  (let [bookmark->meta (volatile! {})]
     (dfs-walk-xml-node
-     @xml-tree
+     xml-tree
      (fn [node] (and (map? node) (= (:tag node) ooxml/bookmark-start)))
      (fn [zipper]
        (let [bookmark-id (->(zip/node zipper) :attrs ooxml/name)]
@@ -228,8 +214,14 @@
                   (::enumeration)
                   (vswap! bookmark->meta assoc bookmark-id))
          zipper)))
+    @bookmark->meta))
+
+(defn- rerender-refs [xml-tree bookmark->meta]
+  (letfn [(instr-text-ref [node]
+            (when (and (map? node) (= ooxml/tag-instr-text (:tag node)))
+              (first (:content node))))]
     (dfs-walk-xml-node
-     @xml-tree
+     xml-tree
      instr-text-ref ;; if it is a ref node
      (fn [loc]
        ;; go right, find text node between seaprate and end.
@@ -237,11 +229,16 @@
        (let [text (instr-text-ref (zip/node loc))]
          (->
           (some-> loc
-             (zip/up) ;; run
-             (zip/right) ;; run
-             (->> (when-pred #(find-elem % :attr ooxml/fld-char-type "separate")))
-             (zip/right)
-             (fill-crossref-content text @bookmark->meta)
-             (zip/right)
-             (->> (when-pred #(find-elem % :attr ooxml/fld-char-type "end"))))
+                  (zip/up) ;; run
+                  (zip/right) ;; run
+                  (->> (when-pred #(find-elem % :attr ooxml/fld-char-type "separate")))
+                  (zip/right)
+                  (fill-crossref-content text bookmark->meta)
+                  (zip/right)
+                  (->> (when-pred #(find-elem % :attr ooxml/fld-char-type "end"))))
           (or loc)))))))
+
+(defn fix-list-dirty-refs [xml-tree]
+  (let [xml-tree (enrich-dirty-refs-meta xml-tree)
+        bookmark-meta (get-bookmark-meta xml-tree)]
+    (rerender-refs xml-tree bookmark-meta)))
