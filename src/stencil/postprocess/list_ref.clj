@@ -153,8 +153,9 @@
 (defn- fill-crossref-content [loc text bookmark->meta]
   (when-let [txt (find-elem loc :tag ooxml/t)]
     (let [current-text (-> txt zip/node :content first)
-          parsed-ref   (parse-instr-text text)]
-      (when-let [{:keys [num-id ilvl stack]} (get bookmark->meta (:id parsed-ref))]
+          parsed-ref   (parse-instr-text text)
+          old-content  (-> txt zip/node :content first)]
+      (if-let [{:keys [num-id ilvl stack]} (get bookmark->meta (:id parsed-ref))]
         (let [definitions (doall (for [i (range (inc ilvl))]
                                    (numbering/style-def-for num-id i)))
               current-stack (some->> (iterations zip/up loc)
@@ -164,12 +165,13 @@
                                      (zip/node)
                                      (::enumeration)
                                      (:stack))
-              replacement (render-list definitions stack (:flags parsed-ref) (or current-stack ()))
-              old-content (-> txt zip/node :content first)]
+              replacement (render-list definitions stack (:flags parsed-ref) (or current-stack ()))]
           (log/debug "Replacing" old-content "with" replacement)
           (-> txt
               (zip/edit assoc :content [replacement])
-              (zip/up)))))))
+              (zip/up)))
+        (do (log/warn "Reference source not found. Previous content: " old-content)
+            (zip/up (zip/edit txt assoc :content ["Error; Reference source not found."])))))))
 
 ;; adds mta data to all numPr elements
 (defn- enrich-dirty-refs-meta [xml-tree]
