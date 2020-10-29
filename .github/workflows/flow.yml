@@ -27,7 +27,7 @@ jobs:
         CLOJARS_PASS: ${{ secrets.CLOJARS_PASS }}
       run: lein deploy snapshots
   docker_push:
-    needs: build
+    needs: clojars_push
     runs-on: ubuntu-latest
     if: github.event_name == 'push'
     steps:
