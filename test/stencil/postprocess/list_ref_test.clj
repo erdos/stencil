@@ -26,6 +26,9 @@
   (is (= "IX" (render-number "upperRoman" 9)))
   (is (= "LVI" (render-number "upperRoman" 56))))
 
+(deftest render-number-chicago
+  (is (= "*" (render-number "chicago" 1)))
+  (is (= "##" (render-number "chicago" 12))))
 
 (deftest test-pattern-rm-prefix-if-no-suffix
   (is (= ".%1/%2/%3." (pattern-rm-prefix-if-no-suffix ".%1/%2/%3.")))

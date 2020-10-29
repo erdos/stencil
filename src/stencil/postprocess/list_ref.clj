@@ -58,6 +58,11 @@
 (defmethod render-number "lowerLetter" [_ number]
   (.toLowerCase (str (render-number "upperLetter" number))))
 
+(defmethod render-number "chicago" [_ number]
+  (nth (for [i (next (range)), c "*†‡§‖#"]
+         (clojure.string/join (repeat i c)))
+       (dec number)))
+
 (defmethod render-number "none" [_ number] "")
 (defmethod render-number "bullet" [_ number] "")
 
