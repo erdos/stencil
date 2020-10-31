@@ -14,7 +14,7 @@
   :pom-plugins [[org.apache.maven.plugins/maven-surefire-plugin "2.20"]]
   :main io.github.erdos.stencil.Main
   :plugins [[lein-javadoc "0.3.0"]
-            [lein-cloverage "1.1.1"]
+            [lein-cloverage "1.2.1"]
             [lein-test-out "0.3.1"]]
   :aliases      {"junit" ["with-profile" "test" "do" "test-out" "junit" "junit.xml"]
                  "coverage" ["cloverage" "--codecov" "--exclude-call" "clojure.core/assert" "--exclude-call" "stencil.util/trace" "--exclude-call" "stencil.util/fail"]}
