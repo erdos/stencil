@@ -50,17 +50,21 @@
 
 
 (defn- xml-lvl-parse [tree]
+  (assert (= ooxml/tag-lvl (:tag tree)))
   (letfn [(node-attr [tag] (-> tree (find-node (comp #{tag} name :tag)) :attrs ooxml/val))]
     {:lvl-text (node-attr "lvlText")
      :num-fmt  (node-attr "numFmt")
      :start    (->int (node-attr "start"))}))
 
 
+(defn prepare-numbering-xml [xml-tree] xml-tree)
+
+
 (defn- parse [numbering-file]
   (assert numbering-file)
   (with-open [r (io/input-stream (io/file numbering-file))]
     (let [tree (xml/parse r)]
-      tree)))
+      (prepare-numbering-xml tree))))
 
 
 (defn main-numbering [dir main-document main-document-rels]
@@ -77,6 +81,6 @@
 (defn style-def-for [id lvl]
   (assert (string? id))
   (assert (integer? lvl))
-  (-> (:parsed *numbering*)
-      (get-id-style-xml id lvl)
-      (xml-lvl-parse)))
+  (some-> (:parsed *numbering*)
+          (get-id-style-xml id lvl)
+          (xml-lvl-parse)))
