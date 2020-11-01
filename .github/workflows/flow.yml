@@ -3,7 +3,7 @@ name: Flow
 on:
   push:
     branches: [ master ]
-    tags: [ v* ]
+    # tags: [ v* ]
 
 jobs:
   build:
@@ -25,7 +25,7 @@ jobs:
       env:
         CLOJARS_USER: ${{ secrets.CLOJARS_USER }}
         CLOJARS_PASS: ${{ secrets.CLOJARS_PASS }}
-      run: lein deploy snapshots
+      run: lein deploy snapshots || echo skipping
   docker_push:
     needs: clojars_push
     runs-on: ubuntu-latest
