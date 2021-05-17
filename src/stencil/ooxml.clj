@@ -67,3 +67,6 @@
 (def attr-numId  :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/numId)
 
 (def attr-ilvl  :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/ilvl)
+
+(def default-aliases
+  {"http://schemas.microsoft.com/office/word/2010/wordprocessingShape" "wps"})
