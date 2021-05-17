@@ -2,7 +2,8 @@
   "In docx files there might be an Ignored attribute which contains an XML namespace alias list.
    The contents of this attribute must be a valid ns alias list on the output document too!"
   (:require [clojure.data.xml.pu-map :as pu-map]
-            [clojure.string :as s]))
+            [clojure.string :as s]
+            [stencil.ooxml :as ooxml]))
 
 (def ^:private ignorable-tag :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fmarkup-compatibility%2F2006/Ignorable)
 (def ^:private choice-tag :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fmarkup-compatibility%2F2006/Choice)
@@ -15,7 +16,9 @@
 
 (defn- map-str [f s] (s/join " " (keep f (s/split s #"\s+"))))
 
-(defn- gen-alias [] (name (gensym "ign")))
+(defn- gen-alias [uri]
+  (or (get ooxml/default-aliases uri)
+      (name (gensym "ign"))))
 
 (defn- update-if-present [m path f] (if (get-in m path) (update-in m path f) m))
 
@@ -55,7 +58,7 @@
   (let [found (volatile! {}) ;; url -> alias mapping
         find! (fn [uri]
                 (or (get @found uri)
-                    (get (vswap! found assoc uri (gen-alias)) uri)))]
+                    (get (vswap! found assoc uri (gen-alias uri)) uri)))]
     (with-pu
       (postwalk-xml
        (fn [form]
