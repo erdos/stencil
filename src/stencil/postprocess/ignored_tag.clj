@@ -16,7 +16,9 @@
 
 (defn- map-str [f s] (s/join " " (keep f (s/split s #"\s+"))))
 
-(defn- gen-alias [] (name (gensym "ign")))
+(defn- gen-alias [uri]
+  (or (get ooxml/default-aliases uri)
+      (name (gensym "ign"))))
 
 (defn- update-if-present [m path f] (if (get-in m path) (update-in m path f) m))
 
@@ -56,7 +58,7 @@
   (let [found (volatile! {}) ;; url -> alias mapping
         find! (fn [uri]
                 (or (get @found uri)
-                    (get (vswap! found assoc uri (or (ooxml/default-aliases uri) (gen-alias))) uri)))]
+                    (get (vswap! found assoc uri (gen-alias uri)) uri)))]
     (with-pu
       (postwalk-xml
        (fn [form]
