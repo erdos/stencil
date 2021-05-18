@@ -45,12 +45,10 @@
 (defn- parse-content-types [^File cts]
   (assert (.exists cts))
   (assert (.isFile cts))
-  (let [parsed (with-open [r (io/input-stream cts)] (xml/parse r))]
-    {:source-file cts
-     ::path       (.getName cts)}))
+  {:source-file cts
+   ::path       (.getName cts)})
 
 
-;; TODO: options-map
 (defn ->exec [xml-streamable]
   (with-open [stream (io/input-stream xml-streamable)]
     (-> (merger/parse-to-tokens-seq stream)
@@ -124,8 +122,8 @@
     (eval-model-part-exec (:executable part) data functions)
     {:writer (resource-copier part)
      :xml-delay (delay
-                 (with-open [reader (io/input-stream (:source-file part))]
-                   (update (xml/parse reader) :content doall)))}))
+                  (with-open [reader (io/input-stream (:source-file part))]
+                    (unlazy-tree (xml/parse reader))))}))
 
 
 (defn- eval-template-model [template-model data functions fragments]

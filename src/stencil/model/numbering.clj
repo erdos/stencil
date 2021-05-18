@@ -57,14 +57,10 @@
      :start    (->int (node-attr "start"))}))
 
 
-(defn prepare-numbering-xml [xml-tree] xml-tree)
-
-
 (defn- parse [numbering-file]
   (assert numbering-file)
   (with-open [r (io/input-stream (io/file numbering-file))]
-    (let [tree (xml/parse r)]
-      (prepare-numbering-xml tree))))
+    (unlazy-tree (xml/parse r))))
 
 
 (defn main-numbering [dir main-document main-document-rels]
