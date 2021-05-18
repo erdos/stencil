@@ -111,7 +111,7 @@
 (defn unlazy-tree [xml-tree]
   (assert (map? xml-tree))
   (doto xml-tree
-    (->> (tree-seq map? :content) dorun)))
+    (-> :content dorun)))
 
 (defmacro when-pred [pred body]
   `(let [b# ~body]
