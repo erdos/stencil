@@ -10,7 +10,7 @@ WORKDIR /app
 
 RUN mv "$(lein uberjar | sed -n 's/^Created \(.*standalone\.jar\)/\1/p')" app-standalone.jar
 
-FROM oracle/graalvm-ce:20.2.0-java8 AS BASE
+FROM ghcr.io/graalvm/graalvm-ce:java8-21.1.0 AS BASE
 
 RUN gu install native-image
 
@@ -34,7 +34,7 @@ COPY --from=BASE /lib64/libz.so.1 /lib64/libz.so.1
 COPY --from=BASE /lib64/librt.so.1 /lib64/librt.so.1
 COPY --from=BASE /lib64/libcrypt.so.1 /lib64/libcrypt.so.1
 COPY --from=BASE /lib64/ld-linux-x86-64.so.2 /lib64/ld-linux-x86-64.so.2
-COPY --from=BASE /lib64/libfreebl3.so /lib64/libfreebl3.so
+# COPY --from=BASE /lib64/libfreebl3.so /lib64/libfreebl3.so
 
 COPY --from=BASE /app/app-standalone /
 
