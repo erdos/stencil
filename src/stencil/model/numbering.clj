@@ -64,7 +64,8 @@
 (defn- parse [numbering-file]
   (assert numbering-file)
   (with-open [r (io/input-stream (io/file numbering-file))]
-    (prepare-numbering-xml (xml/parse r))))
+    (let [tree (xml/parse r)]
+      (prepare-numbering-xml tree))))
 
 
 (defn main-numbering [dir main-document main-document-rels]
