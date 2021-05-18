@@ -57,7 +57,8 @@
      :start    (->int (node-attr "start"))}))
 
 
-(defn prepare-numbering-xml [xml-tree] xml-tree)
+(defn prepare-numbering-xml [xml-tree]
+  (unlazy-tree xml-tree))
 
 
 (defn- parse [numbering-file]
