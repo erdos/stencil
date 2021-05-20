@@ -37,3 +37,13 @@
     (->HideTableColumnMarker)))
 
 (defmethod call-fn "hideRow" [_] (->HideTableRowMarker))
+
+(defn- lookup [column data]
+  (second (or (find data column)
+              (find data (keyword column)))))
+
+(defmethod call-fn "map" [_ ^String column data]
+  (reduce (fn [elems p]
+            (keep (partial lookup p) elems))
+          data
+          (.split column "\\.")))
