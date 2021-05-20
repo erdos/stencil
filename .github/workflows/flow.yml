@@ -3,7 +3,7 @@ name: Flow
 on:
   push:
     branches: [ master ]
-    # tags: [ v* ]
+    tags: [ v* ]
 
 jobs:
   build:
@@ -29,53 +29,29 @@ jobs:
   docker_push:
     needs: clojars_push
     runs-on: ubuntu-latest
-    if: github.event_name == 'push'
     steps:
       - uses: actions/checkout@v2
-      - name: Build image
-        working-directory: service
-        run: docker build . --file Dockerfile --tag stencil
-      - name: Log into GitHub Container Registry
-        run: echo "${{ secrets.CR_PAT }}" | docker login https://ghcr.io -u ${{ github.actor }} --password-stdin
-      - name: Push image to GitHub Container Registry
+      - name: Set env vars
         run: |
-          IMAGE_ID=ghcr.io/${{ github.repository_owner }}/stencil
-
-          # Change all uppercase to lowercase
-          IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
+          IMAGE_ID=ghcr.io/erdos/stencil
 
           # Strip git ref prefix from version
           VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
-
           # Strip "v" prefix from tag name
           [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
-
           # Use Docker `latest` tag convention
           [ "$VERSION" == "master" ] && VERSION=latest
 
-          echo IMAGE_ID=$IMAGE_ID
-          echo VERSION=$VERSION
-
-          docker tag stencil $IMAGE_ID:$VERSION
-          docker push $IMAGE_ID:$VERSION
+          echo TAG=$IMAGE_ID:$VERSION >> $GITHUB_ENV
+      - name: Log into GitHub Container Registry
+        run: echo "${{ secrets.CR_PAT }}" | docker login https://ghcr.io -u ${{ github.actor }} --password-stdin
+      - name: Build image
+        working-directory: service
+        run: docker build . --file Dockerfile --tag ${{ env.TAG }}
+      - name: Push image to GitHub Container Registry
+        run: docker push ${{ env.TAG }}
       - name: Build GraalVM image
         working-directory: service
-        run: docker build . --file Dockerfile.graalvm --tag stencil-graalvm
+        run: docker build . --file Dockerfile.graalvm --tag ${{ env.TAG }}-graal
       - name: Push GraalVM image to GitHub Container Registry
-        run: |
-          IMAGE_ID=ghcr.io/${{ github.repository_owner }}/stencil
-          IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
-          VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
-
-          # Strip "v" prefix from tag name
-          [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
-
-          # Use Docker `latest` tag convention
-          [ "$VERSION" == "master" ] && VERSION=latest
-          VERSION=$VERSION-graal
-
-          echo IMAGE_ID=$IMAGE_ID
-          echo VERSION=$VERSION
-
-          docker tag stencil-graalvm $IMAGE_ID:$VERSION
-          docker push $IMAGE_ID:$VERSION
+        run: docker push ${{ env.TAG }}
