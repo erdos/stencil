@@ -209,6 +209,36 @@
   (is (= nil (run "coalesce(\"\", \"\")")))
   (is (= "a" (run "coalesce(\"\", \"\", \"a\", \"b\")"))))
 
+(deftest map-function
+  (testing "Works for both keyword an string keys"
+    (is (= [1 2 3]
+           (run "map(\"x\", vals)"
+             {"vals" [{"x" 1}
+                      {"x" 2}
+                      {"y" -1}
+                      {:x 3}]}))))
+  (testing "Calling in nil results in empty sequence"
+    (is (= []
+           (run "map(\"x\", vals)" {"vals" nil}))))
+  (testing "Nested map"
+    (is (= [1 2]
+           (run "map('x.y', vals)"
+             {"vals" [{:x {:y 1}} {:x {}} {:x {:y 2}}]}))))
+  (testing "Nested vectors"
+    (is (= [1 2 3]
+           (run "map('x..y', vals)"
+             {"vals" [{:x [{:y 1} {:y 2}]}
+                      {:x [{:y 3}]}]})))
+    (is (= [1 2 3]
+           (run "map('.x', vals)"
+             {"vals" [[{:x 1} {:x 2}] [] [{}] [{:x 3}]]}))))
+  (testing "map with sum"
+    (is (= 6
+           (run "sum(map(\"x\", vals))"
+                {"vals" [{"x" 1} {"x" 2} {"x" 3}]})))))
+
+
+
 (deftest test-colhide-expr
   (is (hide-table-column-marker? (run "hideColumn()"))))
 
