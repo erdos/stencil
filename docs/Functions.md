@@ -69,8 +69,8 @@ Example use cases with data:
 {"items": [{"price": 10, "name": "Wood"}, {"price": "20", "name": "Stone"}]}
 </code>
 
-- <code>join(map('name', items), ',')</code>: to create a comma-separated string of item names
-- <code>sum(map('price', items))</code>: to write the sum of item prices
+- <code>join(map('name', items), ',')</code>: to create a comma-separated string of item names. Prints `Wood, Stone`.
+- <code>sum(map('price', items))</code>: to write the sum of item prices. Prints `30`.
 
 
 
