@@ -18,6 +18,7 @@ This is a short description of the functions implemented in Stencil:
 - [join](#join)
 - [length](#length)
 - [lowercase](#lowercase)
+- [map](#map)
 - `percent`
 - `range`
 - [round](#round)
@@ -54,6 +55,24 @@ The `empty()` function is useful when we want to either enumerate the contents
 of an array or hide the whole paragraph when the array is empty.
 
 <img src="screenshot-function-empty-before.png"/>
+
+### Map
+
+Selects values under a given key in a sequence of maps. The first parameter is a string which contains what key to select:
+- It can be a single key name
+- It can be a nested key, separated by `.` character. For example: `outerkey.innerkey`
+- It can be used for selecting from multidimensional arrays: `outerkey..innerkey`
+
+Example use cases with data:
+
+<code>
+{"items": [{"price": 10, "name": "Wood"}, {"price": "20", "name": "Stone"}]}
+</code>
+
+- <code>join(map('name', items), ',')</code>: to create a comma-separated string of item names
+- <code>sum(map('price', items))</code>: to write the sum of item prices
+
+
 
 ## String functions
 
@@ -139,7 +158,7 @@ The `lowercase(x)` function turns its string argument into a lowercase string. F
 
 ### Str
 
-The `str(x)` functions convers its non-null arguments into a string. Returns an empty string when all arguments are null. 
+The `str(x)` functions convers its non-null arguments into a string. Returns an empty string when all arguments are null.
 
 ## Numeric functions
 
