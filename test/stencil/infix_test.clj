@@ -220,6 +220,10 @@
   (testing "Calling in nil results in empty sequence"
     (is (= []
            (run "map(\"x\", vals)" {"vals" nil}))))
+  (testing "Nested map"
+    (is (= [1, 2]
+           (run "map('x.y', vals)"
+             {"vals" [{:x {:y 1}} {:x {}} {:x {:y 2}}]}))))
   (testing "map with sum"
     (is (= 6
            (run "sum(map(\"x\", vals))"
