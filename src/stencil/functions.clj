@@ -44,6 +44,8 @@
               (find data (keyword column)))))
 
 (defmethod call-fn "map" [_ ^String column data]
+  (when-not (string? column)
+    (fail "First parameter of map() must be a string!" {}))
   (reduce (fn [elems p]
             (if (empty? p)
               (do (doseq [e elems :when (not (or (nil? e) (sequential? e)))]
