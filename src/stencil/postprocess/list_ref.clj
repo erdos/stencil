@@ -121,7 +121,7 @@
 
   )
 
-(defn render-list [styles {:keys [stack] :as bookmark} {:keys [flags]} current-stack]
+(defn render-list [styles {:keys [stack] :as bookmark} flags current-stack]
   (assert (sequential? styles))
   (assert (map? bookmark))
   (assert (sequential? current-stack))
@@ -178,7 +178,7 @@
                                      (zip/node)
                                      (::enumeration)
                                      (:stack))
-              replacement (render-list definitions bookmark parsed-ref (or current-stack ()))]
+              replacement (render-list definitions bookmark (:flags parsed-ref) (or current-stack ()))]
           (log/debug "Replacing" old-content "with" replacement "in" (:id parsed-ref))
           ;; txt is t
           (cond (map? replacement)
