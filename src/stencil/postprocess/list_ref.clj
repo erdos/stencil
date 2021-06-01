@@ -141,7 +141,7 @@
   (let [items (take-while (comp complement #{(zip/node tree)} zip/node) (iterate zip/next tree))]
     (case prop
       :tag  (find-first (comp #{a} :tag zip/node) items)
-      :attr (find-first (comp (if (fn? b) b #{b}) a :attrs zip/node) items))))
+      :attr (find-first (comp #{b} a :attrs zip/node) items))))
 
 (defn- parse-num-pr [node]
   (assert (= ooxml/num-pr (:tag node)))
