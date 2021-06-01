@@ -179,8 +179,9 @@
                                      (zip/node)
                                      (::enumeration)
                                      (:stack))
+
               replacement (render-list definitions stack parsed-ref (or current-stack ()) runs)]
-          (log/debug "Replacing" (:id parsed-ref) "old:" old-content "new:" replacement)
+          (log/debug "Replacing" old-content "with" replacement "in" (:id parsed-ref))
           ;; txt is t
           (cond (map? replacement)
                 ;; returned a <r> so we can replace current node.
@@ -238,9 +239,8 @@
          (map zip/node)
          (doall))))
 
-
-;; Produces map of Bookmark id (REF string) to metadata map. Map contains values under the ::enumeration key of numbering.
-;; we could also get textual values from the bookmark.
+;; Produces map of Bookmark id (REF string) to metadata map. Map contains values from under
+;; the ::enumeration key of numbering node.
 (defn- get-bookmark-meta [xml-tree]
   (let [bookmark->meta (volatile! {})]
     (dfs-walk-xml-node
@@ -262,7 +262,6 @@
 ;; if node is an instrText then return the string in it
 (defn- instr-text-ref [node]
   (when (and (map? node) (= ooxml/tag-instr-text (:tag node)))
-    (println "Foud instr text!")
     (first (:content node))))
 
 (defn- rerender-refs [xml-tree bookmark->meta]
