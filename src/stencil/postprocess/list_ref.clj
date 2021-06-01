@@ -124,8 +124,7 @@
             (:n flags) (render-list-one styles levels))
       (cond-> (:p flags) (-> (some-> (str " ")) (str (render-list-position styles levels current-stack))))))
 
-;; (find-elem zipper :tag "ala")
-;; (find-elem zipper :attr "x" "1")
+;; Walks the tree (zipper) with DFS and returns the first node for given tag or attribute.
 (defn- find-elem [tree prop & [a b]]
   (assert (zipper? tree))
   (assert (keyword? a))
@@ -172,14 +171,14 @@
                                      (::enumeration)
                                      (:stack))
               replacement (render-list definitions stack (:flags parsed-ref) (or current-stack ()))]
-          (log/debug "Replacing" old-content "with" replacement)
+          (log/debug "Replacing" old-content "with" replacement "in" (:id parsed-ref))
           (-> txt
               (zip/edit assoc :content [replacement])
               (zip/up)))
         (do (log/warn "Reference source not found. Previous content: " old-content)
             (zip/up (zip/edit txt assoc :content ["Error; Reference source not found."])))))))
 
-;; adds mta data to all numPr elements
+;; adds ::enumeration key to all numPr elements
 (defn- enrich-dirty-refs-meta [xml-tree]
   (let [nr->stack (volatile! {})]
     (dfs-walk-xml
@@ -207,6 +206,8 @@
                          :num-id num-id
                          :stack (get @nr->stack num-id)}))))))
 
+;; Produces map of Bookmark id (REF string) to metadata map. Map contains values from under
+;; the ::enumeration key of numbering node.
 (defn- get-bookmark-meta [xml-tree]
   (let [bookmark->meta (volatile! {})]
     (dfs-walk-xml-node
@@ -224,27 +225,28 @@
          zipper)))
     @bookmark->meta))
 
+(defn- instr-text-ref [node]
+  (when (and (map? node) (= ooxml/tag-instr-text (:tag node)))
+    (first (:content node))))
+
 (defn- rerender-refs [xml-tree bookmark->meta]
-  (letfn [(instr-text-ref [node]
-            (when (and (map? node) (= ooxml/tag-instr-text (:tag node)))
-              (first (:content node))))]
-    (dfs-walk-xml-node
-     xml-tree
-     instr-text-ref ;; if it is a ref node
-     (fn [loc]
-       ;; go right, find text node between seaprate and end.
-       ;; we can replace text with a rendered value.
-       (let [text (instr-text-ref (zip/node loc))]
-         (->
-          (some-> loc
-                  (zip/up) ;; run
-                  (zip/right) ;; run
-                  (->> (when-pred #(find-elem % :attr ooxml/fld-char-type "separate")))
-                  (zip/right)
-                  (fill-crossref-content text bookmark->meta)
-                  (zip/right)
-                  (->> (when-pred #(find-elem % :attr ooxml/fld-char-type "end"))))
-          (or loc)))))))
+  (dfs-walk-xml-node
+   xml-tree
+   instr-text-ref ;; if it is a ref node
+   (fn [loc]
+     ;; go right, find text node between seaprate and end.
+     ;; we can replace text with a rendered value.
+     (let [text (instr-text-ref (zip/node loc))]
+       (->
+        (some-> loc
+                (zip/up) ;; run
+                (zip/right) ;; run
+                (->> (when-pred #(find-elem % :attr ooxml/fld-char-type "separate")))
+                (zip/right)
+                (fill-crossref-content text bookmark->meta)
+                (zip/right)
+                (->> (when-pred #(find-elem % :attr ooxml/fld-char-type "end"))))
+        (or loc))))))
 
 (defn fix-list-dirty-refs [xml-tree]
   (let [xml-tree (enrich-dirty-refs-meta xml-tree)
