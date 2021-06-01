@@ -113,7 +113,7 @@
   ;; TODO: implement this
   "below")
 
-(defn- render-bookmark-content [bookmark-meta runs]
+(defn- render-bookmark-content [runs]
   #_ (when (empty? runs)
     (fail "Empty content, cannot replace." {:id (:id bookmark-meta)}))
   (or (first runs)
@@ -121,7 +121,7 @@
 
   )
 
-(defn render-list [styles levels {:keys [flags] :as bookmark-meta} current-stack runs]
+(defn render-list [styles levels {:keys [flags]} current-stack runs]
   (assert (sequential? styles))
   (assert (sequential? levels))
   (assert (sequential? current-stack))
@@ -130,8 +130,7 @@
   (-> (cond (:w flags) (render-list-full-context styles levels 0)
             (:r flags) (render-list-relative styles levels current-stack)
             (:n flags) (render-list-one styles levels)
-            (not (:p flags))  (render-bookmark-content bookmark-meta runs)
-            )
+            (not (:p flags))  (render-bookmark-content runs))
       (cond-> (:p flags) (-> (some-> (str " ")) (str (render-list-position styles levels current-stack))))))
 
 ;; Walks the tree (zipper) with DFS and returns the first node for given tag or attribute.
