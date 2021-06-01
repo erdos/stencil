@@ -121,17 +121,17 @@
 
   )
 
-(defn render-list [styles levels {:keys [flags]} current-stack runs]
+(defn render-list [styles {:keys [stack] :as bookmark} {:keys [flags]} current-stack]
   (assert (sequential? styles))
-  (assert (sequential? levels))
+  (assert (map? bookmark))
   (assert (sequential? current-stack))
-  (assert (<= (count levels) (count styles)))
+  (assert (<= (count stack) (count styles)))
   (assert (set? flags))
-  (-> (cond (:w flags) (render-list-full-context styles levels 0)
-            (:r flags) (render-list-relative styles levels current-stack)
-            (:n flags) (render-list-one styles levels)
-            (not (:p flags))  (render-bookmark-content runs))
-      (cond-> (:p flags) (-> (some-> (str " ")) (str (render-list-position styles levels current-stack))))))
+  (-> (cond (:w flags) (render-list-full-context styles stack 0)
+            (:r flags) (render-list-relative styles stack current-stack)
+            (:n flags) (render-list-one styles stack)
+            (not (:p flags)) (render-bookmark-content (:runs bookmark)))
+      (cond-> (:p flags) (-> (some-> (str " ")) (str (render-list-position styles stack current-stack))))))
 
 ;; Walks the tree (zipper) with DFS and returns the first node for given tag or attribute.
 (defn- find-elem [tree prop & [a b]]
@@ -154,7 +154,7 @@
   (assert (zipper? loc))
   (assert (string? tag-name))
   (find-first (comp (fn [elem] (and (map? elem) (some-> elem :tag name #{tag-name}))) zip/node)
-              (take-while some? (iterations zip/right (zip/down loc)))))
+              (iterations zip/right (zip/down loc))))
 
 (defn parse-instr-text [^String s]
   (assert (string? s))
@@ -163,12 +163,14 @@
       {:id id
        :flags (set (map keyword flags))})))
 
-(defn- fill-crossref-content [loc parsed-ref bookmark->meta]
+(defn- fill-crossref-content [loc parsed-ref bookmark]
+  (assert (zipper? loc))
+  (assert (map? parsed-ref))
   (when-let [txt (find-elem loc :tag ooxml/t)]
     (let [old-content (-> txt zip/node :content first)]
-      (if-let [{:keys [num-id ilvl stack runs]} (get bookmark->meta (:id parsed-ref))]
-        (let [definitions (doall (for [i (range (inc ilvl))]
-                                   (numbering/style-def-for num-id i)))
+      (if bookmark
+        (let [definitions (doall (for [i (range (inc (:ilvl bookmark)))]
+                                   (numbering/style-def-for (:num-id bookmark) i)))
               current-stack (some->> (iterations zip/up loc)
                                      (find-first (comp #{ooxml/p} :tag zip/node))
                                      (child-of-tag "pPr")
@@ -176,8 +178,7 @@
                                      (zip/node)
                                      (::enumeration)
                                      (:stack))
-
-              replacement (render-list definitions stack parsed-ref (or current-stack ()) runs)]
+              replacement (render-list definitions bookmark parsed-ref (or current-stack ()))]
           (log/debug "Replacing" old-content "with" replacement "in" (:id parsed-ref))
           ;; txt is t
           (cond (map? replacement)
@@ -262,15 +263,17 @@
     (first (:content node))))
 
 (defn- rerender-refs [xml-tree bookmark->meta]
+  (assert (map? bookmark->meta))
   (dfs-walk-xml-node
    xml-tree
    instr-text-ref ;; if it is a ref node
    (fn [loc]
      ;; go right, find text node between separate and end.
      ;; we can replace text with a rendered value.
-     (let [text (instr-text-ref (zip/node loc))]
+     (let [text (instr-text-ref (zip/node loc))
+           parsed-ref (parse-instr-text text)]
        (->
-        (some-> loc
+        (some-> (when parsed-ref loc)
                 (zip/up) ;; run
                 ;; (zip/right) ;; run: ez nem biztos hogy a separate. lehet hogy csak egy ures run text nelkul!
 
@@ -279,7 +282,7 @@
 
                 ;; ((->> (when-pred #(find-elem % :attr ooxml/fld-char-type "separate")))
                 (zip/right)
-                (fill-crossref-content (parse-instr-text text) bookmark->meta)
+                (fill-crossref-content parsed-ref (bookmark->meta (:id parsed-ref)))
                 (zip/right)
                 (->> (when-pred #(find-elem % :attr ooxml/fld-char-type "end"))))
         (or loc))))))
