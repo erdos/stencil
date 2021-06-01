@@ -164,11 +164,9 @@
       {:id id
        :flags (set (map keyword flags))})))
 
-
-(defn- fill-crossref-content [loc text bookmark->meta]
+(defn- fill-crossref-content [loc parsed-ref bookmark->meta]
   (when-let [txt (find-elem loc :tag ooxml/t)]
-    (let [parsed-ref   (parse-instr-text text)
-          old-content  (-> txt zip/node :content first)]
+    (let [old-content (-> txt zip/node :content first)]
       (if-let [{:keys [num-id ilvl stack runs]} (get bookmark->meta (:id parsed-ref))]
         (let [definitions (doall (for [i (range (inc ilvl))]
                                    (numbering/style-def-for num-id i)))
@@ -283,7 +281,7 @@
 
                 ;; ((->> (when-pred #(find-elem % :attr ooxml/fld-char-type "separate")))
                 (zip/right)
-                (fill-crossref-content text bookmark->meta)
+                (fill-crossref-content (parse-instr-text text) bookmark->meta)
                 (zip/right)
                 (->> (when-pred #(find-elem % :attr ooxml/fld-char-type "end"))))
         (or loc))))))
