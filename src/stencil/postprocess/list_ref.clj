@@ -270,7 +270,6 @@
      ;; go right, find text node between separate and end.
      ;; we can replace text with a rendered value.
      (let [text (instr-text-ref (zip/node loc))]
-       (println "Filling" text)
        (->
         (some-> loc
                 (zip/up) ;; run
