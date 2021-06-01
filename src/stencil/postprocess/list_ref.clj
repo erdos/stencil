@@ -141,7 +141,7 @@
   (let [items (take-while (comp complement #{(zip/node tree)} zip/node) (iterate zip/next tree))]
     (case prop
       :tag  (find-first (comp #{a} :tag zip/node) items)
-      :attr (find-first (comp #{b} a :attrs zip/node) items))))
+      :attr (find-first (comp (if (fn? b) b #{b}) a :attrs zip/node) items))))
 
 (defn- parse-num-pr [node]
   (assert (= ooxml/num-pr (:tag node)))
@@ -191,8 +191,8 @@
 
                 :else
                 (fail "Wrong replacement value." {:value replacement})))
-        (do (log/warn "Reference source not found. Previous content: " old-content)
-            (zip/up (zip/edit txt assoc :content ["Error; Reference source not found."])))))))
+        (do (log/warn "Reference source not found. Previous content:" old-content "id:" (:id parsed-ref))
+            (zip/edit txt assoc :content ["Error; Reference source not found."]))))))
 
 ;; adds ::enumeration key to all numPr elements
 (defn- enrich-dirty-refs-meta [xml-tree]
@@ -259,27 +259,35 @@
          zipper)))
     @bookmark->meta))
 
+;; if node is an instrText then return the string in it
+(defn- instr-text-ref [node]
+  (when (and (map? node) (= ooxml/tag-instr-text (:tag node)))
+    (println "Foud instr text!")
+    (first (:content node))))
+
 (defn- rerender-refs [xml-tree bookmark->meta]
-  (letfn [(instr-text-ref [node]
-            (when (and (map? node) (= ooxml/tag-instr-text (:tag node)))
-              (first (:content node))))]
-    (dfs-walk-xml-node
-     xml-tree
-     instr-text-ref ;; if it is a ref node
-     (fn [loc]
-       ;; go right, find text node between separate and end.
-       ;; we can replace text with a rendered value.
-       (let [text (instr-text-ref (zip/node loc))]
-         (->
-          (some-> loc
-                  (zip/up) ;; run
-                  (zip/right) ;; run: ez nem biztos hogy a separate. lehet hogy csak egy ures run text nelkul!
-                  (->> (when-pred #(find-elem % :attr ooxml/fld-char-type "separate")))
-                  (zip/right)
-                  (fill-crossref-content text bookmark->meta)
-                  (zip/right)
-                  (->> (when-pred #(find-elem % :attr ooxml/fld-char-type "end"))))
-          (or loc)))))))
+  (dfs-walk-xml-node
+   xml-tree
+   instr-text-ref ;; if it is a ref node
+   (fn [loc]
+     ;; go right, find text node between separate and end.
+     ;; we can replace text with a rendered value.
+     (let [text (instr-text-ref (zip/node loc))]
+       (println "Filling" text)
+       (->
+        (some-> loc
+                (zip/up) ;; run
+                ;; (zip/right) ;; run: ez nem biztos hogy a separate. lehet hogy csak egy ures run text nelkul!
+
+                (->> (iterations zip/right)
+                     (find-first #(find-elem % :attr ooxml/fld-char-type "separate")))
+
+                ;; ((->> (when-pred #(find-elem % :attr ooxml/fld-char-type "separate")))
+                (zip/right)
+                (fill-crossref-content text bookmark->meta)
+                (zip/right)
+                (->> (when-pred #(find-elem % :attr ooxml/fld-char-type "end"))))
+        (or loc))))))
 
 (defn fix-list-dirty-refs [xml-tree]
   (let [xml-tree (enrich-dirty-refs-meta xml-tree)
