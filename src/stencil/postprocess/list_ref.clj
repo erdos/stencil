@@ -154,12 +154,9 @@
       {:id id
        :flags (set (map keyword flags))})))
 
-
-(defn- fill-crossref-content [loc text bookmark->meta]
+(defn- fill-crossref-content [loc parsed-ref bookmark->meta]
   (when-let [txt (find-elem loc :tag ooxml/t)]
-    (let [current-text (-> txt zip/node :content first)
-          parsed-ref   (parse-instr-text text)
-          old-content  (-> txt zip/node :content first)]
+    (let [old-content (-> txt zip/node :content first)]
       (if-let [{:keys [num-id ilvl stack]} (get bookmark->meta (:id parsed-ref))]
         (let [definitions (doall (for [i (range (inc ilvl))]
                                    (numbering/style-def-for num-id i)))
@@ -234,7 +231,7 @@
    xml-tree
    instr-text-ref ;; if it is a ref node
    (fn [loc]
-     ;; go right, find text node between seaprate and end.
+     ;; go right, find text node between separate and end.
      ;; we can replace text with a rendered value.
      (let [text (instr-text-ref (zip/node loc))]
        (->
@@ -243,7 +240,7 @@
                 (zip/right) ;; run
                 (->> (when-pred #(find-elem % :attr ooxml/fld-char-type "separate")))
                 (zip/right)
-                (fill-crossref-content text bookmark->meta)
+                (fill-crossref-content (parse-instr-text text) bookmark->meta)
                 (zip/right)
                 (->> (when-pred #(find-elem % :attr ooxml/fld-char-type "end"))))
         (or loc))))))
