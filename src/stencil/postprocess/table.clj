@@ -22,7 +22,7 @@
 (defn- find-last-child [pred tree]
   (assert (zipper? tree))
   (assert (fn? pred))
-  (last (filter (comp pred zip/node) (take-while some? (iterate zip/right (zip/down tree))))))
+  (last (filter (comp pred zip/node) (iterations zip/right (zip/down tree)))))
 
 (defn- first-right-sibling
   "Finds first right sibling that matches the predicate."
@@ -56,7 +56,7 @@
   [pred loc]
   (assert (ifn? pred))
   (assert (zipper? loc))
-  (find-first (comp pred zip/node) (take-while some? (iterations zip/right (zip/down loc)))))
+  (find-first (comp pred zip/node) (iterations zip/right (zip/down loc))))
 
 (defn- tag-matches? [tag elem] (and (map? elem) (some-> elem :tag name #{tag})))
 

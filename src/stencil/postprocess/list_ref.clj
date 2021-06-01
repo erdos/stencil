@@ -145,7 +145,7 @@
   (assert (zipper? loc))
   (assert (string? tag-name))
   (find-first (comp (fn [elem] (and (map? elem) (some-> elem :tag name #{tag-name}))) zip/node)
-              (take-while some? (iterations zip/right (zip/down loc)))))
+              (iterations zip/right (zip/down loc))))
 
 (defn parse-instr-text [^String s]
   (assert (string? s))
