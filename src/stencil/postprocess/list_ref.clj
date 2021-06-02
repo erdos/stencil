@@ -108,10 +108,11 @@
   (let [common-suffix (count (take-while true? (map = (reverse levels) (reverse current-stack))))]
     (render-list-full-context styles levels common-suffix)))
 
-;; returns "below" or "above" or nil
-(defn- render-list-position [styles levels current-stack]
-  ;; TODO: implement this
-  "below")
+;; returns "below" or "above"
+(defn- render-list-position [bookmark parsed-ref]
+  (assert (:order bookmark))
+  (assert (:order parsed-ref))
+  (if (< (:order bookmark) (:order parsed-ref)) "above" "below"))
 
 (defn- render-bookmark-content [runs]
   #_ (when (empty? runs)
@@ -121,7 +122,7 @@
 
   )
 
-(defn render-list [styles {:keys [stack] :as bookmark} flags current-stack]
+(defn render-list [styles {:keys [stack] :as bookmark} {:keys [flags] :as parsed-ref} current-stack]
   (assert (sequential? styles))
   (assert (map? bookmark))
   (assert (sequential? current-stack))
@@ -131,7 +132,7 @@
             (:r flags) (render-list-relative styles stack current-stack)
             (:n flags) (render-list-one styles stack)
             (not (:p flags)) (render-bookmark-content (:runs bookmark)))
-      (cond-> (:p flags) (-> (some-> (str " ")) (str (render-list-position styles stack current-stack))))))
+      (cond-> (:p flags) (-> (some-> (str " ")) (str (render-list-position bookmark parsed-ref))))))
 
 ;; Walks the tree (zipper) with DFS and returns the first node for given tag or attribute.
 (defn- find-elem [tree prop & [a b]]
@@ -178,7 +179,7 @@
                                      (zip/node)
                                      (::enumeration)
                                      (:stack))
-              replacement (render-list definitions bookmark (:flags parsed-ref) (or current-stack ()))]
+              replacement (render-list definitions bookmark parsed-ref (or current-stack ()))]
           (log/debug "Replacing" old-content "with" replacement "in" (:id parsed-ref))
           ;; txt is t
           (cond (map? replacement)
@@ -194,32 +195,40 @@
             (zip/edit txt assoc :content ["Error; Reference source not found."]))))))
 
 ;; adds ::enumeration key to all numPr elements
+;; adds ::instruction key to all instrText elements
 (defn- enrich-dirty-refs-meta [xml-tree]
-  (let [nr->stack (volatile! {})]
+  (let [order     (volatile! 0)
+        nr->stack (volatile! {})]
     (dfs-walk-xml
      xml-tree
-     (fn [node] (and (map? node) (= (:tag node) ooxml/num-pr)))
+     (fn [node] (and (map? node) (#{ooxml/num-pr ooxml/tag-instr-text} (:tag node))))
      (fn [node]
-       (let [{:keys [ilvl num-id]} (parse-num-pr node)]
-         (vswap! nr->stack
-                         update
-                         num-id
-                         (fnil
-                          (fn [stack length]
-                            (cond (< (inc length) (count stack))
-                                  (update-peek (next stack) inc)
+       (condp = (:tag node)
+         ooxml/tag-instr-text
+         (assoc node ::instruction {:order (vswap! order inc)})
 
-                                  (> (inc length) (count stack))
-                                  (conj stack 1)
+         ooxml/num-pr
+         (let [{:keys [ilvl num-id]} (parse-num-pr node)]
+           (vswap! nr->stack
+                   update
+                   num-id
+                   (fnil
+                    (fn [stack length]
+                      (cond (< (inc length) (count stack))
+                            (update-peek (next stack) inc)
 
-                                  :else
-                                  (update-peek stack inc)))
-                          ())
-                         ilvl)
-                 (assoc node ::enumeration
-                        {:ilvl ilvl
-                         :num-id num-id
-                         :stack (get @nr->stack num-id)}))))))
+                            (> (inc length) (count stack))
+                            (conj stack 1)
+
+                            :else
+                            (update-peek stack inc)))
+                    ())
+                   ilvl)
+           (assoc node ::enumeration
+                  {:ilvl ilvl
+                   :num-id num-id
+                   :order (vswap! order inc)
+                   :stack (get @nr->stack num-id)})))))))
 
 ;; Given a location of a bookmark start node, find the <r> nodes until the corresponding <bookmarkEnd>
 (defn- get-bookmarked-runs [zipper]
@@ -244,7 +253,7 @@
      xml-tree
      (fn [node] (and (map? node) (= (:tag node) ooxml/bookmark-start)))
      (fn [zipper]
-       (let [bookmark-id (->(zip/node zipper) :attrs ooxml/name)]
+       (let [bookmark-id (-> zipper zip/node :attrs ooxml/name)]
          (some->> zipper
                   (zip/up)
                   (child-of-tag "pPr")
@@ -269,8 +278,9 @@
    (fn [loc]
      ;; go right, find text node between separate and end.
      ;; we can replace text with a rendered value.
-     (let [text (instr-text-ref (zip/node loc))
-           parsed-ref (parse-instr-text text)]
+     (let [node (zip/node loc)
+           text (instr-text-ref node)
+           parsed-ref (merge (parse-instr-text text) (::instruction node))]
        (->
         (some-> (when parsed-ref loc)
                 (zip/up) ;; run
