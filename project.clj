@@ -37,5 +37,5 @@
                     :test-paths ["java-test"]
                     }
              :ci {:plugins [[lein-javadoc "0.3.0"]
-                            [lein-cloverage "1.2.1"]]
+                            [lein-cloverage "1.2.2"]]
                   }})
