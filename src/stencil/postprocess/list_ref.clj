@@ -185,16 +185,7 @@
                                      (:stack))
               replacement (render-list definitions bookmark parsed-ref (or current-stack ()))]
           (log/debug "Replacing" old-content "with" replacement "in" (:id parsed-ref))
-          ;; txt is t
-          (cond (map? replacement)
-                ;; returned a <r> so we can replace current node.
-                (zip/replace (zip/up txt) replacement)
-
-                (string? replacement)
-                (zip/up (zip/edit txt assoc :content [replacement]))
-
-                :else
-                (fail "Wrong replacement value." {:value replacement})))
+          (zip/up (zip/edit txt assoc :content [replacement])))
         (do (log/warn "Reference source not found. Previous content:" old-content "id:" (:id parsed-ref))
             ;(zip/edit txt assoc :content ["Error; Reference source not found."])
             nil)))))
