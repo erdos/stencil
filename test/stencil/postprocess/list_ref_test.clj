@@ -1,7 +1,7 @@
 (ns stencil.postprocess.list-ref-test
   (:require [stencil.postprocess.list-ref :refer :all]
-            [clojure.zip :as zip]
-            [clojure.test :refer [deftest testing is are]]))
+            [clojure.test :refer [deftest testing is are]]
+            [stencil.integration :as integration]))
 
 
 (deftest render-number-decimal
@@ -87,3 +87,11 @@
   (is (= {:flags #{:w :h}
           :id "__RefNumPara__1_1003916714"}
          (parse-instr-text " REF __RefNumPara__1_1003916714 \\w \\h "))))
+
+(deftest test-integration
+  (is (= ["Testing cross-reference to numbering with position."
+          "Crossref 1: " "2" " " "below"
+          "One" "Three"
+          "Ein" "Drei"
+          "Crossref 2: " "2" " " "above"]
+         (integration/rendered-words "references/crossref-numbering-1.docx" {}))))
