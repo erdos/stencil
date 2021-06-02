@@ -116,7 +116,6 @@
 
 ;; returns string concatenation of text contents from the seq of runs.
 (defn- render-bookmark-content [runs]
-  ;; returns text values from the texts under the runs.
   (apply str
          (for [r runs
                :when (= ooxml/r (:tag r))
@@ -282,12 +281,8 @@
        (->
         (some-> (when parsed-ref loc)
                 (zip/up) ;; run
-                ;; (zip/right) ;; run: ez nem biztos hogy a separate. lehet hogy csak egy ures run text nelkul!
-
                 (->> (iterations zip/right)
                      (find-first #(find-elem % :attr ooxml/fld-char-type "separate")))
-
-                ;; ((->> (when-pred #(find-elem % :attr ooxml/fld-char-type "separate")))
                 (zip/right)
                 (fill-crossref-content parsed-ref (bookmark->meta (:id parsed-ref)))
                 (zip/right)
