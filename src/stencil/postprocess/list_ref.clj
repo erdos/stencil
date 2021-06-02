@@ -192,7 +192,8 @@
                 :else
                 (fail "Wrong replacement value." {:value replacement})))
         (do (log/warn "Reference source not found. Previous content:" old-content "id:" (:id parsed-ref))
-            (zip/edit txt assoc :content ["Error; Reference source not found."]))))))
+            ;(zip/edit txt assoc :content ["Error; Reference source not found."])
+            nil)))))
 
 ;; adds ::enumeration key to all numPr elements
 ;; adds ::instruction key to all instrText elements

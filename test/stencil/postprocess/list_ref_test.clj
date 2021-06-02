@@ -95,3 +95,10 @@
           "Ein" "Drei"
           "Crossref 2: " "2" " " "above"]
          (integration/rendered-words "references/crossref-numbering-1.docx" {}))))
+
+(deftest test-integration-bookmark
+  (is (= ["Test cross-references with bookmarked content."
+          "constant" " item"
+          "second item"
+          "constant item"]
+         (integration/rendered-words "references/crossref-bookmark-1.docx" {:x "constant"}))))
