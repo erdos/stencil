@@ -1,7 +1,7 @@
 (ns stencil.postprocess.list-ref-test
   (:require [stencil.postprocess.list-ref :refer :all]
-            [clojure.zip :as zip]
-            [clojure.test :refer [deftest testing is are]]))
+            [clojure.test :refer [deftest testing is are]]
+            [stencil.integration :as integration]))
 
 
 (deftest render-number-decimal
@@ -45,29 +45,29 @@
   (let [styles [{:start 1 :num-fmt "decimal" :lvl-text "%1."}
                 {:start 1 :num-fmt "lowerRoman" :lvl-text "%2."}
                 {:start 1 :num-fmt "upperLetter" :lvl-text "%3."}]]
-    (is (= "C" (render-list styles {:stack '(3 1 1)} #{:n :h} ())))
-    (is (= "1.i.C" (render-list styles {:stack '(3 1 1)} #{:w :h} ()))))
+    (is (= "C" (render-list styles {:stack '(3 1 1)} {:flags #{:n :h}} ())))
+    (is (= "1.i.C" (render-list styles {:stack '(3 1 1)} {:flags #{:w :h}} ()))))
 
   (let [styles [{:start 1 :num-fmt "decimal" :lvl-text "%1-"}
                 {:start 1 :num-fmt "lowerRoman" :lvl-text "%2/"}
                 {:start 1 :num-fmt "upperLetter" :lvl-text ".%3."}]]
-    (is (= ".C." (render-list styles {:stack '(3 1 1)} #{:n :h} ())))
-    (is (= "1-i.C." (render-list styles {:stack '(3 1 1)} #{:w :h} ()))))
+    (is (= ".C." (render-list styles {:stack '(3 1 1)} {:flags #{:n :h}} ())))
+    (is (= "1-i.C." (render-list styles {:stack '(3 1 1)} {:flags #{:w :h}} ()))))
 
   (let [styles [{:start 1 :num-fmt "decimal" :lvl-text "-%1-"}
                 {:start 1 :num-fmt "lowerRoman" :lvl-text "%2/"}
                 {:start 1 :num-fmt "upperLetter" :lvl-text ".%3."}]]
-    (is (= "-1-i.C." (render-list styles {:stack '(3 1 1)} #{:w :h} ()))))
+    (is (= "-1-i.C." (render-list styles {:stack '(3 1 1)} {:flags #{:w :h}} ()))))
 
   (let [styles [{:start 1 :num-fmt "decimal" :lvl-text "-%1-"}
                 {:start 1 :num-fmt "lowerRoman" :lvl-text "/%2/"}
                 {:start 1 :num-fmt "upperLetter" :lvl-text ".%3."}]]
-    (is (= "-1-/i/.C." (render-list styles {:stack '(3 1 1)} #{:w :h} ()))))
+    (is (= "-1-/i/.C." (render-list styles {:stack '(3 1 1)} {:flags #{:w :h}} ()))))
 
   (let [styles [{:start 1 :num-fmt "decimal" :lvl-text "%1-"}
                 {:start 1 :num-fmt "lowerRoman" :lvl-text "%2/"}
                 {:start 1 :num-fmt "upperLetter" :lvl-text ".%3."}]]
-    (is (= "1-i.C." (render-list styles {:stack '(3 1 1)} #{:w :h} ()))))
+    (is (= "1-i.C." (render-list styles {:stack '(3 1 1)} {:flags #{:w :h}} ()))))
 
   :ok)
 
@@ -76,9 +76,9 @@
   (let [styles [{:start 1 :num-fmt "decimal" :lvl-text "%1."}
                 {:start 1 :num-fmt "lowerRoman" :lvl-text "%2."}
                 {:start 1 :num-fmt "upperLetter" :lvl-text "%3."}]]
-    (is (= "C" (render-list styles {:stack '(3 1 1)} #{:r :h} '(3 1 1))))
-    (is (= "i.C" (render-list styles {:stack '(3 1 1)} #{:r :h} '(1))))
-    (is (= "1.i.C" (render-list styles {:stack '(3 1 1)} #{:r :h} '(2 2 2 2)))))
+    (is (= "C" (render-list styles {:stack '(3 1 1)} {:flags #{:r :h}} '(3 1 1))))
+    (is (= "i.C" (render-list styles {:stack '(3 1 1)} {:flags #{:r :h}} '(1))))
+    (is (= "1.i.C" (render-list styles {:stack '(3 1 1)} {:flags #{:r :h}} '(2 2 2 2)))))
 
   :ok)
 
@@ -87,3 +87,11 @@
   (is (= {:flags #{:w :h}
           :id "__RefNumPara__1_1003916714"}
          (parse-instr-text " REF __RefNumPara__1_1003916714 \\w \\h "))))
+
+(deftest test-integration
+  (is (= ["Testing cross-reference to numbering with position."
+          "Crossref 1: " "2" " " "below"
+          "One" "Three"
+          "Ein" "Drei"
+          "Crossref 2: " "2" " " "above"]
+         (integration/rendered-words "references/crossref-numbering-1.docx" {}))))
