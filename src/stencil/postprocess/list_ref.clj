@@ -222,7 +222,7 @@
      xml-tree
      (fn [node] (and (map? node) (= (:tag node) ooxml/bookmark-start)))
      (fn [zipper]
-       (let [bookmark-id (->(zip/node zipper) :attrs ooxml/name)]
+       (let [bookmark-id (-> zipper zip/node :attrs ooxml/name)]
          (some->> zipper
                   (zip/up)
                   (child-of-tag "pPr")
