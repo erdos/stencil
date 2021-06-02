@@ -99,6 +99,6 @@
 (deftest test-integration-bookmark
   (is (= ["Test cross-references with bookmarked content."
           "constant" " item"
-          "second item"
+          "Second item"
           "constant item"]
          (integration/rendered-words "references/crossref-bookmark-1.docx" {:x "constant"}))))

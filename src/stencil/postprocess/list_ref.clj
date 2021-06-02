@@ -114,13 +114,17 @@
   (assert (:order parsed-ref))
   (if (< (:order bookmark) (:order parsed-ref)) "above" "below"))
 
+;; returns string concatenation of text contents from the seq of runs.
 (defn- render-bookmark-content [runs]
-  #_ (when (empty? runs)
-    (fail "Empty content, cannot replace." {:id (:id bookmark-meta)}))
-  (or (first runs)
-      "???")
-
-  )
+  ;; returns text values from the texts under the runs.
+  (apply str
+         (for [r runs
+               :when (= ooxml/r (:tag r))
+               c (:content r)
+               :when (map? c)
+               :when (= ooxml/t (:tag c))
+               t (:content c)]
+           t)))
 
 (defn render-list [styles {:keys [stack] :as bookmark} {:keys [flags] :as parsed-ref} current-stack]
   (assert (sequential? styles))
