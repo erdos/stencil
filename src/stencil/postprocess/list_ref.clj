@@ -179,6 +179,7 @@
             (zip/up (zip/edit txt assoc :content ["Error; Reference source not found."])))))))
 
 ;; adds ::enumeration key to all numPr elements
+;; adds ::instruction key to all instrText elements
 (defn- enrich-dirty-refs-meta [xml-tree]
   (let [order     (volatile! 0)
         nr->stack (volatile! {})]
@@ -188,7 +189,7 @@
      (fn [node]
        (condp = (:tag node)
          ooxml/tag-instr-text
-         (assoc node ::instr {:order (vswap! order inc)})
+         (assoc node ::instruction {:order (vswap! order inc)})
 
          ooxml/num-pr
          (let [{:keys [ilvl num-id]} (parse-num-pr node)]
@@ -246,7 +247,7 @@
      ;; we can replace text with a rendered value.
      (let [node (zip/node loc)
            text (instr-text-ref node)
-           parsed-ref (merge (parse-instr-text text) (::instr node))]
+           parsed-ref (merge (parse-instr-text text) (::instruction node))]
        (->
         (some-> (when parsed-ref loc)
                 (zip/up) ;; run
