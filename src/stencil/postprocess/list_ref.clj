@@ -222,7 +222,6 @@
                          :stack (get @nr->stack num-id)}))))))
 
 ;; Given a location of a bookmark start node, find the <r> nodes until the corresponding <bookmarkEnd>
-;; TODO: if bookmarkStart and bookmarkEnd are neighbouring, then find
 (defn- get-bookmarked-runs [zipper]
   (assert (= ooxml/bookmark-start (:tag (zip/node zipper))))
   (let [bookmark-id (-> zipper zip/node :attrs ooxml/name)]
