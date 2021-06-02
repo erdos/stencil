@@ -185,7 +185,9 @@
                                      (:stack))
               replacement (render-list definitions bookmark parsed-ref (or current-stack ()))]
           (log/debug "Replacing" old-content "with" replacement "in" (:id parsed-ref))
-          (zip/up (zip/edit txt assoc :content [replacement])))
+          (-> txt
+              (zip/edit assoc :content [replacement])
+              (zip/up)))
         (do (log/warn "Reference source not found. Previous content:" old-content "id:" (:id parsed-ref))
             ;(zip/edit txt assoc :content ["Error; Reference source not found."])
             nil)))))
