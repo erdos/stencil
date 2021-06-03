@@ -114,6 +114,17 @@
   (assert (:order parsed-ref))
   (if (< (:order bookmark) (:order parsed-ref)) "above" "below"))
 
+;; returns string concatenation of text contents from the seq of runs.
+(defn- render-bookmark-content [runs]
+  (apply str
+         (for [r runs
+               :when (= ooxml/r (:tag r))
+               c (:content r)
+               :when (map? c)
+               :when (= ooxml/t (:tag c))
+               t (:content c)]
+           t)))
+
 (defn render-list [styles {:keys [stack] :as bookmark} {:keys [flags] :as parsed-ref} current-stack]
   (assert (sequential? styles))
   (assert (map? bookmark))
@@ -122,7 +133,8 @@
   (assert (set? flags))
   (-> (cond (:w flags) (render-list-full-context styles stack 0)
             (:r flags) (render-list-relative styles stack current-stack)
-            (:n flags) (render-list-one styles stack))
+            (:n flags) (render-list-one styles stack)
+            (not (:p flags)) (render-bookmark-content (:runs bookmark)))
       (cond-> (:p flags) (-> (some-> (str " ")) (str (render-list-position bookmark parsed-ref))))))
 
 ;; Walks the tree (zipper) with DFS and returns the first node for given tag or attribute.
@@ -164,7 +176,7 @@
         (let [definitions (doall (for [i (range (inc (:ilvl bookmark)))]
                                    (numbering/style-def-for (:num-id bookmark) i)))
               current-stack (some->> (iterations zip/up loc)
-                                     (find-first (comp #{ooxml/p} :tag zip/node) )
+                                     (find-first (comp #{ooxml/p} :tag zip/node))
                                      (child-of-tag "pPr")
                                      (child-of-tag "numPr")
                                      (zip/node)
@@ -175,8 +187,9 @@
           (-> txt
               (zip/edit assoc :content [replacement])
               (zip/up)))
-        (do (log/warn "Reference source not found. Previous content: " old-content)
-            (zip/up (zip/edit txt assoc :content ["Error; Reference source not found."])))))))
+        (do (log/warn "Reference source not found. Previous content:" old-content "id:" (:id parsed-ref))
+            ;(zip/edit txt assoc :content ["Error; Reference source not found."])
+            nil)))))
 
 ;; adds ::enumeration key to all numPr elements
 ;; adds ::instruction key to all instrText elements
@@ -214,6 +227,21 @@
                    :order (vswap! order inc)
                    :stack (get @nr->stack num-id)})))))))
 
+;; Given a location of a bookmark start node, find the <r> nodes until the corresponding <bookmarkEnd>
+(defn- get-bookmarked-runs [zipper]
+  (assert (= ooxml/bookmark-start (:tag (zip/node zipper))))
+  (let [bookmark-id (-> zipper zip/node :attrs ooxml/name)]
+    (->> zipper
+         (iterations zip/right)
+         (next)
+         (take-while (comp (fn [n]
+                             (or (-> n :tag (not= ooxml/bookmark-end))
+                                 (-> n :attrs ooxml/name (not= bookmark-id))))
+                           zip/node))
+         (filter (comp (fn [n] (= (:tag n) ooxml/r)) zip/node))
+         (map zip/node)
+         (doall))))
+
 ;; Produces map of Bookmark id (REF string) to metadata map. Map contains values from under
 ;; the ::enumeration key of numbering node.
 (defn- get-bookmark-meta [xml-tree]
@@ -229,10 +257,12 @@
                   (child-of-tag "numPr")
                   (zip/node)
                   (::enumeration)
+                  (merge {:runs (get-bookmarked-runs zipper)})
                   (vswap! bookmark->meta assoc bookmark-id))
          zipper)))
     @bookmark->meta))
 
+;; if node is an instrText then return the string in it
 (defn- instr-text-ref [node]
   (when (and (map? node) (= ooxml/tag-instr-text (:tag node)))
     (first (:content node))))
@@ -251,8 +281,8 @@
        (->
         (some-> (when parsed-ref loc)
                 (zip/up) ;; run
-                (zip/right) ;; run
-                (->> (when-pred #(find-elem % :attr ooxml/fld-char-type "separate")))
+                (->> (iterations zip/right)
+                     (find-first #(find-elem % :attr ooxml/fld-char-type "separate")))
                 (zip/right)
                 (fill-crossref-content parsed-ref (bookmark->meta (:id parsed-ref)))
                 (zip/right)

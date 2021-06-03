@@ -95,3 +95,20 @@
           "Ein" "Drei"
           "Crossref 2: " "2" " " "above"]
          (integration/rendered-words "references/crossref-numbering-1.docx" {}))))
+
+(deftest test-integration-bookmark
+  (is (= ["Test cross-references with bookmarked content."
+          "constant" " item"
+          "Second item"
+          "constant item"]
+         (integration/rendered-words "references/crossref-bookmark-1.docx" {:x "constant"}))))
+
+(deftest test-integration-bookmark-missing
+  (testing "Bookmark referenced after Question1 is missing so its contents will not change."
+    (is (= ["First para:"
+            "Question 1" "Question 2" "Name: Teszt"
+            "Second para:"
+            "Lorem ipsum " "Question 1" "." " "
+            "Nunc viverra imperdiet enim."
+            "Proin pharetra nonummy pede." " " "Question 2"]
+           (integration/rendered-words "references/crossref-bookmark-missing.docx" {:name "Teszt"})))))
