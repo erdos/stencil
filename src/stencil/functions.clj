@@ -1,6 +1,7 @@
 (ns stencil.functions
   "Function definitions"
-  (:require [stencil.types :refer :all]))
+  (:require [stencil.types :refer :all]
+            [stencil.util :refer [fail]]))
 
 (set! *warn-on-reflection* true)
 
@@ -37,3 +38,21 @@
     (->HideTableColumnMarker)))
 
 (defmethod call-fn "hideRow" [_] (->HideTableRowMarker))
+
+(defn- lookup [column data]
+  (second (or (find data column)
+              (find data (keyword column)))))
+
+(defmethod call-fn "map" [_ ^String column data]
+  (when-not (string? column)
+    (fail "First parameter of map() must be a string!" {}))
+  (reduce (fn [elems p]
+            (if (empty? p)
+              (do (doseq [e elems :when (not (or (nil? e) (sequential? e)))]
+                    (fail "Wrong data, expected sequence, got: " {:data e}))
+                  (mapcat seq elems))
+              (do (doseq [e elems :when (not (or (nil? e) (map? e)))]
+                    (fail "Wrong data, expected map, got: " {:data e}))
+                  (keep (partial lookup p) elems))))
+          data
+          (.split column "\\.")))

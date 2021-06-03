@@ -7,6 +7,7 @@
             [clojure.java.io :as io :refer [file]]
             [stencil.eval :as eval]
             [stencil.merger :as merger]
+            [stencil.model.numbering :as numbering]
             [stencil.tree-postprocess :as tree-postprocess]
             [stencil.types :refer [->FragmentInvoke]]
             [stencil.util :refer :all]
@@ -44,12 +45,10 @@
 (defn- parse-content-types [^File cts]
   (assert (.exists cts))
   (assert (.isFile cts))
-  (let [parsed (with-open [r (io/input-stream cts)] (xml/parse r))]
-    {:source-file cts
-     ::path       (.getName cts)}))
+  {:source-file cts
+   ::path       (.getName cts)})
 
 
-;; TODO: options-map
 (defn ->exec [xml-streamable]
   (with-open [stream (io/input-stream xml-streamable)]
     (-> (merger/parse-to-tokens-seq stream)
@@ -81,6 +80,7 @@
      :main          {::path       main-document
                      :source-file (file dir main-document)
                      :executable  (->exec (file dir main-document))
+                     :numbering   (numbering/main-numbering dir main-document main-document-rels)
                      :style       (style/main-style-item dir main-document main-document-rels)
                      :relations main-document-rels
                      :headers+footers (doall
@@ -122,14 +122,15 @@
     (eval-model-part-exec (:executable part) data functions)
     {:writer (resource-copier part)
      :xml-delay (delay
-                 (with-open [reader (io/input-stream (:source-file part))]
-                   (update (xml/parse reader) :content doall)))}))
+                  (with-open [reader (io/input-stream (:source-file part))]
+                    (unlazy-tree (xml/parse reader))))}))
 
 
 (defn- eval-template-model [template-model data functions fragments]
   (assert (:main template-model) "Should be a result of load-template-model call!")
   (assert (some? fragments))
   (binding [*current-styles*     (atom (:parsed (:style (:main template-model))))
+            numbering/*numbering* (:numbering (:main template-model))
             *inserted-fragments* (atom #{})
             *extra-files*        (atom #{})
             *all-fragments*      (into {} fragments)]

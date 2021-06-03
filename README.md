@@ -17,7 +17,8 @@ them to make the template more readable.
 [![CircleCI](https://circleci.com/gh/erdos/stencil/tree/master.svg?style=svg)](https://circleci.com/gh/erdos/stencil/tree/master)
 [![codecov](https://codecov.io/gh/erdos/stencil/branch/master/graph/badge.svg)](https://codecov.io/gh/erdos/stencil)
 [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/erdos/stencil/issues)
-[![HitCount](http://hits.dwyl.io/erdos/stencil.svg)](http://hits.dwyl.io/erdos/stencil)
+<!-- [![HitCount](http://hits.dwyl.io/erdos/stencil.svg)](http://hits.dwyl.io/erdos/stencil) -->
+[![Hits](https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2Ferdos%2Fstencil&count_bg=%239F3DC8&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=hits&edge_flat=false)](https://hits.seeyoufarm.com)
 [![EPL 2.0](https://img.shields.io/badge/License-EPL%202.0-red.svg)](https://www.eclipse.org/legal/epl-2.0/)
 
 
@@ -45,9 +46,9 @@ The project has a simple [service implementation](https://github.com/erdos/stenc
 
 ## Version
 
-**Latest stable** version is `0.3.9`
+**Latest stable** version is `0.3.15`
 
-**Latest snapshot** version is `0.3.10-SNAPSHOT`
+**Latest snapshot** version is `0.3.16-SNAPSHOT`
 
 If you are using Maven, add the followings to your `pom.xml`:
 
@@ -57,7 +58,7 @@ The dependency:
 <dependency>
   <groupId>io.github.erdos</groupId>
   <artifactId>stencil-core</artifactId>
-  <version>0.3.9</version>
+  <version>0.3.15</version>
 </dependency>
 ```
 
@@ -72,7 +73,7 @@ And the [Clojars](https://clojars.org) repository:
 
 Alternatively, if you are using Leiningen, add the following to
 the `:dependencies` section of your `project.clj`
-file: `[io.github.erdos/stencil-core "0.3.9"]`
+file: `[io.github.erdos/stencil-core "0.3.15"]`
 
 Previous versions are available on the [Stencil Clojars](https://clojars.org/io.github.erdos/stencil-core) page.
 
