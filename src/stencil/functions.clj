@@ -1,7 +1,7 @@
 (ns stencil.functions
   "Function definitions"
   (:require [stencil.types :refer :all]
-            [stencil.util :refer [fail]]))
+            [stencil.util :refer [fail find-first]]))
 
 (set! *warn-on-reflection* true)
 
@@ -18,7 +18,7 @@
 
 ;; finds first nonempy argument
 (defmethod call-fn "coalesce" [_ & args-seq]
-  (some not-empty args-seq))
+  (find-first (some-fn number? true? false? not-empty) args-seq))
 
 (defmethod call-fn "length" [_ items] (count items))
 
