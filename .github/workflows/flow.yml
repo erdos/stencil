@@ -45,13 +45,13 @@ jobs:
           echo TAG=$IMAGE_ID:$VERSION >> $GITHUB_ENV
       - name: Log into GitHub Container Registry
         run: echo "${{ secrets.CR_PAT }}" | docker login https://ghcr.io -u ${{ github.actor }} --password-stdin
-      - name: Build image
-        working-directory: service
-        run: docker build . --file Dockerfile --tag ${{ env.TAG }}
-      - name: Push image to GitHub Container Registry
-        run: docker push ${{ env.TAG }}
       - name: Build GraalVM image
         working-directory: service
         run: docker build . --file Dockerfile.graalvm --tag ${{ env.TAG }}-graal
       - name: Push GraalVM image to GitHub Container Registry
         run: docker push ${{ env.TAG }}-graal
+      - name: Build image
+        working-directory: service
+        run: docker build . --file Dockerfile --tag ${{ env.TAG }}
+      - name: Push image to GitHub Container Registry
+        run: docker push ${{ env.TAG }}
