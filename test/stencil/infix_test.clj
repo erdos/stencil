@@ -206,6 +206,7 @@
   (is (= 0 (run "sum(vals)", {"vals" []}))))
 
 (deftest coalesce-function
+  (is (= 42 (run "coalesce(x, 0)" {"x" 42})))
   (is (= nil (run "coalesce(\"\", \"\")")))
   (is (= "a" (run "coalesce(\"\", \"\", \"a\", \"b\")"))))
 
