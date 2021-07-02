@@ -9,12 +9,14 @@ This is a short description of the functions implemented in Stencil:
 - [coalesce](#coalesce)
 - `currency`
 - [date](#date)
+- [decimal](#decimal)
 - [empty](#empty)
 - [floor](#floor)
 - [format](#format)
 - `hideColumn`
 - `hideRow`
 - [html](#html)
+- [integer](#integer)
 - [join](#join)
 - [length](#length)
 - [lowercase](#lowercase)
@@ -41,6 +43,10 @@ Accepts any number of arguments, returns the first not-empty value.
 - to insert the first filled name value: <code>{<i>%=coalesce(partnerFullName, partnerShortName, partnerName)%</i>}</code>
 - to insert the price of an item or default to zero: <code>{<i>%=coalesce(x.price, x.premium, 0)%</i>}</code>
 
+### Decimal
+
+Converts parameter to decimal number. Returns `null` for missing value.
+
 ### Empty
 
 Decides if a parameter is empty or missing. Useful in conditional statements.
@@ -55,6 +61,10 @@ The `empty()` function is useful when we want to either enumerate the contents
 of an array or hide the whole paragraph when the array is empty.
 
 <img src="screenshot-function-empty-before.png"/>
+
+### Integer
+
+Converts parameter to integer number. Returns `null` for missing value.
 
 ### Map
 
