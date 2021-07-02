@@ -16,6 +16,9 @@
   ([_ x y] (range x y))
   ([_ x y z] (range x y z)))
 
+(defmethod call-fn "integer" [_ n] (some-> n biginteger))
+(defmethod call-fn "decimal" [_ f] (some-> f bigdec))
+
 ;; finds first nonempy argument
 (defmethod call-fn "coalesce" [_ & args-seq]
   (find-first (some-fn number? true? false? not-empty) args-seq))

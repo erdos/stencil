@@ -4,6 +4,17 @@
             [clojure.test :refer [deftest testing is are]]))
 
 
+(deftest test-numerics
+  (testing "decimal"
+    (is (= (bigdec 0.23)) (call-fn "decimal" 0.23))
+    (is (= nil (call-fn "decimal" nil))))
+  (testing "integer"
+    (is (= (biginteger 10)) (call-fn "integer" 10))
+    (is (= nil (call-fn "integer" nil)))
+    (is (= (biginteger 10) (call-fn "integer" (bigdec 10.2))))
+    (is (= (biginteger 10) (call-fn "integer" (double 10))))))
+
+
 (deftest test-map
   (testing "Empty input"
     (is (= [] (call-fn "map" "x" [])))
