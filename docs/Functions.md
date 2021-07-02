@@ -139,7 +139,7 @@ Calls [String.format](https://docs.oracle.com/javase/7/docs/api/java/util/Format
 **Example:**
 
 This example formats the value of `price` as a price string:
-<code>{<i>%=format("$ %(,.2f"", price) %</i>}</code>. It may output `$ (6,217.58)`.
+<code>{<i>%=format("$ %(,.2f", price) %</i>}</code>. It may output `$ (6,217.58)`.
 
 
 ### Length
