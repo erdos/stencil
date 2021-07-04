@@ -6,14 +6,17 @@
 
 (deftest test-numerics
   (testing "decimal"
-    (is (= (bigdec 0.23)) (call-fn "decimal" 0.23))
+    (is (= (bigdec 0.23) (call-fn "decimal" 0.23)))
     (is (= nil (call-fn "decimal" nil))))
   (testing "integer"
-    (is (= (biginteger 10)) (call-fn "integer" 10))
+    (is (= (biginteger 10) (call-fn "integer" 10)))
     (is (= nil (call-fn "integer" nil)))
     (is (= (biginteger 10) (call-fn "integer" (bigdec 10.2))))
     (is (= (biginteger 10) (call-fn "integer" (double 10))))))
 
+(deftest test-format
+  (is (= "hello 42" (call-fn "format" "hello %d" 42)))
+  (is (= "hello 42" (call-fn "format" "hello %d" 42.0))))
 
 (deftest test-map
   (testing "Empty input"
