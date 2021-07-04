@@ -15,15 +15,19 @@
     (is (= (biginteger 10) (call-fn "integer" (double 10))))))
 
 (deftest test-format
-  (is (= "hello" (call-fn "format")))
   (is (= "hello 42" (call-fn "format" "hello %d" 42)))
   (is (= "hello 42" (call-fn "format" "hello %d" 42.0)))
+  (testing "Character formatting"
+    (is (= "Hello x" (call-fn "format" "Hello %c" "x")))
+    (is (= "Hello X" (call-fn "format" "Hello %C" \x))))
   (testing "Indexed parameters"
     (is (= "hello 42 41.00" (call-fn "format" "hello %2$d %1$,.2f" 41.0 42.0))))
   (is (= "hello john" (call-fn "format" "hello %s" "john")))
   (testing "Error handling"
-    (is (thrown? ExceptionInfo (call-fn "format" 34)))
-    (is (thrown? ExceptionInfo (call-fn "format" nil)))))
+    (is (thrown? clojure.lang.ArityException (call-fn "format")))
+    (is (thrown? ExceptionInfo (call-fn "format" "pattern")))
+    (is (thrown? ExceptionInfo (call-fn "format" 34 1)))
+    (is (thrown? ExceptionInfo (call-fn "format" nil 2)))))
 
 (deftest test-map
   (testing "Empty input"

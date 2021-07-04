@@ -26,7 +26,7 @@
       get-types  (fn [pattern-str]
                    (second (reduce (fn [[max-idx types] [_ idx _ _ _ _ type]]
                                      (if idx
-                                       [max-idx (assoc types (dec (Long/valueOf idx)) type)]
+                                       [max-idx (assoc types (dec (Long/valueOf ^String idx)) type)]
                                        [(inc max-idx) (assoc types max-idx type)]))
                                    [0 {}]
                                    (re-seq fs-pattern pattern-str))))
@@ -38,11 +38,15 @@
   (defmethod call-fn "format" [_ pattern-str & args]
     (when-not (string? pattern-str)
       (fail "Format pattern must be a string!" {:pattern pattern-str}))
+    (when (empty? args)
+      (fail "Format function expects at least two parameters!" {}))
     (let [types (get-types pattern-str)]
       (->> args
            (map-indexed (fn [idx value]
                           (case (types idx)
-                            ("c" "C")                     (some-> value char)
+                            ("c" "C")                     (cond (nil? value) nil
+                                                                (string? value) (first value)
+                                                                :else (char (int value)))
                             ("d" "o" "x" "X")             (some-> value biginteger)
                             ("e" "E" "f" "g" "G" "a" "A") (some-> value bigdec)
                             value)))
