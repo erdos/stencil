@@ -22,11 +22,11 @@
 ;; The format() function calls java.lang.String.format()
 ;; but it predicts the argumet types from the format string and
 ;; converts the argument values to the correct types to prevent runtime errors.
-(let [fs-pattern #"%(\\d+\\$)?([-#+ 0,(\\<]*)?(\\d+)?(\\.\\d+)?([tT])?([a-zA-Z%])"
+(let [fs-pattern #"%(?:(\d+)\$)?([-#+ 0,(\<]*)?(\d+)?(\.\d+)?([tT])?([a-zA-Z%])"
       get-types  (fn [pattern-str]
                    (second (reduce (fn [[max-idx types] [_ idx _ _ _ _ type]]
                                      (if idx
-                                       [max-idx (assoc types (Long/valueOf idx) type)]
+                                       [max-idx (assoc types (dec (Long/valueOf idx)) type)]
                                        [(inc max-idx) (assoc types max-idx type)]))
                                    [0 {}]
                                    (re-seq fs-pattern pattern-str))))
