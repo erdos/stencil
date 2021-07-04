@@ -90,9 +90,6 @@
 (defn parsing-exception [expression message]
   (ParsingException/fromMessage (str expression) (str message)))
 
-(defn eval-exception-missing [expression]
-  (EvalException/fromMissingValue (str expression)))
-
 (defn dfs-walk-xml-node [xml-tree predicate edit-fn]
   (assert (map? xml-tree))
   (assert (fn? predicate))

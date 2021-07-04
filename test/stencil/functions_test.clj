@@ -18,6 +18,7 @@
   (is (= "hello 42" (call-fn "format" "hello %d" 42)))
   (is (= "hello 42" (call-fn "format" "hello %d" 42.0)))
   (testing "Character formatting"
+    (is (= "Hello x" (call-fn "format" "Hello null" nil)))
     (is (= "Hello x" (call-fn "format" "Hello %c" "x")))
     (is (= "Hello X" (call-fn "format" "Hello %C" \x))))
   (testing "Indexed parameters"
