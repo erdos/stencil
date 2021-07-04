@@ -6,14 +6,32 @@
 
 (deftest test-numerics
   (testing "decimal"
-    (is (= (bigdec 0.23)) (call-fn "decimal" 0.23))
+    (is (= (bigdec 0.23) (call-fn "decimal" 0.23)))
     (is (= nil (call-fn "decimal" nil))))
   (testing "integer"
-    (is (= (biginteger 10)) (call-fn "integer" 10))
+    (is (= (biginteger 10) (call-fn "integer" 10)))
     (is (= nil (call-fn "integer" nil)))
     (is (= (biginteger 10) (call-fn "integer" (bigdec 10.2))))
     (is (= (biginteger 10) (call-fn "integer" (double 10))))))
 
+(deftest test-format
+  (is (= "hello 42" (call-fn "format" "hello %d" 42)))
+  (is (= "hello 42" (call-fn "format" "hello %d" 42.0)))
+  (testing "Integer formatting"
+    (is (= "1,000,000.00" (call-fn "format" "%,.2f" (int 1000000))))
+    (is (= "Hello null" (call-fn "format" "Hello %d" nil))))
+  (testing "Character formatting"
+    (is (= "Hello null" (call-fn "format" "Hello %c" nil)))
+    (is (= "Hello x" (call-fn "format" "Hello %c" "x")))
+    (is (= "Hello X" (call-fn "format" "Hello %C" \x))))
+  (testing "Indexed parameters"
+    (is (= "hello 42 41.00" (call-fn "format" "hello %2$d %1$,.2f" 41.0 42.0))))
+  (is (= "hello john" (call-fn "format" "hello %s" "john")))
+  (testing "Error handling"
+    (is (thrown? clojure.lang.ArityException (call-fn "format")))
+    (is (thrown? ExceptionInfo (call-fn "format" "pattern")))
+    (is (thrown? ExceptionInfo (call-fn "format" 34 1)))
+    (is (thrown? ExceptionInfo (call-fn "format" nil 2)))))
 
 (deftest test-map
   (testing "Empty input"

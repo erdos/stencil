@@ -12,28 +12,6 @@ import java.util.stream.Collectors;
 @SuppressWarnings("unused")
 public enum StringFunctions implements Function {
 
-    /**
-     * Calls the standard Java String.format function.
-     * <p>
-     * Passes every argument to String.format.
-     */
-    FORMAT {
-        @Override
-        public Object call(Object... arguments) {
-            if (arguments.length == 0) {
-                throw new IllegalArgumentException("At least one arg is expected!");
-            } else if (arguments[0] == null || !(arguments[0] instanceof String)) {
-                throw new IllegalArgumentException("Unexpected first arg must be string!");
-            } else {
-                try {
-                    return String.format((String) arguments[0], Arrays.copyOfRange(arguments, 1, arguments.length));
-                } catch (ClassCastException | IllegalFormatException e) {
-                    throw new IllegalArgumentException(e);
-                }
-            }
-        }
-    },
-
     JOIN {
         @SuppressWarnings("unchecked")
         @Override
