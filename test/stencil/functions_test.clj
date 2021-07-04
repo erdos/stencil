@@ -15,10 +15,15 @@
     (is (= (biginteger 10) (call-fn "integer" (double 10))))))
 
 (deftest test-format
+  (is (= "hello" (call-fn "format")))
   (is (= "hello 42" (call-fn "format" "hello %d" 42)))
   (is (= "hello 42" (call-fn "format" "hello %d" 42.0)))
-  (is (= "hello 42 41.00" (call-fn "format" "hello %2$d %1$,.2f" 41.0 42.0)))
-  (is (= "hello john" (call-fn "format" "hello %s" "john"))))
+  (testing "Indexed parameters"
+    (is (= "hello 42 41.00" (call-fn "format" "hello %2$d %1$,.2f" 41.0 42.0))))
+  (is (= "hello john" (call-fn "format" "hello %s" "john")))
+  (testing "Error handling"
+    (is (thrown? ExceptionInfo (call-fn "format" 34)))
+    (is (thrown? ExceptionInfo (call-fn "format" nil)))))
 
 (deftest test-map
   (testing "Empty input"
