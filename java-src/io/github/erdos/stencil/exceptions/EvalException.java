@@ -13,6 +13,10 @@ public final class EvalException extends RuntimeException {
         super(message);
     }
 
+    public static EvalException fromMissingValue(String expression) {
+        return new EvalException("Value is missing for expression: " + expression);
+    }
+
     public static EvalException wrapping(Exception cause) {
         return new EvalException(cause);
     }
