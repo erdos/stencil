@@ -63,13 +63,13 @@
     nil))
 
 (defn- image-path [rel-id mime-type]
-  (str "media/" rel-id "." (mime-type->extension mime-type)))
+  (if-let [extension (mime-type->extension mime-type)]
+    (str "media/" rel-id "." extension)
+    (fail "Unexpected mime-type for image!" {:mime-type mime-type})))
 
 (defn img-data->extrafile [data-uri]
   (let [new-rel                   (->relation-id)
         {:keys [mime-type bytes]} (parse-data-uri data-uri)]
-    (when-not (contains? mime-type->extension mime-type)
-      (fail "Unexpected mime-type for image!" {:mime-type mime-type}))
     {:new-id               new-rel
      :stencil.model/type   rel-type-image
      :stencil.model/target (image-path new-rel mime-type)
