@@ -49,15 +49,16 @@
 
 (defn- render-writers-map [writers-map outstream]
   (assert (map? writers-map))
-  (with-open [zipstream (new ZipOutputStream outstream)]
-    (doseq [[k writer] writers-map
-            :let  [rel-path (FileHelper/toUnixSeparatedString (.toPath (io/file k)))
-                   ze       (new ZipEntry rel-path)]]
-      (assert (not (.contains rel-path "../")))
-      (trace "ZIP: writing %s" rel-path)
-      (.putNextEntry zipstream ze)
-      (writer zipstream)
-      (.closeEntry zipstream))))
+  (io!
+   (with-open [zipstream (new ZipOutputStream outstream)]
+     (doseq [[k writer] writers-map
+             :let  [rel-path (FileHelper/toUnixSeparatedString (.toPath (io/file k)))
+                    ze       (new ZipEntry rel-path)]]
+       (assert (not (.contains rel-path "../")))
+       (trace "ZIP: writing %s" rel-path)
+       (.putNextEntry zipstream ze)
+       (writer zipstream)
+       (.closeEntry zipstream)))))
 
 (defn eval-template [{:keys [template data function fragments] :as args}]
   (assert (:source-folder template))
