@@ -57,9 +57,9 @@
 
 (defn- bytes->writer [^bytes bytes]
   (fn [writer]
-    (io! (doto (io/output-stream writer)
-           (.write bytes)
-           (.flush)))
+    (doto (io/output-stream writer)
+      (.write bytes)
+      (.flush))
     nil))
 
 (defn- image-path [rel-id mime-type]
