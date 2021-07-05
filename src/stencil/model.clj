@@ -256,9 +256,6 @@
 
 ;; replaces the nearest image with the content
 (defmethod call-fn "replaceImage" [_ data]
-  (let [extra-file (img-data->extrafile data)
-        new-rel    (:new-id extra-file)]
-    (assert new-rel)
+  (let [extra-file (img-data->extrafile data)]
     (add-extra-file! extra-file)
-    (->ReplaceImage new-rel)))
-
+    (->ReplaceImage (:new-id extra-file))))
