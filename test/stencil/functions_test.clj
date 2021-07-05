@@ -55,7 +55,8 @@
 
 (deftest test-replace-image
   (binding [stencil.model/*extra-files* (atom #{})]
-    (is (instance? ReplaceImage (call-fn "replaceImage" data-uri)))
+    (is (instance? ReplaceImage (call-fn "replaceImage" data-uri))))
+  (testing "Parsing errors"
     (is (thrown? ExceptionInfo (call-fn "replaceImage" nil)))
     (is (thrown? ExceptionInfo (call-fn "replaceImage" "not data uri")))
     (is (thrown? ExceptionInfo (call-fn "replaceImage" "data:image/unknown;base64,XXXXXXX")))
