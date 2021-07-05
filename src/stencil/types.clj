@@ -37,10 +37,4 @@
 (defn hide-table-column-marker? [x] (instance? HideTableColumnMarker x))
 (defn hide-table-row-marker? [x] (instance? HideTableRowMarker x))
 
-;; Function calls might return delayed values that are dereferenced
-;; only in the postprocess stage.
-(defrecord DelayedValueMarker [delay-object]
-  IDeref
-  (deref [_] @delay-object))
-
 (defn control? [x] (satisfies? ControlMarker x))

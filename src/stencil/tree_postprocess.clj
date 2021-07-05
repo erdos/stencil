@@ -1,7 +1,6 @@
 (ns stencil.tree-postprocess
   "Postprocessing an xml tree"
-  (:require [stencil.postprocess.delayed :refer :all]
-            [stencil.postprocess.table :refer :all]
+  (:require [stencil.postprocess.table :refer :all]
             [stencil.postprocess.whitespaces :refer :all]
             [stencil.postprocess.ignored-tag :refer :all]
             [stencil.postprocess.list-ref :refer :all]
@@ -25,9 +24,6 @@
    #'fix-html-chunks
 
    #'fix-list-dirty-refs
-
-   ;; not used at the moment
-   #'deref-delayed-values
 
    ;; call this first. includes fragments and evaluates them too.
    #'unpack-fragments))
