@@ -49,3 +49,10 @@
     (is (thrown? ExceptionInfo (call-fn "map" "x" "not-a-sequence")))
     (is (thrown? ExceptionInfo (call-fn "map" "x" {:x 1 :y 2})))
     (is (thrown? ExceptionInfo (call-fn "map" 1 [])))))
+
+(import '[stencil.types ReplaceImage])
+(def data-uri "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==")
+
+(deftest test-replace-image
+  (binding [stencil.model/*extra-files* (atom #{})]
+    (is (instance? ReplaceImage (call-fn "replaceImage" data-uri)))))
