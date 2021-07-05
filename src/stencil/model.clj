@@ -43,7 +43,7 @@
 (def ^:private ^:dynamic *extra-files* nil)
 
 (defn- add-extra-file! [m]
-  (assert (map? m))
+  (assert (:new-id m))
   (swap! *extra-files* conj m))
 
 (defn- parse-content-types [^File cts]
@@ -156,8 +156,7 @@
                                     (for [relation @*extra-files*
                                           ;; TODO: itt a path erteket ki neke tolteni valami jora.
                                           :when (or (not (contains? relation :fragment-name))
-                                                    (contains? fragment-names (:fragment-name relation)))
-                                          :let [_ (assert (:new-id relation) (pr-str relation))]]
+                                                    (contains? fragment-names (:fragment-name relation)))]
                                       [(:new-id relation) relation]))
 
                          ;; relation file will be rendered instead of copied
