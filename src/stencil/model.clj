@@ -8,11 +8,11 @@
             [stencil.eval :as eval]
             [stencil.merger :as merger]
             [stencil.model.numbering :as numbering]
-            [stencil.tree-postprocess :as tree-postprocess]
             [stencil.types :refer [->FragmentInvoke]]
             [stencil.util :refer :all]
             [stencil.model.relations :as relations]
             [stencil.model.common :refer :all]
+            [stencil.functions :refer [call-fn]]
             [stencil.model.style :as style
              :refer [expect-fragment-context! *current-styles*]]
             [stencil.cleanup :as cleanup]))
@@ -38,9 +38,12 @@
 ;; set of already inserted fragment ids.
 (def ^:private ^:dynamic *inserted-fragments* nil)
 
-;; list of extra relations to be added after evaluating document
+;; set of extra relations to be added after evaluating document
 (def ^:private ^:dynamic *extra-files* nil)
 
+(defn- add-extra-file! [m]
+  (assert (:new-id m))
+  (swap! *extra-files* conj m))
 
 (defn- parse-content-types [^File cts]
   (assert (.exists cts))
@@ -151,7 +154,8 @@
                          (update-in [:relations :parsed] (fnil into {})
                                     (for [relation @*extra-files*
                                           ;; TODO: itt a path erteket ki neke tolteni valami jora.
-                                          :when (contains? fragment-names (:fragment-name relation))]
+                                          :when (or (not (contains? relation :fragment-name))
+                                                    (contains? fragment-names (:fragment-name relation)))]
                                       [(:new-id relation) relation]))
 
                          ;; relation file will be rendered instead of copied
@@ -221,7 +225,7 @@
      elem)))
 
 
-(defmethod eval/eval-step :cmd/include [f local-data-map {frag-name :name}]
+(defmethod eval/eval-step :cmd/include [_ local-data-map {frag-name :name}]
   (assert (map? local-data-map))
   (assert (string? frag-name))
   (expect-fragment-context!
@@ -243,7 +247,7 @@
                              (map (partial relations/xml-rename-relation-ids relation-rename-map))
                              (map (partial style/xml-rename-style-ids style-ids-rename)))]
        (swap! *inserted-fragments* conj frag-name)
-       (swap! *extra-files* into relation-ids-rename)
+       (run! add-extra-file! relation-ids-rename)
        [{:text (->FragmentInvoke {:frag-evaled-parts evaled-parts})}])
      (throw (ex-info "Did not find fragment for name!"
                      {:fragment-name frag-name
