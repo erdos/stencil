@@ -17,7 +17,7 @@
 
 (defn resource-copier [x]
   (assert (:stencil.model/path x))
-  (assert (:source-file x) (pr-str [:>>> x]))
+  (assert (:source-file x))
   (fn [writer]
     (io!
      (let [stream (io/output-stream writer)]
