@@ -154,7 +154,6 @@
                          (seq @*extra-files*)
                          (update-in [:relations :parsed] (fnil into {})
                                     (for [relation @*extra-files*
-                                          ;; TODO: itt a path erteket ki neke tolteni valami jora.
                                           :when (or (not (contains? relation :fragment-name))
                                                     (contains? fragment-names (:fragment-name relation)))]
                                       [(:new-id relation) relation]))
