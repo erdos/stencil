@@ -9,21 +9,20 @@
 
 (defn ->xml-writer [tree]
   (fn [output-stream]
-    (io!
-     (let [writer (io/writer output-stream)]
-       (xml/emit tree writer)
-       (.flush writer)))))
+    (let [writer (io/writer output-stream)]
+      (xml/emit tree writer)
+      (.flush writer))))
 
 
 (defn resource-copier [x]
   (assert (:stencil.model/path x))
   (assert (:source-file x))
   (fn [writer]
-    (io!
-     (let [stream (io/output-stream writer)]
-       (Files/copy (.toPath (io/file (:source-file x))) stream)
-       (.flush stream)
-       nil))))
+    (let [stream (io/output-stream writer)]
+      (Files/copy (.toPath (io/file (:source-file x))) stream)
+      (.flush stream)
+      nil)))
+
 
 (defn unix-path [^File f]
   (some-> f .toPath FileHelper/toUnixSeparatedString))

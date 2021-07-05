@@ -1,5 +1,8 @@
 FROM clojure:openjdk-8-lein-2.9.3-slim-buster AS build-env
+
 WORKDIR /usr/src/myapp
+
+RUN apt-get update -y && apt install -y strip-nondeterminism
 
 COPY project.clj /usr/src/myapp/
 RUN lein deps
@@ -7,6 +10,8 @@ RUN lein deps
 COPY . /usr/src/myapp
 
 RUN mv "$(lein uberjar | sed -n 's/^Created \(.*standalone\.jar\)/\1/p')" myapp-standalone.jar
+
+RUN strip-nondeterminism -t jar myapp-standalone.jar
 
 FROM openjdk:8-jre-slim-buster
 
