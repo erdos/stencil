@@ -43,4 +43,7 @@
   IDeref
   (deref [_] @delay-object))
 
+(defrecord ReplaceImage [relation] ControlMarker)
+
 (defn control? [x] (satisfies? ControlMarker x))
+
