@@ -59,4 +59,5 @@
     (is (thrown? ExceptionInfo (call-fn "replaceImage" nil)))
     (is (thrown? ExceptionInfo (call-fn "replaceImage" "not data uri")))
     (is (thrown? ExceptionInfo (call-fn "replaceImage" "data:image/unknown;base64,XXXXXXX")))
-    ))
+    (is (thrown? ExceptionInfo (call-fn "replaceImage" "data:image/png;lalala")))
+    (is (thrown? ExceptionInfo (call-fn "replaceImage" "data:image/png;lalala,XXXXXXX")))))

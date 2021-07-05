@@ -24,12 +24,12 @@
   (when-not (.startsWith data-uri-str "data:")
     (fail "Image data should be a valid data uri!" {}))
   (let [end-of-mimetype (.indexOf data-uri-str ";")
-        start-of-data   (inc (.indexOf data-uri-str ","))
-        raw-data  (.substring data-uri-str start-of-data)]
-    (when-not (= "base64" (.substring data-uri-str (inc end-of-mimetype) (dec start-of-data)))
+        start-of-data   (inc (.indexOf data-uri-str ","))]
+    (when-not (and (pos? start-of-data)
+                   (= "base64" (.substring data-uri-str (inc end-of-mimetype) (dec start-of-data))))
       (fail "Image data should be in valid base64-encoded data uri format!" {}))
     {:mime-type (.toLowerCase (.substring data-uri-str 5 end-of-mimetype))
-     :bytes     (.decode (java.util.Base64/getDecoder) (.getBytes raw-data))}))
+     :bytes     (.decode (java.util.Base64/getDecoder) (.getBytes (.substring data-uri-str start-of-data)))}))
 
 (defn- update-image [img-node, ^ReplaceImage data]
   (assert (= ooxml/blip (:tag img-node)))
