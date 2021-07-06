@@ -13,6 +13,7 @@ This is a short description of the functions implemented in Stencil:
 - [empty](#empty)
 - [floor](#floor)
 - [format](#format)
+- [formatWithLocale](#formatWithLocale)
 - `hideColumn`
 - `hideRow`
 - [html](#html)
@@ -145,6 +146,10 @@ You can embed custom xml fragments in the document with the `xml()` function. Th
 ### Format
 
 Calls [String.format](https://docs.oracle.com/javase/7/docs/api/java/util/Formatter.html) function.
+
+### FormatWithLocale
+
+Like `format` but first parameter is an IETF Language Tag. For example: `formatWithLocale("hu", "%,.2f", number)`
 
 **Example:**
 
