@@ -35,12 +35,13 @@
       get-types (fn [p] (or (some (fn [[k v]] (when (= k p) v)) @cache)
                             (doto (get-types p)
                               (->> (swap! cache (fn [c t] (take cache-size (cons [p t] c))))))))]
-  (defmethod call-fn "format" [_ pattern-str & args]
+  (defmethod call-fn "formatWithLocale" [_ locale pattern-str & args]
     (when-not (string? pattern-str)
       (fail "Format pattern must be a string!" {:pattern pattern-str}))
     (when (empty? args)
       (fail "Format function expects at least two parameters!" {}))
-    (let [types (get-types pattern-str)]
+    (let [types (get-types pattern-str)
+          locale (if (string? locale) (java.util.Locale/forLanguageTag ^String locale) locale)]
       (->> args
            (map-indexed (fn [idx value]
                           (case (types idx)
@@ -51,7 +52,10 @@
                             ("e" "E" "f" "g" "G" "a" "A") (some-> value bigdec)
                             value)))
            (to-array)
-           (String/format pattern-str)))))
+           (String/format locale pattern-str)))))
+
+(defmethod call-fn "format" [_ pattern-str & args]
+  (apply call-fn "formatWithLocale" (java.util.Locale/getDefault) pattern-str args))
 
 ;; finds first nonempy argument
 (defmethod call-fn "coalesce" [_ & args-seq]

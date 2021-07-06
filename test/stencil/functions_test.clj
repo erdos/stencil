@@ -17,6 +17,8 @@
 (deftest test-format
   (is (= "hello 42" (call-fn "format" "hello %d" 42)))
   (is (= "hello 42" (call-fn "format" "hello %d" 42.0)))
+  (testing "With custom locale"
+    (is (= "1 000 000,00" (call-fn "formatWithLocale" "hu" "%,.2f" (int 1000000)))))
   (testing "Integer formatting"
     (is (= "1,000,000.00" (call-fn "format" "%,.2f" (int 1000000))))
     (is (= "Hello null" (call-fn "format" "Hello %d" nil))))
