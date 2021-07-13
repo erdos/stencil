@@ -3,6 +3,7 @@
   (:require [stencil.postprocess.table :refer :all]
             [stencil.postprocess.whitespaces :refer :all]
             [stencil.postprocess.ignored-tag :refer :all]
+            [stencil.postprocess.images :refer :all]
             [stencil.postprocess.list-ref :refer :all]
             [stencil.postprocess.fragments :refer :all]
             [stencil.postprocess.html :refer :all]))
@@ -24,6 +25,8 @@
    #'fix-html-chunks
 
    #'fix-list-dirty-refs
+
+   #'replace-images
 
    ;; call this first. includes fragments and evaluates them too.
    #'unpack-fragments))

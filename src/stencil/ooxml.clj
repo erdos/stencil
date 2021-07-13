@@ -72,3 +72,6 @@
 
 (def default-aliases
   {"http://schemas.microsoft.com/office/word/2010/wordprocessingShape" "wps"})
+
+;; drawing, binary large image or picture
+(def blip :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fdrawingml%2F2006%2Fmain/blip)
