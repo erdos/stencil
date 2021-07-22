@@ -37,4 +37,7 @@
 (defn hide-table-column-marker? [x] (instance? HideTableColumnMarker x))
 (defn hide-table-row-marker? [x] (instance? HideTableRowMarker x))
 
+(defrecord ReplaceImage [relation] ControlMarker)
+
 (defn control? [x] (satisfies? ControlMarker x))
+

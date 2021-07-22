@@ -8,7 +8,8 @@
             [stencil.eval :as eval]
             [stencil.merger :as merger]
             [stencil.model.numbering :as numbering]
-            [stencil.types :refer [->FragmentInvoke]]
+            [stencil.types :refer [->FragmentInvoke ->ReplaceImage]]
+            [stencil.postprocess.images :refer [img-data->extrafile]]
             [stencil.util :refer :all]
             [stencil.model.relations :as relations]
             [stencil.model.common :refer :all]
@@ -251,3 +252,10 @@
      (throw (ex-info "Did not find fragment for name!"
                      {:fragment-name frag-name
                       :all-fragment-names (set (keys *all-fragments*))})))))
+
+
+;; replaces the nearest image with the content
+(defmethod call-fn "replaceImage" [_ data]
+  (let [extra-file (img-data->extrafile data)]
+    (add-extra-file! extra-file)
+    (->ReplaceImage (:new-id extra-file))))
