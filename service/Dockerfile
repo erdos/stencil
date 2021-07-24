@@ -12,7 +12,7 @@ COPY . /usr/src/myapp
 RUN mv "$(lein uberjar | sed -n 's/^Created \(.*standalone\.jar\)/\1/p')" myapp-standalone.jar
 RUN jlink --strip-debug --add-modules "$(jdeps --print-module-deps --ignore-missing-deps myapp-standalone.jar)" --output /java
 
-FROM debian:buster-slim
+FROM debian:10.10-slim
 
 ENV STENCIL_HTTP_PORT 8080
 ENV STENCIL_TEMPLATE_DIR /templates
