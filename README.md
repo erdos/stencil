@@ -41,7 +41,7 @@ them to make the template more readable.
 
 ## Getting Started with the Service
 
-The project has a simple [service implementation](https://github.com/erdos/stencil/tree/master/service), which is available on the GitHub Package Repository as a [Docker image](https://github.com/users/erdos/packages/container/package/stencil).
+The project has a simple [service implementation](https://github.com/erdos/stencil/tree/master/service), which is available on the GitHub Package Repository as a [Container image](https://github.com/users/erdos/packages/container/package/stencil).
 
 
 ## Version
