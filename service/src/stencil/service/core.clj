@@ -5,6 +5,7 @@
             [stencil.api :as api]
             [clojure.data :refer [diff]]
             [clojure.java.io :refer [file]]
+            [clojure.string :as s]
             [clojure.tools.logging :as log]
             [ring.middleware.json :refer [wrap-json-body]]))
 
@@ -38,7 +39,7 @@
          (swap! -prepared assoc template-file {last-modified p})
          p))))
 
-(defn get-template [^String template-name]
+(defn get-template [template-name]
   (let [template-name (.substring (str template-name) 1) ;; so they dont start with /
         parent (get-template-dir)
         template (file parent template-name)]
@@ -56,16 +57,15 @@
               :body (str "ERROR: " (.getMessage e))}
              (throw e))))))
 
-(def ^:dynamic *active-log-levels* #{:fatal :error :info :warn})
+(def log-levels
+  (let [levels [:trace :debug :info :warn :error :fatal]]
+    (into {} (map-indexed (fn [idx level] [(name level) (set (drop idx levels))]) levels))))
+
+(def ^:dynamic *active-log-levels* (log-levels "info"))
 
 (defn- wrap-log [handler]
   (fn [req]
-    (if-let [level (get-in req [:headers "x-stencil-log"])]
-      (binding [*active-log-levels*
-                (case level
-                  "debug" #{:error :info :warn :debug}
-                  "trace" #{:error :info :warn :debug :trace})]
-        (handler req))
+    (binding [*active-log-levels* (log-levels (get-in req [:headers "x-stencil-log"] "info"))]
       (handler req))))
 
 (defn -app [request]
@@ -91,17 +91,19 @@
       (wrap-log)
       (wrap-err)))
 
+(defn- ns-get-logger [log-ns]
+  (reify clojure.tools.logging.impl.Logger
+    (enabled? [_ level] (contains? *active-log-levels* level))
+    (write! [_ level throwable message]
+      (printf "%s %s %s %s\n"
+              (java.time.OffsetDateTime/now) (s/upper-case (name level)) log-ns message))))
+
 (alter-var-root
  #'clojure.tools.logging/*logger-factory*
  (constantly
-  (reify
-    clojure.tools.logging.impl.LoggerFactory
+  (reify clojure.tools.logging.impl.LoggerFactory
     (name [_] "stencil-own-logger")
-    (get-logger [t log-ns] t)
-
-    clojure.tools.logging.impl.Logger
-    (enabled? [_ level] (contains? *active-log-levels* level))
-    (write! [_ level throwable message] (println (str "[" (name level) "]") message)))))
+    (get-logger [_ log-ns] (ns-get-logger log-ns)))))
 
 (defn -main [& args]
   (let [http-port    (get-http-port)
