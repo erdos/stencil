@@ -48,6 +48,8 @@ Call `GET /` for a liveness status check.
 
 You can add the `X-Stencil-Log: debug` or `X-Stencil-Log: trace` header to specify the log level while serving the request.
 
+You can also specify the `X-Stencil-Corr-Id: ...` header to set a [Correlation Id](https://en.wikipedia.org/wiki/Identity_correlation) that will be used in the logs. By default, a random value will be generated on each request.
+
 The different responses have different HTTP staus codes.
 
 **response (success)**

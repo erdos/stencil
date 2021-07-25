@@ -61,11 +61,14 @@
   (let [levels [:trace :debug :info :warn :error :fatal]]
     (into {} (map-indexed (fn [idx level] [(name level) (set (drop idx levels))]) levels))))
 
-(def ^:dynamic *active-log-levels* (log-levels "info"))
+(def ^:dynamic *active-log-levels* (log-levels "debug"))
+(def ^:dynamic *corr-id* "SYSTEM")
 
 (defn- wrap-log [handler]
   (fn [req]
-    (binding [*active-log-levels* (log-levels (get-in req [:headers "x-stencil-log"] "info"))]
+    (binding [*active-log-levels* (log-levels (get-in req [:headers "x-stencil-log"] "info"))
+              *corr-id*           (or (get-in req [:headers "x-stencil-corr-id"])
+                                      (subs (str (java.util.UUID/randomUUID)) 0 8))]
       (handler req))))
 
 (defn -app [request]
@@ -78,6 +81,7 @@
     (if-let [prepared (get-template (:uri request))]
       (let [rendered (api/render! prepared (:body request) :output :input-stream)]
         (log/info "Successfully rendered template" (:uri request))
+        (flush)
         {:status 200
          :body rendered
          :headers {"content-type" "application/octet-stream"}}))
@@ -95,8 +99,8 @@
   (reify clojure.tools.logging.impl.Logger
     (enabled? [_ level] (contains? *active-log-levels* level))
     (write! [_ level throwable message]
-      (printf "%s %s %s %s\n"
-              (java.time.OffsetDateTime/now) (s/upper-case (name level)) log-ns message))))
+      (printf "%s %s %s %s : %s\n"
+              (java.time.OffsetDateTime/now) (s/upper-case (name level)) log-ns *corr-id* message))))
 
 (alter-var-root
  #'clojure.tools.logging/*logger-factory*
