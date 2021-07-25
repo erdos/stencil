@@ -27,10 +27,9 @@ them to make the template more readable.
 - Works with `docx` and `pptx` files
 - Simple value substitution
 - Substituting HTML text for dynamic text formatting
-- Conditional blocks in the template
-- Repeating blocks in the template
-- Dynamically show/hide rows and columns in tables
-
+- Conditional and repeating blocks in the template
+- Show/hide rows and columns in tables
+- Dynamically replace images in the template
 
 ## Getting Started with the Library
 
@@ -41,7 +40,7 @@ them to make the template more readable.
 
 ## Getting Started with the Service
 
-The project has a simple [service implementation](https://github.com/erdos/stencil/tree/master/service), which is available on the GitHub Package Repository as a [Container image](https://github.com/users/erdos/packages/container/package/stencil).
+The project has a simple [service implementation](https://github.com/erdos/stencil/tree/master/service), which is available on GitHub Packages as a [Container image](https://github.com/users/erdos/packages/container/package/stencil).
 
 
 ## Version
