@@ -9,4 +9,4 @@
                  [org.clojure/tools.logging "1.1.0"]
                  [ring/ring-json "0.4.0"]]
   :aot :all
-  :main stencil.service.core)
+  :main stencil.service)

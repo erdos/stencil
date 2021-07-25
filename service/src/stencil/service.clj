@@ -1,4 +1,4 @@
-(ns stencil.service.core
+(ns stencil.service
   (:gen-class)
   (:import [java.io File])
   (:require [org.httpkit.server :refer [run-server]]
