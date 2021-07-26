@@ -190,8 +190,12 @@
 )
 
   (testing "Nested loop bindings"
-    ;; TODO: legyen e gymasban ket for ciklus meg egy echo?
-))
+    (is (= ["xs" "xs[].t" "xs[].t[].n"]
+           (find-variables
+            '[{:cmd :for :variable a :expression [xs]
+               :blocks [[{:cmd :for :variable b :expression [a.t]
+                          :blocks [[{:cmd :echo :expression [b.n 1 :plus]}]]}]]}])))
+    ))
 
 (deftest test-process-if-then-else
   (is (=

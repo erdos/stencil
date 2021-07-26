@@ -39,8 +39,6 @@
   (assert (or (nil? items) (sequential? items)))
   (mapcat (partial eval-step function data) items))
 
-;; TODO: creating image files for qr code or barcode should take place here
-
 (defn eval-executable [part data functions]
   (assert (:executable part))
   (tree-postprocess/postprocess
