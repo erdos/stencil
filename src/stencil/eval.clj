@@ -1,8 +1,8 @@
 (ns stencil.eval
   "converts Normalized Control AST -> Evaled token seq"
-  (:require [stencil.infix :refer [eval-rpn]]
+  (:require [clojure.tools.logging :as log]
+            [stencil.infix :refer [eval-rpn]]
             [stencil.types :refer [control?]]
-            [stencil.util :refer [trace]]
             [stencil.tokenizer :as tokenizer]
             [stencil.tree-postprocess :as tree-postprocess]))
 
@@ -14,19 +14,19 @@
 
 (defmethod eval-step :if [function data item]
   (let [condition (eval-rpn data function (:condition item))]
-    (trace "Condition %s evaluated to %s" (:condition item) condition)
+    (log/trace "Condition %s evaluated to %s" (:condition item) condition)
     (if condition
       (mapcat (partial eval-step function data) (:then item))
       (mapcat (partial eval-step function data) (:else item)))))
 
 (defmethod eval-step :echo [function data item]
   (let [value (eval-rpn data function (:expression item))]
-    (trace "Echoing %s as %s" (:expression item) value)
+    (log/trace "Echoing %s as %s" (:expression item) value)
     [{:text (if (control? value) value (str value))}]))
 
 (defmethod eval-step :for [function data item]
   (let [items (seq (eval-rpn data function (:expression item)))]
-    (trace "Loop on %s will repeat %s times" (:expression item) (count items))
+    (log/trace "Loop on %s will repeat %s times" (:expression item) (count items))
     (if (seq items)
       (let [datas  (map #(assoc data (name (:variable item)) %) items)
             bodies (cons (:body-run-once item) (repeat (:body-run-next item)))]

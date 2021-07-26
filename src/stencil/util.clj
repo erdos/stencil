@@ -78,13 +78,6 @@
 
 (defn subs-last [^String s ^long n] (.substring s (- (.length s) n)))
 
-(def print-trace? false)
-
-(defmacro trace [msg & details]
-  (assert (string? msg) "Log message must be a string")
-  `(when print-trace?
-     (println (format ~msg ~@(for [d details] `(pr-str ~d))))))
-
 (defn parsing-exception [expression message]
   (ParsingException/fromMessage (str expression) (str message)))
 
