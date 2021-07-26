@@ -19,9 +19,7 @@
 ;; Invocation of a fragment by name
 (defrecord FragmentInvoke [result] ControlMarker)
 
-;; egyedi parancs objektumok
-
-;; ez a marker jeloli, hogy egy oszlopot el kell rejteni.
+;; Tells if a table column should be hidden in a postprocess step.
 (defrecord HideTableColumnMarker [columns-resize] ControlMarker)
 
 (def column-resize-modes #{:resize-first :resize-last :rational :cut})
@@ -31,13 +29,13 @@
   ([x] (assert (column-resize-modes x))
        (HideTableColumnMarker. x)))
 
-;; ez a marker jeloli, hogy egy egesz sort el kell rejteni.
+;; Tells if a table row should be hidden in a postprocess step.
 (defrecord HideTableRowMarker [] ControlMarker)
 
 (defn hide-table-column-marker? [x] (instance? HideTableColumnMarker x))
 (defn hide-table-row-marker? [x] (instance? HideTableRowMarker x))
 
+;; Tells if the reference of an adjacent image node should be replaced in postprocess step.
 (defrecord ReplaceImage [relation] ControlMarker)
 
 (defn control? [x] (satisfies? ControlMarker x))
-
