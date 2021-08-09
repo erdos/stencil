@@ -170,9 +170,11 @@
           (cond-> (-> template-model :main :style)
             (assoc-in [:main :style :result] (style/file-writer template-model)))))))
 
+
 (defn- model-seq [model]
   (let [model-keys [:relations :headers+footers :main :style :content-types :fragments :numbering]]
     (tree-seq map? (fn [node] (flatten (keep node model-keys))) model)))
+
 
 ;; returns a map where key is path and value is writer fn.
 (defn- evaled-template-model->writers-map [evaled-template-model]
@@ -215,9 +217,7 @@
   (assert (map? data))
   (-> template
       (eval-template-model data function fragments)
-      (time)
-      (evaled-template-model->writers-map)
-      (time)))
+      (evaled-template-model->writers-map)))
 
 
 (defn- extract-body-parts [xml-tree]
