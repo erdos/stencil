@@ -183,7 +183,7 @@
     ;; relations files that are created on-the-fly
     (into result
           (for [m (model-seq evaled-template-model)
-                :when (and (map? m) (not (sorted? m)) (::path m))
+                :when (::path m)
                 :when (:parsed (:relations m))
                 :when (not (:source-file (:relations m)))]
             [(::path (:relations m)) (relations/writer (:parsed (:relations m)))]))
@@ -191,7 +191,7 @@
     ;; create writer for every item where ::path is specified
     (into result
           (for [m (model-seq evaled-template-model)
-                :when (and (map? m) (not (sorted? m)) (::path m))
+                :when (::path m)
                 :when (not= "External" (::mode m))
                 :when (not (contains? result (::path m)))]
             [(::path m) (or (:writer (:result m)) (resource-copier m))]))
@@ -199,7 +199,7 @@
     ;; find all items in all relations
     (into result
           (for [m (model-seq evaled-template-model)
-                :when (and (map? m) (not (sorted? m)) (:relations m))
+                :when (:relations m)
                 :let [src-parent  (delay (file (or (:source-folder m)
                                                   (.getParentFile (file (:source-file m))))))
                       path-parent (some-> m ::path file .getParentFile)]
