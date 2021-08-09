@@ -172,7 +172,7 @@
 
 
 (defn- model-seq [model]
-  (let [model-keys [:relations :headers+footers :main :style :content-types :fragments :numbering]]
+  (let [model-keys [:relations :headers+footers :main :style :content-types :fragments :numbering :result]]
     (tree-seq map? (fn [node] (flatten (keep node model-keys))) model)))
 
 
