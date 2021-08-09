@@ -1,7 +1,7 @@
 (ns stencil.api-test
   (:import [io.github.erdos.stencil.exceptions EvalException])
-  (:require [clojure.test :refer [deftest testing is are]]
-            [stencil.api :refer :all]))
+  (:require [clojure.test :refer [deftest testing is]]
+            [stencil.api :refer [prepare render! fragment cleanup!]]))
 
 (deftest test-prepare+render+cleanup
   (let [template (prepare "./examples/Purchase Reminder/template.docx")
@@ -132,21 +132,16 @@
     (with-open [template (prepare "test-resources/test-image-1.docx")]
       (render! template data :output f :overwrite? true))))
 
-(comment
-
+(deftest test-multipart
   (let [template (prepare "test-resources/multipart/main.docx")
         body     (fragment "test-resources/multipart/body.docx")
         header   (fragment "test-resources/multipart/header.docx")
         footer   (fragment "test-resources/multipart/footer.docx")
         data     {:name "John Doe"}]
     ;; ~51ms on the author's machine
-    (time
-     (render! template data
-              :fragments {"body"   body
-                          "header" header
-                          "footer" footer}
-              :output "/tmp/out1.docx"
-              :overwrite? true)))
-
-
-  )
+    (render! template data
+             :fragments {"body"   body
+                         "header" header
+                         "footer" footer}
+             :output "/tmp/out-multipart.docx"
+             :overwrite? true)))

@@ -1,6 +1,6 @@
 (ns stencil.process
   "These functions are called from Java."
-  (:import [java.io File PipedInputStream PipedOutputStream InputStream]
+  (:import [java.io InputStream]
            [java.util.zip ZipEntry ZipOutputStream]
            [io.github.erdos.stencil PrepareOptions]
            [io.github.erdos.stencil.impl FileHelper ZipHelper])

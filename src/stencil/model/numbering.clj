@@ -1,5 +1,4 @@
 (ns stencil.model.numbering
-  (:import [java.io File])
   (:require [clojure.data.xml :as xml]
             [clojure.java.io :as io]
             [stencil.ooxml :as ooxml]

@@ -17,3 +17,4 @@ junit.xml
 .idea/
 /stencil-native
 /*.docx
+.DS_Store

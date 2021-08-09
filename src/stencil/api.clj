@@ -6,7 +6,6 @@
             [stencil.types])
   (:import [io.github.erdos.stencil API PreparedFragment PreparedTemplate TemplateData]
            [stencil.types OpenTag CloseTag TextTag]
-           [java.io InputStreamReader]
            [java.util Map]))
 
 
