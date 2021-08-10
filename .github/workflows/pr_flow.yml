@@ -17,6 +17,11 @@ jobs:
       run: lein test
     - name: Coverage
       run: lein coverage
+    - name: Codecov
+      uses: codecov/codecov-action@v2
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        files: ./target/coverage/codecov.json
     - name: Run Java Tests
       run: lein pom && mvn test --batch-mode --fail-at-end
     - name: Publish Test Report
