@@ -1,5 +1,4 @@
-(ns stencil.types
-  (:import [clojure.lang IDeref]))
+(ns stencil.types)
 
 (set! *warn-on-reflection* true)
 

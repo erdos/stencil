@@ -2,7 +2,7 @@
   "Parsing and evaluating infix algebraic expressions.
 
   https://en.wikipedia.org/wiki/Shunting-yard_algorithm"
-  (:require [stencil.util :refer :all]
+  (:require [stencil.util :refer [fail update-peek]]
             [clojure.tools.logging :as log]
             [stencil.functions :refer [call-fn]]))
 

@@ -1,6 +1,6 @@
 (ns stencil.util
   (:require [clojure.zip])
-  (:import [io.github.erdos.stencil.exceptions EvalException ParsingException]))
+  (:import [io.github.erdos.stencil.exceptions ParsingException]))
 
 (set! *warn-on-reflection* true)
 

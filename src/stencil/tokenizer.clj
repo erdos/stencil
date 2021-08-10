@@ -2,8 +2,8 @@
   "Fog egy XML dokumentumot es tokenekre bontja"
   (:require [clojure.data.xml :as xml]
             [stencil.infix :as infix]
-            [stencil.types :refer :all]
-            [stencil.util :refer :all]))
+            [stencil.types :refer [open-tag close-tag]]
+            [stencil.util :refer [mod-stack-top-conj mod-stack-top-last parsing-exception]]))
 
 (set! *warn-on-reflection* true)
 
