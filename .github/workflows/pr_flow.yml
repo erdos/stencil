@@ -17,14 +17,13 @@ jobs:
       run: lein test
     - name: Coverage
       run: lein coverage
-    - uses: codecov/codecov-action@v2
+    - name: Codecov
+      uses: codecov/codecov-action@v2
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         files: ./target/coverage/codecov.json
-    - name: Make Pom
-      run: lein pom
-    - name: Maven Test
-      run: mvn test --batch-mode --fail-at-end
+    - name: Run Java Tests
+      run: lein pom && mvn test --batch-mode --fail-at-end
     - name: Publish Test Report
       if: ${{ always() }}
       uses: scacap/action-surefire-report@v1
