@@ -1,6 +1,6 @@
 (ns stencil.functions
   "Function definitions"
-  (:require [stencil.types :refer :all]
+  (:require [stencil.types :refer [->HideTableColumnMarker ->HideTableRowMarker]]
             [stencil.util :refer [fail find-first]]))
 
 (set! *warn-on-reflection* true)

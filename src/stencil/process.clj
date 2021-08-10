@@ -27,6 +27,7 @@
              (into (for [x (:headers+footers (:main model))
                          v (:variables (:executable x))] v)))))
 
+;; Called  from Java API
 (defn prepare-template [^InputStream stream, ^PrepareOptions options]
   (assert (instance? InputStream stream))
   (let [zip-dir   (FileHelper/createNonexistentTempFile "stencil-" ".zip.contents")
@@ -38,6 +39,7 @@
         merge-fragment-names
         merge-variable-names)))
 
+;; Called from Java API
 (defn prepare-fragment [input, ^PrepareOptions options]
   (assert (some? input))
   (let [zip-dir (FileHelper/createNonexistentTempFile
@@ -60,7 +62,8 @@
        (writer zipstream)
        (.closeEntry zipstream)))))
 
-(defn eval-template [{:keys [template data function fragments] :as args}]
+;; Called from Java API
+(defn eval-template [{:keys [template data function fragments]}]
   (assert (:source-folder template))
   (let [data        (into {} data)
         writers-map (model/template-model->writers-map template data function fragments)]

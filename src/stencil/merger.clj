@@ -1,11 +1,9 @@
 (ns stencil.merger
   "Token listaban a text tokenekbol kiszedi a parancsokat es action tokenekbe teszi."
-  (:require [clojure.test :refer [deftest testing is are]]
-            [clojure.data.xml :as xml]
+  (:require [clojure.data.xml :as xml]
             [stencil.postprocess.ignored-tag :as ignored-tag]
             [stencil
-             [cleanup :refer :all]
-             [types :refer :all]
+             [types :refer [open-tag close-tag]]
              [tokenizer :as tokenizer]
              [util :refer [prefixes suffixes subs-last]]]))
 
@@ -102,7 +100,8 @@
             that        (if (empty? that)
                           (throw (ex-info "Tag is not closed? " {:read (first this)}))
                           (first (nth that (dec (count close-tag)))))
-            action-content (apply str (map (comp :char first) this))]
+            ; action-content (apply str (map (comp :char first) this))
+            ]
         (concat
          (map map-action-token (:tokens sts))
          (let [ap (map-action-token {:action (apply str (map (comp :char first) this))})]
