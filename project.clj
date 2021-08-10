@@ -27,6 +27,8 @@
   :profiles {:uberjar {:aot :all}
              :dev {:aot :all
                    :dependencies [[org.slf4j/slf4j-simple "2.0.0-alpha1"]]
+                   :injections [(require 'stencil.spec)
+                                (require '[clojure.spec.alpha :as s])]
                    :jvm-opts ["-Dorg.slf4j.simpleLogger.defaultLogLevel=debug"]}
              :test {:aot :all
                     :dependencies [[junit/junit "4.12"]
@@ -35,6 +37,7 @@
                     :plugins      [[lein-test-out "0.3.1"]]
                     :resource-paths    ["test-resources"]
                     :test-paths ["java-test"]
+                    :injections [(require 'stencil.spec-test)]
                     }
              :ci {:plugins [[lein-javadoc "0.3.0"]
                             [lein-cloverage "1.2.2"]]

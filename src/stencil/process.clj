@@ -60,6 +60,7 @@
        (writer zipstream)
        (.closeEntry zipstream)))))
 
+;; called from Java API
 (defn eval-template [{:keys [template data function fragments] :as args}]
   (assert (:source-folder template))
   (let [data        (into {} data)
