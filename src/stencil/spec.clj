@@ -15,8 +15,10 @@
                            :req-un [::source-file]
                            :opt-un [::m/parsed]))
 
+(s/def :?/relations (s/nilable ::relations))
+
 (s/def ::m/headers+footers (s/* (s/keys :req [::m/path]
-                                        :req-un [::source-file ::m/executable ::relations])))
+                                        :req-un [::source-file ::m/executable :?/relations])))
 
 (s/def ::source-folder (s/and (partial instance? java.io.File)
                               #(.isDirectory ^File %)
@@ -26,7 +28,14 @@
                             #(.isFile ^File %)
                             #(.exists ^File %)))
 
-(s/def ::main (s/keys :req [::m/path] :req-un [::numbering]))
+(s/def ::main (s/keys :req [::m/path]
+                      :opt-un [::m/headers+footers] ;; not present in fragments
+                      :req-un [::numbering
+                               ::source-file
+                               ::executable
+                               ::style
+                               ::relations
+                               ]))
 
 
 (s/def ::m/content-types
