@@ -6,10 +6,10 @@
   :min-lein-version  "2.0.0"
   :java-source-paths ["java-src"]
   :javac-options     ["-target" "8" "-source" "8"]
-  :dependencies [[org.clojure/clojure "1.8.0"]
-                 [org.clojure/data.xml "0.2.0-alpha5"]
+  :dependencies [[org.clojure/clojure "1.9.0"]
+                 [org.clojure/data.xml "0.2.0-alpha6"]
                  [org.clojure/tools.logging "1.1.0"]
-                 [org.slf4j/slf4j-api "2.0.0-alpha1"]]
+                 [org.slf4j/slf4j-api "2.0.0-alpha2"]]
   :pom-addition ([:properties ["maven.compiler.source" "8"] ["maven.compiler.target" "8"]])
   :pom-plugins [[org.apache.maven.plugins/maven-surefire-plugin "2.20"]]
   :main io.github.erdos.stencil.Main
