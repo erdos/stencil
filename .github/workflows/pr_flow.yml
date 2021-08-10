@@ -1,0 +1,23 @@
+name: PR Flow
+
+on:
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install dependencies
+      run: lein deps
+    - name: Compile Java
+      run: lein javac
+    - name: Compile Clojure
+      run: lein test
+    - name: Make Pom
+      run: lein pom
+    - name: Coverage
+      run: lein coverage
+    - name: Maven Test
+      run: mvn test
