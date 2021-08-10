@@ -12,10 +12,10 @@ public class LocaleFunctionsTest {
     @Test
     public void testCurrency() {
         assertNull(CURRENCY.call(new Object[]{null}));
-        assertEquals("123,00 Ft", CURRENCY.call(123, "hu_HU"));
-        assertEquals("123,45 Ft", CURRENCY.call(123.45, "hu_HU"));
-        assertEquals("0,00 Ft", CURRENCY.call(0.0, "hu_HU"));
-        assertEquals("-1,00 Ft", CURRENCY.call(-1, "hu_HU"));
+        assertEquals("123,00 Ft", CURRENCY.call(123, "HU-HU"));
+        assertEquals("123,45 Ft", CURRENCY.call(123.45, "HU-HU"));
+        assertEquals("0,00 Ft", CURRENCY.call(0.0, "HU-HU"));
+        assertEquals("-1,00 Ft", CURRENCY.call(-1, "HU-HU"));
     }
 
     @Test
