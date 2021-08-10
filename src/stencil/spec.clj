@@ -4,6 +4,11 @@
             [stencil.model :as m]
             [stencil.process]))
 
+;; TODO
+(s/def ::m/mode #{"External"})
+
+;; keys are  either all keywords or all strings
+(s/def ::data map?)
 
 ;; other types are also possible
 (s/def ::m/type #{m/rel-type-footer m/rel-type-header m/rel-type-main m/rel-type-slide})
@@ -17,8 +22,14 @@
 
 (s/def :?/relations (s/nilable ::relations))
 
+(s/def ::result (s/keys :req-un [::writer]))
+
+(s/def ::style (s/keys :req [::m/path]
+                       :opt-un [::result]))
+
 (s/def ::m/headers+footers (s/* (s/keys :req [::m/path]
-                                        :req-un [::source-file ::m/executable :?/relations])))
+                                        :req-un [::source-file ::m/executable :?/relations]
+                                        :opt-un [::result])))
 
 (s/def ::source-folder (s/and (partial instance? java.io.File)
                               #(.isDirectory ^File %)
@@ -29,8 +40,8 @@
                             #(.exists ^File %)))
 
 (s/def ::main (s/keys :req [::m/path]
-                      :opt-un [::m/headers+footers] ;; not present in fragments
-                      :req-un [::numbering
+                      :opt-un [::m/headers+footers ::result] ;; not present in fragments
+                      :req-un [:?/numbering
                                ::source-file
                                ::executable
                                ::style
@@ -51,18 +62,27 @@
 (s/def ::numbering (s/nilable (s/keys :req [::m/path]
                                       :req-un [::source-file ::parsed])))
 
+(s/def :?/numbering (s/nilable ::numbering))
+
 (s/fdef m/load-template-model
   :args (s/cat :dir ::source-folder, :opts map?)
   :ret ::m/model)
 
+(s/fdef m/load-fragment-model
+  :args (s/cat :dir ::source-folder, :opts map?)
+  :ret ::m/model)
+
 (s/fdef m/eval-template-model
-  :args (s/cat :model ::m/model, :data map?, :functions any?, :fragments any?)
+  :args (s/cat :model ::m/model
+               :data ::data
+               :unused/function-arg any?
+               :fragments (s/map-of string? ::m/model))
   :ret  ::m/model)
 
 (s/def :exec/variables (s/coll-of string? :unique true))
 (s/def :exec/dynamic? boolean?)
 (s/def :exec/executable any?) ;; seq of normalized control ast.
-(s/def :exec/fragments any?) ;; what was that?
+(s/def :exec/fragments (s/coll-of string? :unique true)) ;; what was that?
 
 (s/def ::executable (s/keys :req-un [:exec/variables :exec/dynamic? :exec/executable :exec/fragments]))
 
@@ -71,8 +91,13 @@
 
 (s/def :eval-template/data any?) ;; map of string or keyword keys
 (s/def :eval-template/fragments (s/map-of string? any?))
-
 (s/def :eval-template/function fn?)
 
 (s/fdef stencil.process/eval-template
   :args (s/cat :ps (s/keys :req-un [::template :eval-template/data :eval-template/function :eval-template/fragments])))
+
+(s/def ::writer (s/fspec :args (s/cat :writer (partial instance? java.io.Writer)) :ret nil?))
+
+(s/fdef template-model->writers-map
+  :args (s/cat :model ::m/model, :data ::data, :functions any?, :fragments any?)
+  :ret (s/map-of ::m/path ::writer))
