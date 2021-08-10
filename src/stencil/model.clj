@@ -10,9 +10,9 @@
             [stencil.model.numbering :as numbering]
             [stencil.types :refer [->FragmentInvoke ->ReplaceImage]]
             [stencil.postprocess.images :refer [img-data->extrafile]]
-            [stencil.util :refer :all]
+            [stencil.util :refer [unlazy-tree]]
             [stencil.model.relations :as relations]
-            [stencil.model.common :refer :all]
+            [stencil.model.common :refer [unix-path ->xml-writer resource-copier]]
             [stencil.functions :refer [call-fn]]
             [stencil.model.style :as style
              :refer [expect-fragment-context! *current-styles*]]
@@ -88,7 +88,7 @@
                      :style       (style/main-style-item dir main-document main-document-rels)
                      :relations main-document-rels
                      :headers+footers (doall
-                                       (for [[id m] (:parsed main-document-rels)
+                                       (for [[_ m] (:parsed main-document-rels)
                                              :when (#{rel-type-footer
                                                       rel-type-header
                                                       rel-type-slide}
@@ -171,30 +171,35 @@
             (assoc-in [:main :style :result] (style/file-writer template-model)))))))
 
 
+(defn- model-seq [model]
+  (let [model-keys [:relations :headers+footers :main :style :content-types :fragments :numbering :result]]
+    (tree-seq map? (fn [node] (flatten (keep node model-keys))) model)))
+
+
 ;; returns a map where key is path and value is writer fn.
 (defn- evaled-template-model->writers-map [evaled-template-model]
   (as-> (sorted-map) result
 
     ;; relations files that are created on-the-fly
     (into result
-          (for [m (tree-seq coll? seq evaled-template-model)
-                :when (and (map? m) (not (sorted? m)) (::path m))
+          (for [m (model-seq evaled-template-model)
+                :when (::path m)
                 :when (:parsed (:relations m))
                 :when (not (:source-file (:relations m)))]
             [(::path (:relations m)) (relations/writer (:parsed (:relations m)))]))
 
     ;; create writer for every item where ::path is specified
     (into result
-          (for [m (tree-seq coll? seq evaled-template-model)
-                :when (and (map? m) (not (sorted? m)) (::path m))
+          (for [m (model-seq evaled-template-model)
+                :when (::path m)
                 :when (not= "External" (::mode m))
                 :when (not (contains? result (::path m)))]
             [(::path m) (or (:writer (:result m)) (resource-copier m))]))
 
     ;; find all items in all relations
     (into result
-          (for [m (tree-seq coll? seq evaled-template-model)
-                :when (and (map? m) (not (sorted? m)) (:relations m))
+          (for [m (model-seq evaled-template-model)
+                :when (:relations m)
                 :let [src-parent  (delay (file (or (:source-folder m)
                                                   (.getParentFile (file (:source-file m))))))
                       path-parent (some-> m ::path file .getParentFile)]
