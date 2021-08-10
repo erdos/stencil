@@ -20,4 +20,7 @@ jobs:
     - name: Coverage
       run: lein coverage
     - name: Maven Test
-      run: mvn test
+      run: mvn test --batch-mode --fail-at-end
+    - name: Publish Test Report
+      if: ${{ always() }}
+      uses: scacap/action-surefire-report@v1
