@@ -39,7 +39,7 @@
                     :test-paths ["java-test"]
                     :injections [(require 'stencil.spec)
                                  (require '[clojure.spec.test.alpha :as sta])
-                                 (eval '(run! sta/instrument (clojure.spec.test.alpha/instrumentable-sys)))]}
+                                 (eval '(run! sta/instrument (clojure.spec.test.alpha/instrumentable-syms)))]}
              :ci {:plugins [[lein-javadoc "0.3.0"]
                             [lein-cloverage "1.2.2"]]
                   }})
