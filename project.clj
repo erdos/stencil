@@ -9,7 +9,7 @@
   :dependencies [[org.clojure/clojure "1.9.0"]
                  [org.clojure/data.xml "0.2.0-alpha6"]
                  [org.clojure/tools.logging "1.1.0"]
-                 [org.slf4j/slf4j-api "2.0.0-alpha2"]]
+                 [org.slf4j/slf4j-api "1.6.2"]]
   :pom-addition ([:properties ["maven.compiler.source" "8"] ["maven.compiler.target" "8"]])
   :pom-plugins [[org.apache.maven.plugins/maven-surefire-plugin "2.20"]]
   :main io.github.erdos.stencil.Main
