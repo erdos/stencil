@@ -18,3 +18,4 @@ junit.xml
 /stencil-native
 /*.docx
 .DS_Store
+.lsp/
