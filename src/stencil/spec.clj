@@ -41,12 +41,11 @@
 
 (s/def ::main (s/keys :req [::m/path]
                       :opt-un [::m/headers+footers ::result] ;; not present in fragments
-                      :req-un [:?/numbering
-                               ::source-file
+                      :opt [::numbering]
+                      :req-un [::source-file
                                ::executable
                                ::style
-                               ::relations
-                               ]))
+                               ::relations]))
 
 
 (s/def ::m/content-types
@@ -59,10 +58,8 @@
 
 (s/def ::parsed any?)
 
-(s/def ::numbering (s/nilable (s/keys :req [::m/path]
-                                      :req-un [::source-file ::parsed])))
-
-(s/def :?/numbering (s/nilable ::numbering))
+(s/def ::m/numbering (s/nilable (s/keys :req [::m/path]
+                                        :req-un [::source-file ::parsed])))
 
 (s/fdef m/load-template-model
   :args (s/cat :dir ::source-folder, :opts map?)
