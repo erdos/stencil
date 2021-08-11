@@ -37,8 +37,9 @@
                     :plugins      [[lein-test-out "0.3.1"]]
                     :resource-paths    ["test-resources"]
                     :test-paths ["java-test"]
-                    :injections [(require 'stencil.spec-test)]
-                    }
+                    :injections [(require 'stencil.spec)
+                                 (require '[clojure.spec.test.alpha :as sta])
+                                 (eval '(run! sta/instrument (sta/instrumentable-syms)))]}
              :ci {:plugins [[lein-javadoc "0.3.0"]
                             [lein-cloverage "1.2.2"]]
                   }})
