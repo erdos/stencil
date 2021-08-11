@@ -9,7 +9,7 @@
   :dependencies [[org.clojure/clojure "1.9.0"]
                  [org.clojure/data.xml "0.2.0-alpha6"]
                  [org.clojure/tools.logging "1.1.0"]
-                 [org.slf4j/slf4j-api "2.0.0-alpha2"]]
+                 [org.slf4j/slf4j-api "1.6.2"]]
   :pom-addition ([:properties ["maven.compiler.source" "8"] ["maven.compiler.target" "8"]])
   :pom-plugins [[org.apache.maven.plugins/maven-surefire-plugin "2.20"]]
   :main io.github.erdos.stencil.Main
@@ -26,7 +26,7 @@
                                :sign-releases false}]]
   :profiles {:uberjar {:aot :all}
              :dev {:aot :all
-                   :dependencies [[org.slf4j/slf4j-simple "2.0.0-alpha2"]]
+                   :dependencies [[org.slf4j/slf4j-simple "1.6.2"]]
                    :injections [(require 'stencil.spec)
                                 (require '[clojure.spec.alpha :as s])]
                    :jvm-opts ["-Dorg.slf4j.simpleLogger.defaultLogLevel=debug"]}
@@ -39,7 +39,7 @@
                     :test-paths ["java-test"]
                     :injections [(require 'stencil.spec)
                                  (require '[clojure.spec.test.alpha :as sta])
-                                 (eval '(run! sta/instrument (sta/instrumentable-syms)))]}
+                                 (eval '(run! sta/instrument (clojure.spec.test.alpha/instrumentable-sys)))]}
              :ci {:plugins [[lein-javadoc "0.3.0"]
                             [lein-cloverage "1.2.2"]]
                   }})
