@@ -73,6 +73,7 @@
                      {::path rels-path, :source-file rels-file, :parsed (relations/parse rels-file)})))
 
         main-document-rels (->rels main-document)
+        assoc-if-val (fn [m k v] (if (some? v) (assoc m k v) m))
 
         ->exec (binding [merger/*only-includes* (boolean (:only-includes options-map))]
                  (bound-fn* ->exec))]
@@ -81,23 +82,23 @@
      :relations     {::path (unix-path (file "_rels" ".rels"))
                      :source-file (file dir "_rels" ".rels")
                      :parsed package-rels}
-     :main          {::path       main-document
-                     :source-file (file dir main-document)
-                     :executable  (->exec (file dir main-document))
-                     :numbering   (numbering/main-numbering dir main-document main-document-rels)
-                     :style       (style/main-style-item dir main-document main-document-rels)
-                     :relations main-document-rels
-                     :headers+footers (doall
-                                       (for [[_ m] (:parsed main-document-rels)
-                                             :when (#{rel-type-footer
-                                                      rel-type-header
-                                                      rel-type-slide}
-                                                    (::type m))
-                                             :let [f (file (.getParentFile (file main-document)) (::target m))]]
-                                         {::path       (unix-path f)
-                                          :source-file (file dir f)
-                                          :executable  (->exec (file dir f))
-                                          :relations   (->rels f)}))}}))
+     :main          (-> {::path       main-document
+                         :source-file (file dir main-document)
+                         :executable  (->exec (file dir main-document))
+                         :style       (style/main-style-item dir main-document main-document-rels)
+                         :relations   main-document-rels
+                         :headers+footers (doall
+                                           (for [[_ m] (:parsed main-document-rels)
+                                                 :when (#{rel-type-footer
+                                                          rel-type-header
+                                                          rel-type-slide}
+                                                        (::type m))
+                                                 :let [f (file (.getParentFile (file main-document)) (::target m))]]
+                                             {::path       (unix-path f)
+                                              :source-file (file dir f)
+                                              :executable  (->exec (file dir f))
+                                              :relations   (->rels f)}))}
+                        (assoc-if-val ::numbering (numbering/main-numbering dir main-document main-document-rels)))}))
 
 
 (defn load-fragment-model [dir options-map]
@@ -134,7 +135,7 @@
   (assert (:main template-model) "Should be a result of load-template-model call!")
   (assert (some? fragments))
   (binding [*current-styles*     (atom (:parsed (:style (:main template-model))))
-            numbering/*numbering* (:numbering (:main template-model))
+            numbering/*numbering* (::numbering (:main template-model))
             *inserted-fragments* (atom #{})
             *extra-files*        (atom #{})
             *all-fragments*      (into {} fragments)]
@@ -172,7 +173,7 @@
 
 
 (defn- model-seq [model]
-  (let [model-keys [:relations :headers+footers :main :style :content-types :fragments :numbering :result]]
+  (let [model-keys [:relations :headers+footers :main :style :content-types :fragments ::numbering :result]]
     (tree-seq map? (fn [node] (flatten (keep node model-keys))) model)))
 
 

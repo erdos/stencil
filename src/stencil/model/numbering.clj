@@ -2,8 +2,8 @@
   (:require [clojure.data.xml :as xml]
             [clojure.java.io :as io]
             [stencil.ooxml :as ooxml]
-            [stencil.util :refer :all]
-            [stencil.model.common :refer :all]))
+            [stencil.util :refer [unlazy-tree ->int]]
+            [stencil.model.common :refer [unix-path]]))
 
 
 (def ^:private rel-type-numbering
