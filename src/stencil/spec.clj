@@ -1,34 +1,40 @@
 (ns stencil.spec
   (:import [java.io File])
   (:require [clojure.spec.alpha :as s]
+            [clojure.tools.logging.impl] ;; hack for AOT
             [stencil.model :as m]
             [stencil.process]))
 
+
+
 ;; TODO
-(s/def ::m/mode #{"External"})
+(s/def :stencil.model/mode #{"External"})
 
 ;; keys are  either all keywords or all strings
 (s/def ::data map?)
 
 ;; other types are also possible
-(s/def ::m/type #{m/rel-type-footer m/rel-type-header m/rel-type-main m/rel-type-slide})
+(s/def :stencil.model/type #{stencil.model/rel-type-footer
+                             stencil.model/rel-type-header
+                             stencil.model/rel-type-main
+                             stencil.model/rel-type-slide})
 
-(s/def ::m/path (s/and string? not-empty #(not (.startsWith ^String % "/"))))
+(s/def :stencil.model/path (s/and string? not-empty #(not (.startsWith ^String % "/"))))
 
 ;; relationship file
-(s/def ::relations (s/keys :req    [::m/path]
+(s/def ::relations (s/keys :req    [:stencil.model/path]
                            :req-un [::source-file]
-                           :opt-un [::m/parsed]))
+                           :opt-un [:stencil.model/parsed]))
 
 (s/def :?/relations (s/nilable ::relations))
 
 (s/def ::result (s/keys :req-un [::writer]))
 
-(s/def ::style (s/keys :req [::m/path]
+(s/def ::style (s/keys :req [:stencil.model/path]
                        :opt-un [::result]))
 
-(s/def ::m/headers+footers (s/* (s/keys :req [::m/path]
-                                        :req-un [::source-file ::m/executable :?/relations]
+(s/def :stencil.model/headers+footers (s/* (s/keys :req [:stencil.model/path]
+                                        :req-un [::source-file :stencil.model/executable :?/relations]
                                         :opt-un [::result])))
 
 (s/def ::source-folder (s/and (partial instance? java.io.File)
@@ -39,8 +45,8 @@
                             #(.isFile ^File %)
                             #(.exists ^File %)))
 
-(s/def ::main (s/keys :req [::m/path]
-                      :opt-un [::m/headers+footers ::result] ;; not present in fragments
+(s/def ::main (s/keys :req [:stencil.model/path]
+                      :opt-un [:stencil.model/headers+footers ::result] ;; not present in fragments
                       :opt [::numbering]
                       :req-un [::source-file
                                ::executable
@@ -48,33 +54,33 @@
                                ::relations]))
 
 
-(s/def ::m/content-types
-  (s/keys :req [::m/path]
+(s/def :stencil.model/content-types
+  (s/keys :req [:stencil.model/path]
           :req-un [::source-file]))
 
-(s/def ::m/model
+(s/def :stencil.model/model
   (s/keys :req []
-          :req-un [::main ::source-folder ::m/content-types ::relations]))
+          :req-un [::main ::source-folder :stencil.model/content-types ::relations]))
 
 (s/def ::parsed any?)
 
-(s/def ::m/numbering (s/nilable (s/keys :req [::m/path]
+(s/def :stencil.model/numbering (s/nilable (s/keys :req [:stencil.model/path]
                                         :req-un [::source-file ::parsed])))
 
-(s/fdef m/load-template-model
+(s/fdef stencil.model/load-template-model
   :args (s/cat :dir ::source-folder, :opts map?)
-  :ret ::m/model)
+  :ret :stencil.model/model)
 
-(s/fdef m/load-fragment-model
+(s/fdef stencil.model/load-fragment-model
   :args (s/cat :dir ::source-folder, :opts map?)
-  :ret ::m/model)
+  :ret :stencil.model/model)
 
-(s/fdef m/eval-template-model
-  :args (s/cat :model ::m/model
+(s/fdef stencil.model/eval-template-model
+  :args (s/cat :model :stencil.model/model
                :data ::data
                :unused/function-arg any?
-               :fragments (s/map-of string? ::m/model))
-  :ret  ::m/model)
+               :fragments (s/map-of string? :stencil.model/model))
+  :ret  :stencil.model/model)
 
 (s/def :exec/variables (s/coll-of string? :unique true))
 (s/def :exec/dynamic? boolean?)
@@ -96,5 +102,5 @@
 (s/def ::writer (s/fspec :args (s/cat :writer (partial instance? java.io.Writer)) :ret nil?))
 
 (s/fdef template-model->writers-map
-  :args (s/cat :model ::m/model, :data ::data, :functions any?, :fragments any?)
-  :ret (s/map-of ::m/path ::writer))
+  :args (s/cat :model :stencil.model/model, :data ::data, :functions any?, :fragments any?)
+  :ret (s/map-of :stencil.model/path ::writer))
