@@ -1,7 +1,7 @@
 (ns stencil.postprocess.images
   (:require [clojure.java.io :as io]
-            [clojure.tools.logging :as log]
             [clojure.zip :as zip]
+            [stencil.log :as log]
             [stencil.ooxml :as ooxml]
             [stencil.model.relations :refer [rel-type-image]]
             [stencil.util :refer [fail find-first iterations dfs-walk-xml-node]])

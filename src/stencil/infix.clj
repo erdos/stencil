@@ -3,7 +3,7 @@
 
   https://en.wikipedia.org/wiki/Shunting-yard_algorithm"
   (:require [stencil.util :refer [fail update-peek]]
-            [clojure.tools.logging :as log]
+            [stencil.log :as log]
             [stencil.functions :refer [call-fn]]))
 
 (set! *warn-on-reflection* true)

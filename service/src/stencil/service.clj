@@ -3,10 +3,11 @@
   (:import [java.io File])
   (:require [org.httpkit.server :refer [run-server]]
             [stencil.api :as api]
+            [stencil.log :as log]
+            [stencil.slf4j :as slf4j]
             [clojure.data :refer [diff]]
             [clojure.java.io :refer [file]]
             [clojure.string :as s]
-            [clojure.tools.logging :as log]
             [ring.middleware.json :refer [wrap-json-body]]))
 
 (set! *warn-on-reflection* true)
@@ -57,16 +58,11 @@
               :body (str "ERROR: " (.getMessage e))}
              (throw e))))))
 
-(def log-levels
-  (let [levels [:trace :debug :info :warn :error :fatal]]
-    (into {} (map-indexed (fn [idx level] [(name level) (set (drop idx levels))]) levels))))
-
-(def ^:dynamic *active-log-levels* (log-levels "debug"))
 (def ^:dynamic *corr-id* "SYSTEM")
 
 (defn- wrap-log [handler]
   (fn [req]
-    (binding [*active-log-levels* (log-levels (get-in req [:headers "x-stencil-log"] "info"))
+    (binding [slf4j/*active-log-levels* (slf4j/log-levels-upto (get-in req [:headers "x-stencil-log"] "info"))
               *corr-id*           (or (get-in req [:headers "x-stencil-corr-id"])
                                       (subs (str (java.util.UUID/randomUUID)) 0 8))]
       (handler req))))
@@ -95,21 +91,9 @@
       (wrap-log)
       (wrap-err)))
 
-(defn- ns-get-logger [log-ns]
-  (reify clojure.tools.logging.impl.Logger
-    (enabled? [_ level] (contains? *active-log-levels* level))
-    (write! [_ level throwable message]
-      (printf "%s %s %s %s : %s\n"
-              (java.time.OffsetDateTime/now) (s/upper-case (name level)) log-ns *corr-id* message))))
-
-(alter-var-root
- #'clojure.tools.logging/*logger-factory*
- (constantly
-  (reify clojure.tools.logging.impl.LoggerFactory
-    (name [_] "stencil-own-logger")
-    (get-logger [_ log-ns] (ns-get-logger log-ns)))))
-
 (defn -main [& args]
+  (log/info "Starting")
+  (log/debug "Starting")
   (let [http-port    (get-http-port)
         template-dir ^File (get-template-dir)
         server (run-server app {:port http-port})]

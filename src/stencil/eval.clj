@@ -1,6 +1,6 @@
 (ns stencil.eval
   "converts Normalized Control AST -> Evaled token seq"
-  (:require [clojure.tools.logging :as log]
+  (:require [stencil.log :as log]
             [stencil.infix :refer [eval-rpn]]
             [stencil.types :refer [control?]]
             [stencil.tokenizer :as tokenizer]

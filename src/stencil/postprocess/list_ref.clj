@@ -2,7 +2,7 @@
   (:require [stencil.util :refer :all]
             [stencil.ooxml :as ooxml]
             [stencil.model.numbering :as numbering]
-            [clojure.tools.logging :as log]
+            [stencil.log :as log]
             [clojure.zip :as zip]))
 
 (set! *warn-on-reflection* true)

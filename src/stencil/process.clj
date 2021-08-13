@@ -5,7 +5,7 @@
            [io.github.erdos.stencil PrepareOptions]
            [io.github.erdos.stencil.impl FileHelper ZipHelper])
   (:require [clojure.java.io :as io]
-            [clojure.tools.logging :as log]
+            [stencil.log :as log]
             [stencil.model :as model]))
 
 (set! *warn-on-reflection* true)
