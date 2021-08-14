@@ -18,7 +18,7 @@
       (isFatalEnabled [] (contains? *active-log-levels* :fatal))
       (getFullyQualifiedCallerName [] caller-name)
       (handleNormalizedLoggingCall [level marker msg args throwable]
-        (println :from-custom-impl caller-name level marker msg args throwable)))))
+        (println :from-custom-impl caller-name (str level) marker msg arg throwable)))))
 
 (deftype SLF4JServiceProvider []
   org.slf4j.spi.SLF4JServiceProvider
