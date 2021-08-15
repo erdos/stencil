@@ -6,7 +6,6 @@
 (defn- log [level msg args]
   (assert (keyword? level))
   (assert (string? msg))
-  (println :> (bean level))
   (let [logger (get-logger (.toString (.getName *ns*)))]
     (case level
       :trace (.trace logger (str "!!!" msg args))

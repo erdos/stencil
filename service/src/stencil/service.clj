@@ -58,13 +58,11 @@
               :body (str "ERROR: " (.getMessage e))}
              (throw e))))))
 
-(def ^:dynamic *corr-id* "SYSTEM")
-
 (defn- wrap-log [handler]
   (fn [req]
     (binding [slf4j/*active-log-levels* (slf4j/log-levels-upto (get-in req [:headers "x-stencil-log"] "info"))
-              *corr-id*           (or (get-in req [:headers "x-stencil-corr-id"])
-                                      (subs (str (java.util.UUID/randomUUID)) 0 8))]
+              slf4j/*corr-id*           (or (get-in req [:headers "x-stencil-corr-id"])
+                                            (subs (str (java.util.UUID/randomUUID)) 0 8))]
       (handler req))))
 
 (defn -app [request]

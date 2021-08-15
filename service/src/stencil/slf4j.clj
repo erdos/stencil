@@ -5,6 +5,7 @@
     (into {} (map-indexed (fn [idx level] [(name level) (set (drop idx levels))]) levels))))
 
 (def ^:dynamic *active-log-levels* (log-levels-upto "debug"))
+(def ^:dynamic *corr-id* "SYSTEM")
 
 (deftype StencilLoggerFactory []
   org.slf4j.ILoggerFactory
@@ -18,7 +19,7 @@
       (isFatalEnabled [] (contains? *active-log-levels* :fatal))
       (getFullyQualifiedCallerName [] caller-name)
       (handleNormalizedLoggingCall [level marker msg args throwable]
-        (println :from-custom-impl caller-name (str level) marker msg arg throwable)))))
+        (println (str (java.time.LocalDateTime/now)) (str level) caller-name *corr-id* ":" args throwable)))))
 
 (deftype SLF4JServiceProvider []
   org.slf4j.spi.SLF4JServiceProvider
