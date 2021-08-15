@@ -1,6 +1,7 @@
 (ns stencil.service
   (:gen-class)
-  (:import [java.io File])
+  (:import [java.io File]
+           [org.slf4j MDC])
   (:require [org.httpkit.server :refer [run-server]]
             [stencil.api :as api]
             [stencil.log :as log]
@@ -63,7 +64,9 @@
     (binding [slf4j/*active-log-levels* (slf4j/log-levels-upto (get-in req [:headers "x-stencil-log"] "info"))
               slf4j/*corr-id*           (or (get-in req [:headers "x-stencil-corr-id"])
                                             (subs (str (java.util.UUID/randomUUID)) 0 8))]
-      (handler req))))
+      (try (MDC/put "corr-id" (str slf4j/*corr-id*))
+           (handler req)
+           (finally (MDC/clear))))))
 
 (defn -app [request]
   (cond
