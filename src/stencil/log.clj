@@ -2,14 +2,16 @@
 
 (def get-logger (memoize (fn [^String name] (.getLogger (org.slf4j.LoggerFactory/getILoggerFactory) name))))
 
-(def logger [] (get-logger (.toString (.getName *ns*))))
+(defn logger [] (get-logger (.toString (.getName *ns*))))
 
 (defmacro ^:private def-log-level [level]
   (assert (symbol? level))
   ;; TODO: perhaps make it a macro!
-  `(defn ~level [msg# & args#]
-     (. (get-logger (.toString (.getName *ns*)))
-        ~level msg# args#)))
+  `(defn ~level
+     ([^String msg#] (. (logger) ~level msg#))
+     ([^String msg# arg#] (. (logger) ~level msg# arg#))
+     ([^String msg# arg0# & args#]
+      (. (logger) ~level msg# (to-array (cons arg0# args#))))))
 
 (def-log-level trace)
 (def-log-level debug)
