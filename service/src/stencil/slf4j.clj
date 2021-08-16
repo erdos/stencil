@@ -1,11 +1,6 @@
 (ns stencil.slf4j)
 
-(def ^:private log-levels-upto
-  (let [levels [:trace :debug :info :warn :error :fatal]]
-    (into {} (map-indexed (fn [idx level] [(name level) (set (drop idx levels))]) levels))))
-
-(def ^:dynamic *active-log-levels* (log-levels-upto "debug"))
-(def ^:dynamic *corr-id* "SYSTEM")
+(set! *warn-on-reflection* true)
 
 (defmacro with-mdc [bindings & bodies]
   `(try
@@ -19,6 +14,9 @@
 (defn get-log-level []
   (or (org.slf4j.MDC/get "log-level") default-log-level "info"))
 
+(defn get-corr-id []
+  (or (org.slf4j.MDC/get "corr-id") "SYSTEM"))
+
 (deftype StencilLoggerFactory []
   org.slf4j.ILoggerFactory
   (getLogger [_ caller-name]
@@ -31,7 +29,8 @@
       (isFatalEnabled [] true)
       (getFullyQualifiedCallerName [] caller-name)
       (handleNormalizedLoggingCall [level marker msg args throwable]
-        (println (str (java.time.LocalDateTime/now)) (str level) caller-name *corr-id* ":" args throwable)))))
+        (println (str (java.time.LocalDateTime/now))
+                 (str level) caller-name (get-corr-id) ":" args throwable)))))
 
 (def mdc-adapter (new org.slf4j.helpers.BasicMDCAdapter))
 (def logger-factory (new StencilLoggerFactory))
