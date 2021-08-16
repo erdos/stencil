@@ -9,7 +9,9 @@
      ~@bodies
      (finally (org.slf4j.MDC/clear))))
 
-(def default-log-level (not-empty (System/getenv "STENCIL_LOG_LEVEL")))
+(def default-log-level
+  (doto (not-empty (System/getenv "STENCIL_LOG_LEVEL"))
+    (-> (#{"trace" "debug" "info" "warn" "error" "fatal"}) (assert))))
 
 (defn get-log-level []
   (or (org.slf4j.MDC/get "log-level") default-log-level "info"))
@@ -30,7 +32,7 @@
       (getFullyQualifiedCallerName [] caller-name)
       (handleNormalizedLoggingCall [level marker msg args throwable]
         (println (str (java.time.LocalDateTime/now))
-                 (str level) caller-name (get-corr-id) ":" args throwable)))))
+                 (str level) caller-name (get-corr-id) ":" msg (pr-str args) (pr-str throwable))))))
 
 (def mdc-adapter (new org.slf4j.helpers.BasicMDCAdapter))
 (def logger-factory (new StencilLoggerFactory))

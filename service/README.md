@@ -99,3 +99,5 @@ For example:
 ```
 2021-08-15T15:32:44.025129Z INFO stencil.service 71631d49 : Successfully rendered template /test-functions.docx
 ```
+
+You can bind the `STENCIL_LOG_LEVEL` environment variable to change the default logging level from `info`. Acceptible values: `trace`, `debug`, `info`, `warn`, `error`, `fatal`.
