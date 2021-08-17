@@ -110,6 +110,7 @@
     (get-logger [_ log-ns] (ns-get-logger log-ns)))))
 
 (defn -main [& args]
+  (log/info "Starting Stencil Service" api/version)
   (let [http-port    (get-http-port)
         template-dir ^File (get-template-dir)
         server (run-server app {:port http-port})]
