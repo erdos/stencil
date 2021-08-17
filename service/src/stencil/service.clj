@@ -90,8 +90,7 @@
       (wrap-err)))
 
 (defn -main [& args]
-  (log/info "Starting")
-  (log/debug "Starting")
+  (log/info (str "Starting Stencil version " api/version))
   (let [http-port    (get-http-port)
         template-dir ^File (get-template-dir)
         server (run-server app {:port http-port})]

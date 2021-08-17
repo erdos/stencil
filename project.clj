@@ -24,6 +24,7 @@
                                :password :env/clojars_pass
                                :sign-releases false}]]
   :profiles {:uberjar {:aot :all}
+             :jar     {:aot :all}
              :dev {:aot :all
                    :dependencies [[org.slf4j/slf4j-simple "2.0.0-alpha1"]]
                    :jvm-opts ["-Dorg.slf4j.simpleLogger.defaultLogLevel=debug"]}

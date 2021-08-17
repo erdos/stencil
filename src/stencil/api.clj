@@ -84,4 +84,4 @@
 
 (defmacro ^:private get-version [] (System/getProperty "stencil-core.version"))
 
-(def version (get-version))
+(def ^:const version (doto (get-version) assert))

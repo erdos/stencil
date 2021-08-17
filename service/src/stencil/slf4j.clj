@@ -11,7 +11,7 @@
 
 (def default-log-level
   (doto (not-empty (System/getenv "STENCIL_LOG_LEVEL"))
-    (-> (#{"trace" "debug" "info" "warn" "error" "fatal"}) (assert))))
+    (some-> (#{"trace" "debug" "info" "warn" "error" "fatal"}) (assert))))
 
 (defn get-log-level []
   (or (org.slf4j.MDC/get "log-level") default-log-level "info"))
