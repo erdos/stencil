@@ -7,7 +7,6 @@
             [stencil.slf4j :as slf4j]
             [clojure.data :refer [diff]]
             [clojure.java.io :refer [file]]
-            [clojure.string :as s]
             [ring.middleware.json :refer [wrap-json-body]]))
 
 (set! *warn-on-reflection* true)
@@ -90,7 +89,7 @@
       (wrap-err)))
 
 (defn -main [& args]
-  (log/info (str "Starting Stencil version " api/version))
+  (log/info "Starting Stencil Service" api/version)
   (let [http-port    (get-http-port)
         template-dir ^File (get-template-dir)
         server (run-server app {:port http-port})]

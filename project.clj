@@ -23,6 +23,7 @@
                                :username :env/clojars_user
                                :password :env/clojars_pass
                                :sign-releases false}]]
+  :filespecs [{:type :bytes, :path "stencil-version", :bytes ~(-> "project.clj" slurp read-string nnext first)}]
   :profiles {:uberjar {:aot :all}
              :dev {:aot :all
                    :dependencies [[org.slf4j/slf4j-simple "2.0.0-alpha1"]]

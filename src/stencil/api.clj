@@ -82,6 +82,11 @@
         :else (throw (ex-info "Unexpected object to clean up!" {:template template})))
   template)
 
+<<<<<<< HEAD
 (defmacro ^:private get-version [] (System/getProperty "stencil-core.version"))
 
 (def ^:const version (doto (get-version) assert))
+=======
+(def version (or (System/getProperty "stencil-core.version")
+                 (slurp (io/resource "stencil-version"))))
+>>>>>>> origin/master
