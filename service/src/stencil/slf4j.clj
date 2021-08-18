@@ -37,10 +37,12 @@
       (getFullyQualifiedCallerName [] caller-name)
       (handleNormalizedLoggingCall
         [level marker msg args throwable]
-        (println (str (java.time.LocalDateTime/now))
-                 (str level) caller-name (get-corr-id) ":" (msg+args msg args))
+        (.write *out*
+                (str (java.time.LocalDateTime/now)
+                     "  " level " " caller-name " " (get-corr-id) " : " (msg+args msg args)
+                     \newline))
         (when throwable
-          (println (pr-str throwable)))))))
+          (.write *out* (pr-str throwable)))))))
 
 (def mdc-adapter (new org.slf4j.helpers.BasicMDCAdapter))
 (def logger-factory (new StencilLoggerFactory))
