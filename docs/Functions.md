@@ -13,7 +13,7 @@ This is a short description of the functions implemented in Stencil:
 - [empty](#empty)
 - [floor](#floor)
 - [format](#format)
-- [formatWithLocale](#formatWithLocale)
+- [formatWithLocale](#formatwithlocale)
 - `hideColumn`
 - `hideRow`
 - [html](#html)
