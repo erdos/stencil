@@ -14,19 +14,19 @@
 
 (defmethod eval-step :if [function data item]
   (let [condition (eval-rpn data function (:condition item))]
-    (log/trace "Condition %s evaluated to %s" (:condition item) condition)
+    (log/trace "Condition {} evaluated to {}" (:condition item) condition)
     (if condition
       (mapcat (partial eval-step function data) (:then item))
       (mapcat (partial eval-step function data) (:else item)))))
 
 (defmethod eval-step :echo [function data item]
   (let [value (eval-rpn data function (:expression item))]
-    (log/trace "Echoing %s as %s" (:expression item) value)
+    (log/trace "Echoing {} as {}" (:expression item) value)
     [{:text (if (control? value) value (str value))}]))
 
 (defmethod eval-step :for [function data item]
   (let [items (seq (eval-rpn data function (:expression item)))]
-    (log/trace "Loop on %s will repeat %s times" (:expression item) (count items))
+    (log/trace "Loop on {} will repeat {} times" (:expression item) (count items))
     (if (seq items)
       (let [datas  (map #(assoc data (name (:variable item)) %) items)
             bodies (cons (:body-run-once item) (repeat (:body-run-next item)))]

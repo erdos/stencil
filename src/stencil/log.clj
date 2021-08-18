@@ -1,3 +1,4 @@
+
 (ns stencil.log)
 
 (def get-logger (memoize (fn [^String name] (.getLogger (org.slf4j.LoggerFactory/getILoggerFactory) name))))
@@ -10,8 +11,7 @@
   `(defn ~level
      ([^String msg#] (. (logger) ~level msg#))
      ([^String msg# arg#] (. (logger) ~level msg# arg#))
-     ([^String msg# arg0# & args#]
-      (. (logger) ~level msg# (to-array (cons arg0# args#))))))
+     ([^String msg# arg0# & args#] (. (logger) ~level msg# (to-array (cons arg0# args#))))))
 
 (def-log-level trace)
 (def-log-level debug)

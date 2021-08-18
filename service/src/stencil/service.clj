@@ -73,7 +73,7 @@
     (= :post (:request-method request) :post)
     (if-let [prepared (get-template (:uri request))]
       (let [rendered (api/render! prepared (:body request) :output :input-stream)]
-        (log/info "Successfully rendered template" (:uri request))
+        (log/info "Successfully rendered template {}" (:uri request))
         (flush)
         {:status 200
          :body rendered
@@ -89,12 +89,12 @@
       (wrap-err)))
 
 (defn -main [& args]
-  (log/info "Starting Stencil Service" api/version)
+  (log/info "Starting Stencil Service {}" api/version)
   (let [http-port    (get-http-port)
         template-dir ^File (get-template-dir)
         server (run-server app {:port http-port})]
-    (log/info "Started listening on" http-port "serving" (str template-dir))
-    (log/info "Available template files: ")
+    (log/info "Started listening on {} serving {}" http-port (str template-dir))
+    (log/info "Available template files:")
     (doseq [^File line (file-seq template-dir)
             :when (.isFile line)]
-      (log/info (str (.relativize (.toPath template-dir) (.toPath line)))))))
+      (log/info "- {}" (.relativize (.toPath template-dir) (.toPath line))))))

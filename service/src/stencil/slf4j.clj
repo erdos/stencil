@@ -19,20 +19,28 @@
 (defn get-corr-id []
   (or (org.slf4j.MDC/get "corr-id") "SYSTEM"))
 
+(defn- msg+args [^String msg args]
+  (if (empty? args)
+    msg
+    (apply str (interleave (.split msg "\\{\\}" -1) (map str args)))))
+
 (deftype StencilLoggerFactory []
   org.slf4j.ILoggerFactory
   (getLogger [_ caller-name]
     (proxy [org.slf4j.helpers.AbstractLogger] []
       (isTraceEnabled [] (contains? #{"trace"} (get-log-level)))
       (isDebugEnabled [] (contains? #{"trace" "debug"} (get-log-level)))
-      (isInfoEnabled []  (contains? #{"trace" "debug" "info"} (get-log-level)) )
+      (isInfoEnabled []  (contains? #{"trace" "debug" "info"} (get-log-level)))
       (isWarnEnabled []  (contains? #{"trace" "debug" "info" "warn"} (get-log-level)))
       (isErrorEnabled [] (contains? #{"trace" "debug" "info" "warn" "error"} (get-log-level)))
       (isFatalEnabled [] true)
       (getFullyQualifiedCallerName [] caller-name)
-      (handleNormalizedLoggingCall [level marker msg args throwable]
+      (handleNormalizedLoggingCall
+        [level marker msg args throwable]
         (println (str (java.time.LocalDateTime/now))
-                 (str level) caller-name (get-corr-id) ":" msg (pr-str args) (pr-str throwable))))))
+                 (str level) caller-name (get-corr-id) ":" (msg+args msg args))
+        (when throwable
+          (println (pr-str throwable)))))))
 
 (def mdc-adapter (new org.slf4j.helpers.BasicMDCAdapter))
 (def logger-factory (new StencilLoggerFactory))

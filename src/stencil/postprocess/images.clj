@@ -37,7 +37,7 @@
   (let [current-rel (-> img-node :attrs ooxml/r-embed)
         new-val     (-> data .relation)]
     (assert new-val)
-    (log/debug "Replacing image relation" current-rel "by" new-val)
+    (log/debug "Replacing image relation {} by {}" current-rel new-val)
     (assoc-in img-node [:attrs ooxml/r-embed] new-val)))
 
 (defn- replace-image [marker-loc]

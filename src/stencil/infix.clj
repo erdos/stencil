@@ -255,11 +255,11 @@
 
 (defmethod reduce-step FnCall [stack {:keys [fn args]}]
   (try
-    (log/trace "Calling function" fn "with arguments" args)
+    (log/trace "Calling function {} with arguments {}" fn args)
     (let [[ops new-stack] (split-at args stack)
           ops (reverse ops)
           result (apply call-fn fn ops)]
-      (log/trace "Result was" result)
+      (log/trace "Result was {}" result)
       (conj new-stack result))
     (catch clojure.lang.ArityException e
       (throw (ex-info (str "Wrong arity: " (.getMessage e))

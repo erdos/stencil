@@ -57,7 +57,7 @@
              :let  [rel-path (FileHelper/toUnixSeparatedString (.toPath (io/file k)))
                     ze       (new ZipEntry rel-path)]]
        (assert (not (.contains rel-path "../")))
-       (log/trace "ZIP: writing %s" rel-path)
+       (log/trace "ZIP: writing {}" rel-path)
        (.putNextEntry zipstream ze)
        (writer zipstream)
        (.closeEntry zipstream)))))
