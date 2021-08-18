@@ -101,14 +101,21 @@ Joins a list of items with an optional separator.
 
 Formats a date value according to a given [format string](https://docs.oracle.com/javase/6/docs/api/java/text/SimpleDateFormat.html).
 
-Arguments:
+When called  with two arguments:
 
 1. First argument is a format string.
 2. Second argument is a string containing a date value.
 
+With three arguments:
+
+1. First argument is an IETF Language Tag string.
+2. First argument is a format string.
+3. Second argument is a string containing a date value.
+
 **Example:**
 
-This example formats the value of `partner.birthDate` as a date string: <code>{<i>%=date("yyyy-MM-dd", partner.birthDate) %</i>}</code>
+1. This example formats the value of `partner.birthDate` as a date string: <code>{<i>%=date("yyyy-MM-dd", partner.birthDate) %</i>}</code>
+2. With locale: `date("hu", "YYYY MMMM d", "2021-05-20")` evalues to `"2021 május 20"`.
 
 Also, try these formats strings:
 
