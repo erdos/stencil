@@ -101,10 +101,16 @@ Joins a list of items with an optional separator.
 
 Formats a date value according to a given [format string](https://docs.oracle.com/javase/6/docs/api/java/text/SimpleDateFormat.html).
 
-Arguments:
+When called  with two arguments:
 
 1. First argument is a format string.
 2. Second argument is a string containing a date value.
+
+With three arguments:
+
+1. First argument is an IETF Language Tag string.
+2. First argument is a format string.
+3. Second argument is a string containing a date value.
 
 **Example:**
 
