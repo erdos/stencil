@@ -51,18 +51,22 @@
   (fn [request]
     (try (handler request)
          (catch clojure.lang.ExceptionInfo e
-           (log/error "Error" e)
            (if-let [status (:status (ex-data e))]
-             {:status status
-              :body (str "ERROR: " (.getMessage e))}
-             (throw e))))))
+             (do (log/error "Render error={}" (.getMessage e))
+                 {:status status
+                  :body (str "ERROR: " (.getMessage e))})
+             (do (log/error "Error" e)
+                 (throw e)))))))
 
 (defn- wrap-log [handler]
   (fn [req]
     (slf4j/with-mdc ["log-level" (get-in req [:headers "x-stencil-log"] "info")
                      "corr-id"   (or (get-in req [:headers "x-stencil-corr-id"])
                                      (subs (str (java.util.UUID/randomUUID)) 0 8))]
-      (handler req))))
+      (let [response (handler req)]
+        (when (not= 200 (:status response))
+          (log/error "Response status was {}" (:status response)))
+        response))))
 
 (defn -app [request]
   (cond
@@ -71,13 +75,13 @@
      :body "I am alive."}
 
     (= :post (:request-method request) :post)
-    (if-let [prepared (get-template (:uri request))]
-      (let [rendered (api/render! prepared (:body request) :output :input-stream)]
-        (log/info "Successfully rendered template {}" (:uri request))
-        (flush)
-        {:status 200
-         :body rendered
-         :headers {"content-type" "application/octet-stream"}}))
+    (let [prepared (get-template (:uri request))
+          rendered (api/render! prepared (:body request) :output :input-stream)]
+      (log/info "Successfully rendered template {}" (:uri request))
+      (flush)
+      {:status 200
+       :body rendered
+       :headers {"content-type" "application/octet-stream"}})
 
     :else
     (throw (ex-info "Method Not Allowed" {:status 405}))))
@@ -85,8 +89,8 @@
 (def app
   (-> -app
       (wrap-json-body {:keywords? false})
-      (wrap-log)
-      (wrap-err)))
+      (wrap-err)
+      (wrap-log)))
 
 (defn -main [& args]
   (log/info "Starting Stencil Service {}" api/version)
