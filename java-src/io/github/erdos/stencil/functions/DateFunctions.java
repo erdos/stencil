@@ -10,12 +10,14 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 import static java.util.Arrays.asList;
+import static java.util.Locale.forLanguageTag;
+import static java.util.Locale.getDefault;
 import static java.util.Optional.empty;
 import static java.util.Optional.of;
-
 /**
  * Date handling functions
  */
@@ -32,27 +34,41 @@ public enum DateFunctions implements Function {
     DATE {
         @Override
         public Object call(Object... arguments) throws IllegalArgumentException {
-            if (arguments.length != 2)
-                throw new IllegalArgumentException("date() function expects exactly 2 arguments!");
+            if (arguments.length != 2 && arguments.length != 3)
+                throw new IllegalArgumentException("date() function expects exactly 2 or 3 arguments!");
             if (arguments[0] == null || arguments[1] == null || arguments[1].toString().isEmpty())
                 return null;
 
-            final String pattern = arguments[0].toString();
-            final Object datum = arguments[1];
+            final Locale locale;
+            final String pattern;
+            final Object datum;
+
+            if (arguments.length == 2) {
+                locale = getDefault();
+                pattern = arguments[0].toString();
+                datum = arguments[1];
+            } else {
+                if (arguments[2] == null || arguments[2].toString().isEmpty()) {
+                    return null;
+                }
+                locale = forLanguageTag(arguments[0].toString());
+                pattern = arguments[1].toString();
+                datum = arguments[2];
+            }
 
             final Optional<LocalDate> d2 = DateFunctions.maybeLocalDate(datum);
             if (d2.isPresent()) {
-                return d2.get().format(DateTimeFormatter.ofPattern(pattern));
+                return d2.get().format(DateTimeFormatter.ofPattern(pattern, locale));
             }
 
             final Optional<LocalDateTime> d3 = DateFunctions.maybeLocalDateTime(datum);
             if (d3.isPresent()) {
-                return d3.get().format(DateTimeFormatter.ofPattern(pattern));
+                return d3.get().format(DateTimeFormatter.ofPattern(pattern, locale));
             }
 
             final Optional<Date> d1 = DateFunctions.maybeDate(datum);
             if (d1.isPresent()) {
-                return new SimpleDateFormat(pattern).format(d1.get());
+                return new SimpleDateFormat(pattern, locale).format(d1.get());
             }
 
             throw new IllegalArgumentException("Could not parse date object " + datum.toString());

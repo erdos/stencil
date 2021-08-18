@@ -35,6 +35,14 @@
     (is (thrown? ExceptionInfo (call-fn "format" 34 1)))
     (is (thrown? ExceptionInfo (call-fn "format" nil 2)))))
 
+
+(defmethod call-fn "date" [_ & args]
+  (.call io.github.erdos.stencil.functions.DateFunctions/DATE  (to-array args)))
+
+(deftest test-date
+  (is (= "2021/05/20" (call-fn "date" "YYYY/MM/d", "2021-05-20")))
+  (is (= "2021 május 20" (call-fn "date" "hu" "YYYY MMMM d", "2021-05-20"))))
+
 (deftest test-map
   (testing "Empty input"
     (is (= [] (call-fn "map" "x" [])))
