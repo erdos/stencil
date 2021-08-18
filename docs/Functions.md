@@ -114,7 +114,8 @@ With three arguments:
 
 **Example:**
 
-This example formats the value of `partner.birthDate` as a date string: <code>{<i>%=date("yyyy-MM-dd", partner.birthDate) %</i>}</code>
+1. This example formats the value of `partner.birthDate` as a date string: <code>{<i>%=date("yyyy-MM-dd", partner.birthDate) %</i>}</code>
+2. With locale: `date("hu", "YYYY MMMM d", "2021-05-20")` evalues to `"2021 május 20"`.
 
 Also, try these formats strings:
 
