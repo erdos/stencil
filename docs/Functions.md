@@ -109,13 +109,13 @@ When called  with two arguments:
 With three arguments:
 
 1. First argument is an IETF Language Tag string.
-2. First argument is a format string.
-3. Second argument is a string containing a date value.
+2. Second argument is a format string.
+3. Third argument is a string containing a date value.
 
 **Example:**
 
-1. This example formats the value of `partner.birthDate` as a date string: <code>{<i>%=date("yyyy-MM-dd", partner.birthDate) %</i>}</code>
-2. With locale: `date("hu", "YYYY MMMM d", "2021-05-20")` evalues to `"2021 május 20"`.
+1. This example formats the value of `birthDate` as a date string: <code>{<i>%=date("yyyy-MM-dd", birthDate) %</i>}</code>
+2. With locale: `date("hu", "YYYY MMMM d", "2021-05-20")` evaluates to `"2021 május 20"`.
 
 Also, try these formats strings:
 
