@@ -25,6 +25,12 @@ After applying Stencil with input data `{"customerName": "John Doe"}` you get th
 
 <img src="screenshot-substitution-after.png"/>
 
+## Nested field access
+
+You can reference values from nested fields by writing a dot separator between the field names. For example: `customer.name` can be used to reference the value `"John"` in  `{"customer": {"name": "John"}}`
+
+When the field name contains special characters, it may not be possible to reference it in a syntactically correct way directly. In these cases, the special curly braces operator can be used for property access. Syntax is `field1[field2]`. The expression `field2` will also be evaluated, so you need to quote the expression if it is not a dynamic vale. For example: `customer['name']`.
+
 ## Control structures
 
 You can embed control structures in your templates to implement advanced
