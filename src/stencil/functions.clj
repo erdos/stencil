@@ -69,6 +69,8 @@
 (defmethod call-fn "sum" [_ items]
   (reduce + items))
 
+(defmethod call-fn "list" [_ & elements] (vec elements))
+
 (defmethod call-fn "hideColumn" [_ & args]
   (case (first args)
     ("cut") (->HideTableColumnMarker :cut)

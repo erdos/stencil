@@ -20,6 +20,7 @@ This is a short description of the functions implemented in Stencil:
 - [integer](#integer)
 - [join](#join)
 - [length](#length)
+- [list](#list)
 - [lowercase](#lowercase)
 - [map](#map)
 - `percent`
@@ -62,6 +63,10 @@ The `empty()` function is useful when we want to either enumerate the contents
 of an array or hide the whole paragraph when the array is empty.
 
 <img src="screenshot-function-empty-before.png"/>
+
+### List
+
+Creates a list collection from the supplied arguments. Intended to be used with other collections functions.
 
 ### Integer
 
