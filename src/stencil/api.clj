@@ -82,5 +82,5 @@
         :else (throw (ex-info "Unexpected object to clean up!" {:template template})))
   template)
 
-(def version (or (System/getProperty "stencil-core.version")
-                 (slurp (io/resource "stencil-version"))))
+(def version (or (some-> (io/resource "stencil-version") slurp)
+                 (System/getProperty "stencil-core.version")))
