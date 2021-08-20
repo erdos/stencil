@@ -67,7 +67,7 @@
                   (into (vals infix/ops))
                   (into (vals infix/ops2))
                   (into (keys infix/operation-tokens))
-                  (disj :open :close :comma))
+                  (disj :open :close :comma :open-bracket :close-bracket))
           known-ops (set (filter keyword? (keys (methods @#'infix/reduce-step))))]
       (is (every? known-ops ops)))))
 
@@ -112,6 +112,30 @@
   (testing "Concatenation of strings"
     (is (= "abcd" (run "'ab' + 'c' + 'd'")))
     (is (= "abc123" (run "'abc' + 1 + 23")))))
+
+(deftest nested-field-access
+  (is (= 1 (run "a.b"      {"a" {"b" 1}})))
+  (is (= 2 (run "a['b-c']" {"a" {"b-c" 2}})))
+  (is (= 3 (run "a[1]"     {"a" {"1" 3}})))
+  (is (= 4 (run "a['1']"   {"a" {"1" 4}})))
+  (is (= 5 (run "a[(1)]"   {"a" {"1" 5}})))
+  (is (= 6 (run "(a)[1]"   {"a" {"1" 6}})))
+
+  (testing "multiple expressions"
+    (is (= 7 (run "a[a[1]+4]" {"a" {"1" 2 "6" 7}}))))
+
+  (testing "syntax error"
+    (is (thrown? ExceptionInfo (run "[3]" {})))
+    (is (thrown? ExceptionInfo (run "a[1,2]" {}))))
+
+  (testing "key is missing from input"
+    (is (= nil (run "a[1]"     {"a" {"2" 2}})))
+    (is (= nil (run "a[1]"     {}))))
+
+  (testing "array access"
+    (is (= nil (run "a[1]"    {"a" []})))
+    (is (= nil (run "a['1']"  {"a" ["x" "y" "z"]})))
+    (is (= "y" (run "a[1]"    {"a" ["x" "y" "z"]})))))
 
 (deftest logical-operators
   (testing "Mixed"
