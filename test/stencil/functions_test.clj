@@ -48,6 +48,10 @@
       (is (= nil (date "hu" "YYYY MMMM d", nil)))
       (is (= nil (date nil "YYYY MMMM d", "2021-05-20"))))))
 
+(deftest test-list
+  (is (= [] (call-fn "list")))
+  (is (= [1 nil 3] (call-fn "list" 1 nil 3))))
+
 (deftest test-map
   (testing "Empty input"
     (is (= [] (call-fn "map" "x" [])))
