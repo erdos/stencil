@@ -122,10 +122,12 @@
   (is (= 6 (run "(a)[1]"   {"a" {"1" 6}})))
 
   (testing "multiple expressions"
-    (is (= 7 (run "a[a[1]+4]" {"a" {"1" 2 "6" 7}}))))
+    (is (= 7 (run "a[a[1]+4]" {"a" {"1" 2 "6" 7}})))
+    (is (= 8 (run "a[1][2]" {"a" {"1" {"2" 8}}}))))
 
   (testing "syntax error"
     (is (thrown? ExceptionInfo (run "[3]" {})))
+    (is (thrown? ExceptionInfo (run "a[[3]]" {})))
     (is (thrown? ExceptionInfo (run "a[1,2]" {}))))
 
   (testing "key is missing from input"
