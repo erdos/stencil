@@ -21,6 +21,8 @@
    \^ :power
    \( :open
    \) :close
+   \[ :open-bracket
+   \] :close-bracket
    \! :not
    \= :eq
    \< :lt
@@ -51,6 +53,7 @@
   {:open  -999
    ;;;:close -998
    :comma -998
+   :open-bracket -999
 
    :or -21
    :and -20
@@ -88,8 +91,8 @@
     (case (first characters)
       \" (read-until \") ;; programmer quotes
       \' (read-until \') ;; programmer quotes
-      \“ (read-until \”) ;; english double quotes
-      \‘ (read-until \’) ;; english single quotes
+      \“ (read-until \”) ;; english double quotes
+      \‘ (read-until \’) ;; english single quotes
       \’ (read-until \’) ;; hungarian single quotes (felidezojel)
       \„ (read-until \”) ;; hungarian double quotes (macskakorom)
       (fail "No string literal" {:c (first characters)}))))
@@ -191,12 +194,24 @@
       (= :open e0)
       (recur next-expr (conj opstack :open) result (inc parentheses) (conj functions nil))
 
+      (= :open-bracket e0)
+      (recur next-expr (conj opstack :open-bracket) result (inc parentheses) functions)
+
       (instance? FnCall e0)
       (recur next-expr (conj opstack :open) result
              (inc parentheses)
              (conj functions {:fn (:fn-name  e0)
                               :args (if (= :close (first next-expr)) 0 1)}))
       ;; (recur next-expr (conj opstack :fncall) result (conj functions {:fn e0}))
+
+      (= :close-bracket e0)
+      (let [[popped-ops [_ & keep-ops]]
+            (split-with (partial not= :open-bracket) opstack)]
+        (recur next-expr
+               keep-ops
+               (into result (concat popped-ops [:get]))
+               (dec parentheses)
+               functions))
 
       (= :close e0)
       (let [[popped-ops [_ & keep-ops]]
@@ -292,6 +307,7 @@
 (def-reduce-step :gt [s0 s1] (> s1 s0))
 (def-reduce-step :gte [s0 s1] (>= s1 s0))
 (def-reduce-step :power [s0 s1] (Math/pow s1 s0))
+(def-reduce-step :get [a b] (get b (if (vector? b) a (str a))))
 
 (defn eval-rpn
   ([bindings default-function tokens]
