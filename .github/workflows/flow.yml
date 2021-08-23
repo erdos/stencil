@@ -12,8 +12,21 @@ jobs:
     - uses: actions/checkout@v2
     - name: Install dependencies
       run: lein deps
-    - name: Run tests
+    - name: Run Clojure Tests
       run: lein test
+    - name: Run Java Tests
+      run: lein pom && mvn test --batch-mode --fail-at-end
+  coverage:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+     - name: Coverage
+       run: lein coverage
+     - name: Codecov
+       uses: codecov/codecov-action@v2
+       with:
+         token: ${{ secrets.CODECOV_TOKEN }}
+         files: ./target/coverage/codecov.json
   clojars_push:
     needs: build
     runs-on: ubuntu-latest
