@@ -141,7 +141,7 @@
 (defn- find-elem [tree prop & [a b]]
   (assert (zipper? tree))
   (assert (keyword? a))
-  (let [items (take-while (comp complement zip/end?) (iterate zip/next tree))]
+  (let [items (take-while (comp complement #{(zip/node tree)} zip/node) (iterate zip/next tree))]
     (case prop
       :tag  (find-first (comp #{a} :tag zip/node) items)
       :attr (find-first (comp #{b} a :attrs zip/node) items))))
