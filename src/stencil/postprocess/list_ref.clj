@@ -296,8 +296,8 @@
              (when-let [bookmark (bookmark->meta (:id parsed-ref))]
                (some-> loc
                        (zip/up) ;; run
-                       (some->> (iterations zip/right)
-                                (find-first #(find-elem % :attr ooxml/fld-char-type "separate")))
+                       (->> (iterations zip/right)
+                            (find-first #(find-elem % :attr ooxml/fld-char-type "separate")))
                        (zip/right)
                        (fill-crossref-content parsed-ref bookmark)
                        (zip/right)
