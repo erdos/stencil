@@ -141,7 +141,7 @@
 (defn- find-elem [tree prop & [a b]]
   (assert (zipper? tree))
   (assert (keyword? a))
-  (let [items (take-while (comp complement #{(zip/node tree)} zip/node) (iterate zip/next tree))]
+  (let [items (take-while (comp complement zip/end?) (iterate zip/next tree))]
     (case prop
       :tag  (find-first (comp #{a} :tag zip/node) items)
       :attr (find-first (comp #{b} a :attrs zip/node) items))))
@@ -170,6 +170,7 @@
 (defn- fill-crossref-content [loc parsed-ref bookmark]
   (assert (zipper? loc))
   (assert (map? parsed-ref))
+  (assert bookmark)
   (when-let [txt (find-elem loc :tag ooxml/t)]
     (let [old-content (-> txt zip/node :content first)]
       (if bookmark
@@ -276,18 +277,18 @@
      ;; go right, find text node between separate and end.
      ;; we can replace text with a rendered value.
      (let [node (zip/node loc)
-           text (instr-text-ref node)
-           parsed-ref (merge (parse-instr-text text) (::instruction node))]
-       (->
-        (some-> (when parsed-ref loc)
-                (zip/up) ;; run
-                (->> (iterations zip/right)
-                     (find-first #(find-elem % :attr ooxml/fld-char-type "separate")))
-                (zip/right)
-                (fill-crossref-content parsed-ref (bookmark->meta (:id parsed-ref)))
-                (zip/right)
-                (->> (when-pred #(find-elem % :attr ooxml/fld-char-type "end"))))
-        (or loc))))))
+           text (instr-text-ref node)]
+       (or (when-let [parsed-ref (merge (parse-instr-text text) (::instruction node))]
+             (when-let [bookmark (bookmark->meta (:id parsed-ref))]
+               (some-> loc
+                       (zip/up) ;; run
+                       (some->> (iterations zip/right)
+                                (find-first #(find-elem % :attr ooxml/fld-char-type "separate")))
+                       (zip/right)
+                       (fill-crossref-content parsed-ref bookmark)
+                       (zip/right)
+                       (->> (when-pred #(find-elem % :attr ooxml/fld-char-type "end"))))))
+           loc)))))
 
 (defn fix-list-dirty-refs [xml-tree]
   (let [xml-tree (enrich-dirty-refs-meta xml-tree)
