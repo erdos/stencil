@@ -291,15 +291,16 @@
      (let [node (zip/node loc)
            text (instr-text-ref node)
            parsed-ref (merge (parse-instr-text text) (::instruction node))]
-       (-> (some-> (when parsed-ref loc)
-                   (zip/up) ;; run
-                   (->> (iterations zip/right)
-                        (find-first #(find-elem % :attr ooxml/fld-char-type "separate")))
-                   (zip/right)
-                   (fill-crossref-content parsed-ref (bookmark->meta (:id parsed-ref)))
-                   (zip/right)
-                   (->> (when-pred #(find-elem % :attr ooxml/fld-char-type "end"))))
-           (or loc))))))
+       (->
+        (some-> (when parsed-ref loc)
+                (zip/up) ;; run
+                (->> (iterations zip/right)
+                     (find-first #(find-elem % :attr ooxml/fld-char-type "separate")))
+                (zip/right)
+                (fill-crossref-content parsed-ref (bookmark->meta (:id parsed-ref)))
+                (zip/right)
+                (->> (when-pred #(find-elem % :attr ooxml/fld-char-type "end"))))
+        (or loc))))))
 
 (defn fix-list-dirty-refs [xml-tree]
   (let [xml-tree (enrich-dirty-refs-meta xml-tree)
