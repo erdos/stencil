@@ -183,7 +183,6 @@
 (defn- fill-crossref-content [loc parsed-ref bookmark]
   (assert (zipper? loc))
   (assert (map? parsed-ref))
-  (assert bookmark)
   (when-let [txt (find-elem loc :tag ooxml/t)]
     (let [old-content (-> txt zip/node :content first)]
       (if bookmark
@@ -292,16 +291,15 @@
      (let [node (zip/node loc)
            text (instr-text-ref node)]
        (or (when-let [parsed-ref (merge (parse-instr-text text) (::instruction node))]
-             (when-let [bookmark (bookmark->meta (:id parsed-ref))]
-               (some-> loc
-                       (zip/up) ;; run
-                       (->> (iterations zip/right)
-                            (find-first #(find-elem % :attr ooxml/fld-char-type "separate")))
-                       (zip/right)
-                       (fill-crossref-content parsed-ref bookmark)
-                       (zip/right)
-                       (->> (when-pred #(find-elem % :attr ooxml/fld-char-type "end"))))))
-           loc)))))
+             (some-> loc
+                     (zip/up) ;; run
+                     (->> (iterations zip/right)
+                          (find-first #(find-elem % :attr ooxml/fld-char-type "separate")))
+                     (zip/right)
+                     (fill-crossref-content parsed-ref (bookmark->meta (:id parsed-ref)))
+                     (zip/right)
+                     (->> (when-pred #(find-elem % :attr ooxml/fld-char-type "end"))))))
+       loc))))
 
 (defn fix-list-dirty-refs [xml-tree]
   (let [xml-tree (enrich-dirty-refs-meta xml-tree)
