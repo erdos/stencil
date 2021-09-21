@@ -1,4 +1,4 @@
-(defproject io.github.erdos/stencil-core "0.3.25"
+(defproject io.github.erdos/stencil-core "0.3.26-SNAPSHOT"
   :url "https://github.com/erdos/stencil"
   :description       "Templating engine for office documents."
   :license {:name "Eclipse Public License - v 2.0"
