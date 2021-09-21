@@ -137,14 +137,27 @@
             (not (:p flags)) (render-bookmark-content (:runs bookmark)))
       (cond-> (:p flags) (-> (some-> (str " ")) (str (render-list-position bookmark parsed-ref))))))
 
+;; lazy seq of all zippers in the subtree walked by preorder DFS graph traversal
+(defn- descendants [tree]
+  (assert (zipper? tree))
+  (cons tree
+        ((fn f [tree depth]
+           (if-let [d (zip/down tree)]
+             (cons d (lazy-seq (f d (inc depth))))
+             (loop [tree tree, depth depth]
+               (when (pos? depth)
+                 (if-let [r (zip/right tree)]
+                   (cons r (lazy-seq (f r depth)))
+                   (recur (zip/up tree) (dec depth)))))))
+         tree 0)))
+
 ;; Walks the tree (zipper) with DFS and returns the first node for given tag or attribute.
 (defn- find-elem [tree prop & [a b]]
   (assert (zipper? tree))
   (assert (keyword? a))
-  (let [items (take-while (comp complement #{(zip/node tree)} zip/node) (iterate zip/next tree))]
-    (case prop
-      :tag  (find-first (comp #{a} :tag zip/node) items)
-      :attr (find-first (comp #{b} a :attrs zip/node) items))))
+  (case prop
+    :tag  (find-first (comp #{a} :tag zip/node) (descendants tree))
+    :attr (find-first (comp #{b} a :attrs zip/node) (descendants tree))))
 
 (defn- parse-num-pr [node]
   (assert (= ooxml/num-pr (:tag node)))
