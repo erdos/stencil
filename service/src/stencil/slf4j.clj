@@ -39,7 +39,7 @@
         [level marker msg args throwable]
         (.write *out*
                 (str (java.time.LocalDateTime/now)
-                     "  " level " " caller-name " " (get-corr-id) " : " (msg+args msg args)
+                     " " level " " caller-name " " (get-corr-id) " : " (msg+args msg args)
                      \newline))
         (when throwable
           (.write *out* (pr-str throwable)))))))
