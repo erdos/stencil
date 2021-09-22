@@ -1,7 +1,6 @@
 (ns stencil.spec
   (:import [java.io File])
   (:require [clojure.spec.alpha :as s]
-            [clojure.tools.logging.impl] ;; hack for AOT
             [stencil.model :as m]
             [stencil.process]))
 
