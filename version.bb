@@ -38,7 +38,9 @@
   (-> file
       slurp
       (.replace old-str new-str)
-      (->> (spit file))))
+      (->> (spit file)))
+  (clojure.java.shell/sh "git" "add" (str file))
+  nil)
 
 (def current-version-parsed
   (-> "project.clj" slurp read-string nnext first parse-version))
@@ -55,8 +57,6 @@
      (reduce (fn [a [path val]] (assoc-in a path val)) {})
      (def versions))
 
-(println :versions versions)
-
 (replace-in-file "project.clj"
                  (-> versions :current :raw)
                  (-> versions :next :raw))
@@ -72,3 +72,5 @@
   (replace-in-file "README.md"
                    (-> versions :current :snapshot)
                    (-> versions :bump :snapshot)))
+
+(println :versions versions)

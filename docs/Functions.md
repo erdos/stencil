@@ -13,13 +13,14 @@ This is a short description of the functions implemented in Stencil:
 - [empty](#empty)
 - [floor](#floor)
 - [format](#format)
-- [formatWithLocale](#formatWithLocale)
+- [formatWithLocale](#formatwithlocale)
 - `hideColumn`
 - `hideRow`
 - [html](#html)
 - [integer](#integer)
 - [join](#join)
 - [length](#length)
+- [list](#list)
 - [lowercase](#lowercase)
 - [map](#map)
 - `percent`
@@ -63,6 +64,10 @@ of an array or hide the whole paragraph when the array is empty.
 
 <img src="screenshot-function-empty-before.png"/>
 
+### List
+
+Creates a list collection from the supplied arguments. Intended to be used with other collections functions.
+
 ### Integer
 
 Converts parameter to integer number. Returns `null` for missing value.
@@ -101,14 +106,21 @@ Joins a list of items with an optional separator.
 
 Formats a date value according to a given [format string](https://docs.oracle.com/javase/6/docs/api/java/text/SimpleDateFormat.html).
 
-Arguments:
+When called  with two arguments:
 
 1. First argument is a format string.
 2. Second argument is a string containing a date value.
 
+With three arguments:
+
+1. First argument is an IETF Language Tag string.
+2. Second argument is a format string.
+3. Third argument is a string containing a date value.
+
 **Example:**
 
-This example formats the value of `partner.birthDate` as a date string: <code>{<i>%=date("yyyy-MM-dd", partner.birthDate) %</i>}</code>
+1. This example formats the value of `birthDate` as a date string: <code>{<i>%=date("yyyy-MM-dd", birthDate) %</i>}</code>
+2. With locale: `date("hu", "YYYY MMMM d", "2021-05-20")` evaluates to `"2021 május 20"`.
 
 Also, try these formats strings:
 

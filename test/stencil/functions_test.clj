@@ -1,6 +1,7 @@
 (ns stencil.functions-test
   (:import [clojure.lang ExceptionInfo])
   (:require [stencil.functions :refer [call-fn]]
+            [stencil.model]
             [clojure.test :refer [deftest testing is are]]))
 
 
@@ -29,11 +30,48 @@
   (testing "Indexed parameters"
     (is (= "hello 42 41.00" (call-fn "format" "hello %2$d %1$,.2f" 41.0 42.0))))
   (is (= "hello john" (call-fn "format" "hello %s" "john")))
+  (testing "all types"
+    (are [out pattern param] (= out (call-fn "format" pattern param))
+      ;; %c and %C
+      "c" "%c" \c
+      "c" "%c" "c"
+      "null" "%c" nil
+      "C" "%C" \c
+      "C" "%C" "c"
+      "NULL" "%C" nil
+      ;; %d
+      "123" "%d"  123.4
+      "null" "%d" nil
+      ;; %o -- octal
+      "173" "%o" 123.4
+      "null" "%o" nil
+      ;; %x -- hexadecimal
+      "7b" "%x" 123
+      "7B" "%X" 123
+      "null" "%x" nil
+      "NULL" "%X" nil))
   (testing "Error handling"
     (is (thrown? clojure.lang.ArityException (call-fn "format")))
     (is (thrown? ExceptionInfo (call-fn "format" "pattern")))
     (is (thrown? ExceptionInfo (call-fn "format" 34 1)))
     (is (thrown? ExceptionInfo (call-fn "format" nil 2)))))
+
+
+(deftest test-date
+  (letfn [(date [& args] (.call io.github.erdos.stencil.functions.DateFunctions/DATE  (to-array args)))]
+    (testing "two arguments"
+      (is (= "2021/05/20" (date "YYYY/MM/d", "2021-05-20")))
+      (is (= nil (date nil, "2021-05-20")))
+      (is (= nil (date "YYYY/MM/d", nil))))
+    (testing "three arguments"
+      (is (= "2021 május 20" (date "hu" "YYYY MMMM d", "2021-05-20")))
+      (is (= nil (date "hu" nil, "2021-05-20")))
+      (is (= nil (date "hu" "YYYY MMMM d", nil)))
+      (is (= nil (date nil "YYYY MMMM d", "2021-05-20"))))))
+
+(deftest test-list
+  (is (= [] (call-fn "list")))
+  (is (= [1 nil 3] (call-fn "list" 1 nil 3))))
 
 (deftest test-map
   (testing "Empty input"
@@ -47,6 +85,8 @@
     (is (= [1 2 3]
            (call-fn "map" "x.y"
                     [{:x {:y 1}} {:x {:y 2}} {:x {:y 3}}]))))
+  (testing "Map out nils"
+    (is (= [] (call-fn "map" "k.x" [{:k {}} {:k nil}]))))
   (testing "Invalid input"
     (is (thrown? ExceptionInfo (call-fn "map" "x" "not-a-sequence")))
     (is (thrown? ExceptionInfo (call-fn "map" "x" {:x 1 :y 2})))

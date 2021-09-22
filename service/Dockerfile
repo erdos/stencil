@@ -10,13 +10,14 @@ RUN lein deps
 COPY . /usr/src/myapp
 
 RUN mv "$(lein uberjar | sed -n 's/^Created \(.*standalone\.jar\)/\1/p')" myapp-standalone.jar
-RUN jlink --strip-debug --add-modules "$(jdeps --print-module-deps --ignore-missing-deps myapp-standalone.jar)" --output /java
+RUN jlink --strip-debug --add-modules "$(jdeps --print-module-deps --ignore-missing-deps myapp-standalone.jar)" --add-modules jdk.localedata --output /java
 
 FROM debian:10.10-slim
 
 ENV STENCIL_HTTP_PORT 8080
 ENV STENCIL_TEMPLATE_DIR /templates
 ENV STENCIL_JAVA_OPTIONS -XX:+PrintFlagsFinal
+ENV STENCIL_LOG_LEVEL info
 
 VOLUME /templates
 

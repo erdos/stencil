@@ -1,4 +1,4 @@
-(defproject io.github.erdos/stencil-core "0.3.22-SNAPSHOT"
+(defproject io.github.erdos/stencil-core "0.3.27-SNAPSHOT"
   :url "https://github.com/erdos/stencil"
   :description       "Templating engine for office documents."
   :license {:name "Eclipse Public License - v 2.0"
@@ -8,8 +8,7 @@
   :javac-options     ["-target" "8" "-source" "8"]
   :dependencies [[org.clojure/clojure "1.9.0"]
                  [org.clojure/data.xml "0.2.0-alpha6"]
-                 [org.clojure/tools.logging "1.1.0"]
-                 [org.slf4j/slf4j-api "1.6.2"]]
+                 [org.slf4j/slf4j-api "1.7.32"]]
   :pom-addition ([:properties ["maven.compiler.source" "8"] ["maven.compiler.target" "8"]])
   :pom-plugins [[org.apache.maven.plugins/maven-surefire-plugin "2.20"]]
   :main io.github.erdos.stencil.Main
@@ -24,6 +23,7 @@
                                :username :env/clojars_user
                                :password :env/clojars_pass
                                :sign-releases false}]]
+  :filespecs [{:type :bytes, :path "stencil-version", :bytes ~(-> "project.clj" slurp read-string nnext first)}]
   :profiles {:uberjar {:aot :all}
              :dev {:aot :all
                    :dependencies [[org.slf4j/slf4j-simple "1.6.2"]]

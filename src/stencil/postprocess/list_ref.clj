@@ -2,7 +2,7 @@
   (:require [stencil.util :refer :all]
             [stencil.ooxml :as ooxml]
             [stencil.model.numbering :as numbering]
-            [clojure.tools.logging :as log]
+            [stencil.log :as log]
             [clojure.zip :as zip]))
 
 (set! *warn-on-reflection* true)
@@ -137,14 +137,27 @@
             (not (:p flags)) (render-bookmark-content (:runs bookmark)))
       (cond-> (:p flags) (-> (some-> (str " ")) (str (render-list-position bookmark parsed-ref))))))
 
+;; lazy seq of all zippers in the subtree walked by preorder DFS graph traversal
+(defn- descendants [tree]
+  (assert (zipper? tree))
+  (cons tree
+        ((fn f [tree depth]
+           (if-let [d (zip/down tree)]
+             (cons d (lazy-seq (f d (inc depth))))
+             (loop [tree tree, depth depth]
+               (when (pos? depth)
+                 (if-let [r (zip/right tree)]
+                   (cons r (lazy-seq (f r depth)))
+                   (recur (zip/up tree) (dec depth)))))))
+         tree 0)))
+
 ;; Walks the tree (zipper) with DFS and returns the first node for given tag or attribute.
 (defn- find-elem [tree prop & [a b]]
   (assert (zipper? tree))
   (assert (keyword? a))
-  (let [items (take-while (comp complement #{(zip/node tree)} zip/node) (iterate zip/next tree))]
-    (case prop
-      :tag  (find-first (comp #{a} :tag zip/node) items)
-      :attr (find-first (comp #{b} a :attrs zip/node) items))))
+  (case prop
+    :tag  (find-first (comp #{a} :tag zip/node) (descendants tree))
+    :attr (find-first (comp #{b} a :attrs zip/node) (descendants tree))))
 
 (defn- parse-num-pr [node]
   (assert (= ooxml/num-pr (:tag node)))
@@ -183,11 +196,11 @@
                                      (::enumeration)
                                      (:stack))
               replacement (render-list definitions bookmark parsed-ref (or current-stack ()))]
-          (log/debug "Replacing" old-content "with" replacement "in" (:id parsed-ref))
+          (log/debug "Replacing {} with {} in {}" old-content replacement (:id parsed-ref))
           (-> txt
               (zip/edit assoc :content [replacement])
               (zip/up)))
-        (do (log/warn "Reference source not found. Previous content:" old-content "id:" (:id parsed-ref))
+        (do (log/warn "Reference source not found. Previous content: {} id: {}" old-content (:id parsed-ref))
             ;(zip/edit txt assoc :content ["Error; Reference source not found."])
             nil)))))
 

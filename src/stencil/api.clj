@@ -82,6 +82,5 @@
         :else (throw (ex-info "Unexpected object to clean up!" {:template template})))
   template)
 
-(defmacro ^:private get-version [] (System/getProperty "stencil-core.version"))
-
-(def version (get-version))
+(def version (or (some-> (io/resource "stencil-version") slurp)
+                 (System/getProperty "stencil-core.version")))

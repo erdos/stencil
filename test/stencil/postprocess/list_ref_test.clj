@@ -1,7 +1,45 @@
 (ns stencil.postprocess.list-ref-test
   (:require [stencil.postprocess.list-ref :refer :all]
-            [clojure.test :refer [deftest testing is are]]
+            [stencil.util :refer [xml-zip]]
+            [clojure.test :refer [deftest testing is]]
+            [clojure.zip :as zip]
             [stencil.integration :as integration]))
+
+
+(declare -find-elem -descendants)
+
+
+;; make all private maps public!
+(let [target (the-ns 'stencil.postprocess.list-ref)]
+  (doseq [[k v] (ns-map target)
+          :when (and (var? v) (= target (.ns ^clojure.lang.Var v)))]
+    (eval `(defn ~(symbol (str "-" k)) [~'& args#] (apply (deref ~v) args#)))))
+
+
+(deftest test-descendants
+  (let [tree (xml-zip {:tag :0
+                       :content [{:tag :a :content [{:tag :b}
+                                                    {:tag :c :content [{:tag :d}]}
+                                                    {:tag :e}]}]})]
+    (testing "siblings are not returned"
+      (is (= [{:tag :b}]
+             (->> tree zip/down zip/down -descendants (map zip/node)))))
+    (is (= [:a :b :c :d :e]
+           (map (comp :tag zip/node) (-descendants (zip/down tree)))))
+    (is (= [1 2 3 4]
+           (map zip/node (next (-descendants (xml-zip {:tag :0 :content [1 2 3 4]}))))))))
+
+
+(deftest test-find-elem
+  (let [tree (xml-zip {:tag :a :content [{:tag :b :content [1 2 3]}
+                                         {:tag :c :content [4 5 6]}]})]
+    (testing "Test by tag name"
+      (testing "Find root"
+        (is (= (zip/node tree) (zip/node (-find-elem tree :tag :a)))))
+      (let [f (-find-elem tree :tag :b)]
+        (is (= {:tag :b :content [1 2 3]} (zip/node f))))
+      (is (= nil (-find-elem tree :tag :not-found)))
+      (is (= nil (-find-elem (zip/down tree) :tag :a))))))
 
 
 (deftest render-number-decimal
