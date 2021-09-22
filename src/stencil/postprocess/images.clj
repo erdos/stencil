@@ -1,7 +1,7 @@
 (ns stencil.postprocess.images
   (:require [clojure.java.io :as io]
-            [clojure.tools.logging :as log]
             [clojure.zip :as zip]
+            [stencil.log :as log]
             [stencil.ooxml :as ooxml]
             [stencil.model.relations :refer [rel-type-image]]
             [stencil.util :refer [fail find-first iterations dfs-walk-xml-node]])
@@ -37,7 +37,7 @@
   (let [current-rel (-> img-node :attrs ooxml/r-embed)
         new-val     (-> data .relation)]
     (assert new-val)
-    (log/debug "Replacing image relation" current-rel "by" new-val)
+    (log/debug "Replacing image relation {} by {}" current-rel new-val)
     (assoc-in img-node [:attrs ooxml/r-embed] new-val)))
 
 (defn- replace-image [marker-loc]

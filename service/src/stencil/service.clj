@@ -3,10 +3,10 @@
   (:import [java.io File])
   (:require [org.httpkit.server :refer [run-server]]
             [stencil.api :as api]
+            [stencil.log :as log]
+            [stencil.slf4j :as slf4j]
             [clojure.data :refer [diff]]
             [clojure.java.io :refer [file]]
-            [clojure.string :as s]
-            [clojure.tools.logging :as log]
             [ring.middleware.json :refer [wrap-json-body]]))
 
 (set! *warn-on-reflection* true)
@@ -51,25 +51,22 @@
   (fn [request]
     (try (handler request)
          (catch clojure.lang.ExceptionInfo e
-           (log/error "Error" e)
            (if-let [status (:status (ex-data e))]
-             {:status status
-              :body (str "ERROR: " (.getMessage e))}
-             (throw e))))))
-
-(def log-levels
-  (let [levels [:trace :debug :info :warn :error :fatal]]
-    (into {} (map-indexed (fn [idx level] [(name level) (set (drop idx levels))]) levels))))
-
-(def ^:dynamic *active-log-levels* (log-levels "debug"))
-(def ^:dynamic *corr-id* "SYSTEM")
+             (do (log/error "Render error={}" (.getMessage e))
+                 {:status status
+                  :body (str "ERROR: " (.getMessage e))})
+             (do (log/error "Error" e)
+                 (throw e)))))))
 
 (defn- wrap-log [handler]
   (fn [req]
-    (binding [*active-log-levels* (log-levels (get-in req [:headers "x-stencil-log"] "info"))
-              *corr-id*           (or (get-in req [:headers "x-stencil-corr-id"])
-                                      (subs (str (java.util.UUID/randomUUID)) 0 8))]
-      (handler req))))
+    (slf4j/with-mdc ["log-level" (get-in req [:headers "x-stencil-log"] "info")
+                     "corr-id"   (or (get-in req [:headers "x-stencil-corr-id"])
+                                     (subs (str (java.util.UUID/randomUUID)) 0 8))]
+      (let [response (handler req)]
+        (when (not= 200 (:status response))
+          (log/error "Response status was {}" (:status response)))
+        response))))
 
 (defn -app [request]
   (cond
@@ -78,13 +75,13 @@
      :body "I am alive."}
 
     (= :post (:request-method request) :post)
-    (if-let [prepared (get-template (:uri request))]
-      (let [rendered (api/render! prepared (:body request) :output :input-stream)]
-        (log/info "Successfully rendered template" (:uri request))
-        (flush)
-        {:status 200
-         :body rendered
-         :headers {"content-type" "application/octet-stream"}}))
+    (let [prepared (get-template (:uri request))
+          rendered (api/render! prepared (:body request) :output :input-stream)]
+      (log/info "Successfully rendered template {}" (:uri request))
+      (flush)
+      {:status 200
+       :body rendered
+       :headers {"content-type" "application/octet-stream"}})
 
     :else
     (throw (ex-info "Method Not Allowed" {:status 405}))))
@@ -92,30 +89,16 @@
 (def app
   (-> -app
       (wrap-json-body {:keywords? false})
-      (wrap-log)
-      (wrap-err)))
-
-(defn- ns-get-logger [log-ns]
-  (reify clojure.tools.logging.impl.Logger
-    (enabled? [_ level] (contains? *active-log-levels* level))
-    (write! [_ level throwable message]
-      (printf "%s %s %s %s : %s\n"
-              (java.time.OffsetDateTime/now) (s/upper-case (name level)) log-ns *corr-id* message))))
-
-(alter-var-root
- #'clojure.tools.logging/*logger-factory*
- (constantly
-  (reify clojure.tools.logging.impl.LoggerFactory
-    (name [_] "stencil-own-logger")
-    (get-logger [_ log-ns] (ns-get-logger log-ns)))))
+      (wrap-err)
+      (wrap-log)))
 
 (defn -main [& args]
-  (log/info "Starting Stencil Service" api/version)
+  (log/info "Starting Stencil Service {}" api/version)
   (let [http-port    (get-http-port)
         template-dir ^File (get-template-dir)
         server (run-server app {:port http-port})]
-    (log/info "Started listening on" http-port "serving" (str template-dir))
-    (log/info "Available template files: ")
+    (log/info "Started listening on {} serving {}" http-port (str template-dir))
+    (log/info "Available template files:")
     (doseq [^File line (file-seq template-dir)
             :when (.isFile line)]
-      (log/info (str (.relativize (.toPath template-dir) (.toPath line)))))))
+      (log/info "- {}" (.relativize (.toPath template-dir) (.toPath line))))))

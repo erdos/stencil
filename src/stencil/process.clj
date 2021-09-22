@@ -5,7 +5,7 @@
            [io.github.erdos.stencil PrepareOptions]
            [io.github.erdos.stencil.impl FileHelper ZipHelper])
   (:require [clojure.java.io :as io]
-            [clojure.tools.logging :as log]
+            [stencil.log :as log]
             [stencil.model :as model]))
 
 (set! *warn-on-reflection* true)
@@ -57,7 +57,7 @@
              :let  [rel-path (FileHelper/toUnixSeparatedString (.toPath (io/file k)))
                     ze       (new ZipEntry rel-path)]]
        (assert (not (.contains rel-path "../")))
-       (log/trace "ZIP: writing %s" rel-path)
+       (log/trace "ZIP: writing {}" rel-path)
        (.putNextEntry zipstream ze)
        (writer zipstream)
        (.closeEntry zipstream)))))

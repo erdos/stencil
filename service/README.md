@@ -85,3 +85,19 @@ This happens when the template could not be evaluated.
 This happens when you do not send a `POST` request.
 
 - status `405`
+
+### Logging
+
+Logs are printed to standard output in the following format:
+
+```
+date-time log-level namespace correlation-id : log-message
+```
+
+For example:
+
+```
+2021-08-15T15:32:44.025129Z INFO stencil.service 71631d49 : Successfully rendered template /test-functions.docx
+```
+
+You can bind the `STENCIL_LOG_LEVEL` environment variable to change the default logging level from `info`. Acceptible values: `trace`, `debug`, `info`, `warn`, `error`, `fatal`.

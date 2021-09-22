@@ -2,7 +2,7 @@
   (:require [stencil.util :refer :all]
             [stencil.ooxml :as ooxml]
             [stencil.model.numbering :as numbering]
-            [clojure.tools.logging :as log]
+            [stencil.log :as log]
             [clojure.zip :as zip]))
 
 (set! *warn-on-reflection* true)
@@ -196,11 +196,11 @@
                                      (::enumeration)
                                      (:stack))
               replacement (render-list definitions bookmark parsed-ref (or current-stack ()))]
-          (log/debug "Replacing" old-content "with" replacement "in" (:id parsed-ref))
+          (log/debug "Replacing {} with {} in {}" old-content replacement (:id parsed-ref))
           (-> txt
               (zip/edit assoc :content [replacement])
               (zip/up)))
-        (do (log/warn "Reference source not found. Previous content:" old-content "id:" (:id parsed-ref))
+        (do (log/warn "Reference source not found. Previous content: {} id: {}" old-content (:id parsed-ref))
             ;(zip/edit txt assoc :content ["Error; Reference source not found."])
             nil)))))
 
