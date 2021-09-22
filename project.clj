@@ -13,7 +13,11 @@
   :pom-plugins [[org.apache.maven.plugins/maven-surefire-plugin "2.20"]]
   :main io.github.erdos.stencil.Main
   :aliases      {"junit" ["with-profile" "+test" "test-out" "junit" "junit.xml"]
-                 "coverage" ["with-profile" "+ci" "cloverage" "--codecov" "--exclude-call" "clojure.core/assert" "--exclude-call" "stencil.util/trace" "--exclude-call" "stencil.util/fail"]}
+                 "coverage" ["with-profile" "+ci" "cloverage" "--codecov"
+                             "--exclude-call" "clojure.core/assert"
+                             "--exclude-call" "stencil.util/trace"
+                             "--exclude-call" "stencil.util/fail"
+                             "--exclude-call" "clojure.spec.alpha/def"]}
   :javadoc-opts {:package-names ["stencil"]
                  :additional-args ["-overview" "java-src/overview.html"
                                    "-top" "<style>kbd{background:#ddd}; a[title~=class], a[title~=interface], a[title~=enum]{text-decoration: underline; font-weight: bold} dd>code{background:#eee}</style>"]}
