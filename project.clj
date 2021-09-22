@@ -26,7 +26,7 @@
   :filespecs [{:type :bytes, :path "stencil-version", :bytes ~(-> "project.clj" slurp read-string nnext first)}]
   :profiles {:uberjar {:aot :all}
              :dev {:aot :all
-                   :dependencies [[org.slf4j/slf4j-simple "1.6.2"]]
+                   :dependencies [[org.slf4j/slf4j-simple "2.0.0-alpha1"]]
                    :injections [
                                 (require 'stencil.spec)
                                 (require '[clojure.spec.alpha :as s])]
