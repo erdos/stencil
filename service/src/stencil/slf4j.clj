@@ -52,5 +52,5 @@
   (getLoggerFactory [_] logger-factory)
   (getMarkerFactory [_] nil)
   (getMDCAdapter [_] mdc-adapter)
-  (getRequesteApiVersion [_] "1.8") ;; TODO
+  (getRequestedApiVersion [_] "2.0.99")
   (initialize [_]))

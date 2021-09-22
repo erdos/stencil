@@ -5,6 +5,7 @@
             :url "https://www.eclipse.org/legal/epl-2.0/"}
   :dependencies [[org.clojure/clojure "1.10.2-alpha2"]
                  [io.github.erdos/stencil-core "0.3.27-SNAPSHOT"]
+                 [org.slf4j/slf4j-api "2.0.0-alpha5"]
                  [http-kit "2.5.0"]
                  [ring/ring-json "0.4.0"]]
   :aot :all
