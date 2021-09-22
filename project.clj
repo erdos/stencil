@@ -8,7 +8,7 @@
   :javac-options     ["-target" "8" "-source" "8"]
   :dependencies [[org.clojure/clojure "1.9.0"]
                  [org.clojure/data.xml "0.2.0-alpha6"]
-                 [org.slf4j/slf4j-api "1.7.32"]]
+                 [org.slf4j/slf4j-api "2.0.0-alpha5"]]
   :pom-addition ([:properties ["maven.compiler.source" "8"] ["maven.compiler.target" "8"]])
   :pom-plugins [[org.apache.maven.plugins/maven-surefire-plugin "2.20"]]
   :main io.github.erdos.stencil.Main
@@ -26,7 +26,7 @@
   :filespecs [{:type :bytes, :path "stencil-version", :bytes ~(-> "project.clj" slurp read-string nnext first)}]
   :profiles {:uberjar {:aot :all}
              :dev {:aot :all
-                   :dependencies [[org.slf4j/slf4j-simple "2.0.0-alpha1"]]
+                   :dependencies [[org.slf4j/slf4j-simple "2.0.0-alpha5"]]
                    :injections [
                                 (require 'stencil.spec)
                                 (require '[clojure.spec.alpha :as s])]
