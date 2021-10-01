@@ -17,7 +17,9 @@
       (list '. '(stencil.log/logger) '~level msg# arg#))
      ([msg# arg0# ~'& args#]
       (assert (string? msg#))
-      (list '. '(stencil.log/logger) '~level msg# (list 'to-array (list* 'list arg0# args#))))))
+      (->> (list* 'list arg0# args#)
+           (list 'to-array)
+           (list '. '(stencil.log/logger) '~level msg#)))))
 
 (declare trace debug info warn error fatal)
 
@@ -26,4 +28,3 @@
 (def-log-level info)
 (def-log-level warn)
 (def-log-level error)
-(def-log-level fatal)
