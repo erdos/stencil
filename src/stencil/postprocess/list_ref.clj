@@ -138,7 +138,7 @@
       (cond-> (:p flags) (-> (some-> (str " ")) (str (render-list-position bookmark parsed-ref))))))
 
 ;; lazy seq of all zippers in the subtree walked by preorder DFS graph traversal
-(defn- descendants [tree]
+(defn- locs-seq [tree]
   (assert (zipper? tree))
   (cons tree
         ((fn f [tree depth]
@@ -156,8 +156,8 @@
   (assert (zipper? tree))
   (assert (keyword? a))
   (case prop
-    :tag  (find-first (comp #{a} :tag zip/node) (descendants tree))
-    :attr (find-first (comp #{b} a :attrs zip/node) (descendants tree))))
+    :tag  (find-first (comp #{a} :tag zip/node) (locs-seq tree))
+    :attr (find-first (comp #{b} a :attrs zip/node) (locs-seq tree))))
 
 (defn- parse-num-pr [node]
   (assert (= ooxml/num-pr (:tag node)))
