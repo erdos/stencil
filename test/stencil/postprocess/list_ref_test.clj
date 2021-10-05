@@ -6,7 +6,7 @@
             [stencil.integration :as integration]))
 
 
-(declare -find-elem -descendants)
+(declare -find-elem -locs-seq)
 
 
 ;; make all private maps public!
@@ -16,18 +16,18 @@
     (eval `(defn ~(symbol (str "-" k)) [~'& args#] (apply (deref ~v) args#)))))
 
 
-(deftest test-descendants
+(deftest test-locs-seq
   (let [tree (xml-zip {:tag :0
                        :content [{:tag :a :content [{:tag :b}
                                                     {:tag :c :content [{:tag :d}]}
                                                     {:tag :e}]}]})]
     (testing "siblings are not returned"
       (is (= [{:tag :b}]
-             (->> tree zip/down zip/down -descendants (map zip/node)))))
+             (->> tree zip/down zip/down -locs-seq (map zip/node)))))
     (is (= [:a :b :c :d :e]
-           (map (comp :tag zip/node) (-descendants (zip/down tree)))))
+           (map (comp :tag zip/node) (-locs-seq (zip/down tree)))))
     (is (= [1 2 3 4]
-           (map zip/node (next (-descendants (xml-zip {:tag :0 :content [1 2 3 4]}))))))))
+           (map zip/node (next (-locs-seq (xml-zip {:tag :0 :content [1 2 3 4]}))))))))
 
 
 (deftest test-find-elem
