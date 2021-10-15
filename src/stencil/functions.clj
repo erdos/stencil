@@ -91,7 +91,9 @@
     (fail "First parameter of map() must be a string!" {}))
   (reduce (fn [elems p]
             (if (empty? p)
-              (do (doseq [e elems :when (not (or (nil? e) (sequential? e)))]
+              (do (doseq [e elems :when (not (or (nil? e)
+                                                 (sequential? e)
+                                                 (instance? java.util.List e)))]
                     (fail "Wrong data, expected sequence, got: " {:data e}))
                   (mapcat seq elems))
               (do (doseq [e elems :when (not (or (nil? e) (map? e)))]

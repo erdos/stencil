@@ -81,12 +81,24 @@
   (testing "Simple cases"
     (is (= [1 2 3]
            (call-fn "map" "x" [{:x 1} {:x 2} {:x 3}]))))
+  (testing "Multidimensional array"
+    (is (= [1 2 3 4]
+           (call-fn "map" ".x" [[{:x 1} {:x 2}] [{:x 3} {:x 4}]])))
+    (is (= [1 2 3 4]
+           (call-fn "map" ".x" [(new java.util.ArrayList [{:x 1} {:x 2}])
+                                (new java.util.LinkedList [{:x 3} {:x 4}])]))))
   (testing "Nested input"
+    (is (= [1 2 3 4]
+           (call-fn "map" "x..y"
+                    [{:x [{:y 1} {:y 2}]} {:x [{:y 3} {:y 4}]}])))
     (is (= [1 2 3]
            (call-fn "map" "x.y"
                     [{:x {:y 1}} {:x {:y 2}} {:x {:y 3}}]))))
   (testing "Map out nils"
     (is (= [] (call-fn "map" "k.x" [{:k {}} {:k nil}]))))
+  (testing "On java list"
+    (is (= [1 2 3]
+           (call-fn "map" "x" (new java.util.ArrayList [{:x 1} {:x 2} {:x 3}])))))
   (testing "Invalid input"
     (is (thrown? ExceptionInfo (call-fn "map" "x" "not-a-sequence")))
     (is (thrown? ExceptionInfo (call-fn "map" "x" {:x 1 :y 2})))
