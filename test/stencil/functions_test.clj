@@ -104,6 +104,14 @@
     (is (thrown? ExceptionInfo (call-fn "map" "x" {:x 1 :y 2})))
     (is (thrown? ExceptionInfo (call-fn "map" 1 [])))))
 
+(deftest test-join-and
+  (are [expect param] (= expect (call-fn "joinAnd" param ", " " and "))
+    ""           nil
+    ""           []
+    "1"          [1]
+    "1 and 2"    [1 2]
+    "1, 2 and 3" [1 2 3]))
+
 (import '[stencil.types ReplaceImage])
 (def data-uri "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==")
 
