@@ -2,7 +2,7 @@
   "Parsing and evaluating infix algebraic expressions.
 
   https://en.wikipedia.org/wiki/Shunting-yard_algorithm"
-  (:require [stencil.util :refer [fail update-peek]]
+  (:require [stencil.util :refer [fail update-peek ->int]]
             [stencil.log :as log]
             [stencil.functions :refer [call-fn]]))
 
@@ -307,7 +307,11 @@
 (def-reduce-step :gt [s0 s1] (> s1 s0))
 (def-reduce-step :gte [s0 s1] (>= s1 s0))
 (def-reduce-step :power [s0 s1] (Math/pow s1 s0))
-(def-reduce-step :get [a b] (get b (if (vector? b) a (str a))))
+(def-reduce-step :get [a b]
+  (cond (sequential? b) (when (number? a) (get b (->int a)))
+        (string? b)     (when (number? a) (get b (->int a)))
+        (instance? java.util.List b) (when (number? a) (.get ^java.util.List b (->int a)))
+        :else           (get b (str a))))
 
 (defn eval-rpn
   ([bindings default-function tokens]
