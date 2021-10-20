@@ -19,7 +19,7 @@ This is a short description of the functions implemented in Stencil:
 - [html](#html)
 - [integer](#integer)
 - [join](#join)
-- [joinAnd](#joinAnd)
+- [joinAnd](#joinand)
 - [length](#length)
 - [list](#list)
 - [lowercase](#lowercase)
@@ -108,7 +108,7 @@ Joins a list of items with an optional separator.
 Joins a list of items using two separators. The first separator is used to join the items except for the last item. The second separator is used to join the last item. When two items are supplied, then
 only the second separator is used.
 
-**Example:** call <code>join(xs, ", ", " and ")</code> to get <code>"1, 2, 3 and 4"</code>.
+**Example:** call <code>joinAnd(xs, ", ", " and ")</code> to get <code>"1, 2, 3 and 4"</code>.
 
 ### Date
 
