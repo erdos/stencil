@@ -1,7 +1,8 @@
 (ns stencil.api-test
   (:import [io.github.erdos.stencil.exceptions EvalException])
   (:require [clojure.test :refer [deftest testing is]]
-            [stencil.api :refer [prepare render! fragment cleanup!]]))
+            [stencil.api :refer [prepare render! fragment cleanup!]]
+            [stencil.functions :refer [call-fn]]))
 
 (deftest test-prepare+render+cleanup
   (let [template (prepare "./examples/Purchase Reminder/template.docx")
@@ -145,3 +146,16 @@
                          "footer" footer}
              :output "/tmp/out-multipart.docx"
              :overwrite? true)))
+
+(deftest test-custom-function
+  (with-open [template (prepare "test-resources/test-custom-function.docx")]
+    (let [called (atom false)
+          f (java.io.File/createTempFile "stencil" ".docx")]
+      (try
+        (defmethod call-fn "customFunction"
+          [_ & args]
+          (reset! called true)
+          (first args))
+        (render! template {:input "data"} :output f :overwrite? true)
+        (is @called)
+        (finally (remove-method call-fn "customFunction"))))))
