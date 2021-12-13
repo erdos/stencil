@@ -77,11 +77,3 @@
   (is (= {:a 1} (update-some {:a 1} [:b] inc)))
   (is (= {:a 2 :x 1} (update-some {:a 1 :x 1} [:a] inc)))
   (is (= {:a 1 :x 1} (update-some {:a 1 :x 1} [:a] #{}))))
-
-(deftest concatv-test
-  (is (vector? (concatv)))
-  (is (= [] (concatv)))
-  (is (= [] (concatv nil)))
-  (is (= [] (concatv nil nil)))
-  (is (= [1] (concatv '(1))))
-  (is (= [1 2 3 4] (concatv '(1 2) '(3 4)))))

@@ -40,7 +40,7 @@
                          (let [tree (xml/parse r)
                                all-ids (set (keep (comp ooxml/style-id :attrs) (:content tree)))
                                insertable (vals (apply dissoc @*current-styles* all-ids))]
-                           (update tree :content concatv insertable)))]
+                           (update tree :content (comp vec concat) insertable)))]
      {:writer (->xml-writer extended-tree)})))
 
 
