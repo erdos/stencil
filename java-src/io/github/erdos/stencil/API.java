@@ -1,12 +1,15 @@
 package io.github.erdos.stencil;
 
+import io.github.erdos.stencil.functions.Function;
 import io.github.erdos.stencil.impl.NativeEvaluator;
 import io.github.erdos.stencil.impl.NativeTemplateFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Map;
 
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 
 public final class API {
@@ -46,10 +49,18 @@ public final class API {
     }
 
     public static EvaluatedDocument render(PreparedTemplate template, TemplateData data) {
-        return render(template, emptyMap(), data);
+        return render(template, emptyMap(), data, emptyList());
     }
 
     public static EvaluatedDocument render(PreparedTemplate template, Map<String, PreparedFragment> fragments, TemplateData data) {
-        return new NativeEvaluator().render(template, fragments, data);
+        return render(template, fragments, data, emptyList());
+    }
+
+    public static EvaluatedDocument render(PreparedTemplate template, Map<String, PreparedFragment> fragments, TemplateData data, Collection<Function> customFunctions) {
+        final NativeEvaluator evaluator = new NativeEvaluator();
+        if (customFunctions != null) {
+            evaluator.getFunctionEvaluator().registerFunctions(customFunctions.toArray(new Function[0]));
+        }
+        return evaluator.render(template, fragments, data);
     }
 }

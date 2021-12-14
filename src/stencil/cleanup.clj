@@ -7,7 +7,7 @@
 
   valid XML String -> tokens -> Annotated Control AST -> Normalized Control AST -> Evaled AST -> Hiccup or valid XML String
   "
-  (:require [stencil.util :refer [keepv mod-stack-top-conj mod-stack-top-last parsing-exception stacks-difference-key]]
+  (:require [stencil.util :refer [mod-stack-top-conj mod-stack-top-last parsing-exception stacks-difference-key]]
             [stencil.types :refer [open-tag close-tag ->CloseTag]]))
 
 (set! *warn-on-reflection* true)
@@ -124,19 +124,19 @@
 (defmethod control-ast-normalize-step :if [control-ast]
   (case (count (:blocks control-ast))
     2 (let [[then else] (:blocks control-ast)
-            then2 (concat (keepv control-ast-normalize (:children then))
+            then2 (concat (keep control-ast-normalize (:children then))
                           (stack-revert-close (:before else))
                           (:after else))
             else2 (concat (stack-revert-close (:before then))
                           (:after then)
-                          (keepv control-ast-normalize (:children else)))]
+                          (keep control-ast-normalize (:children else)))]
         (-> (dissoc control-ast :blocks)
             (assoc :then (vec then2) :else (vec else2))))
 
     1 (let [[then] (:blocks control-ast)
             else   (:after then)]
         (-> (dissoc control-ast :blocks)
-            (assoc :then (keepv control-ast-normalize (:children then)), :else else)))
+            (assoc :then (vec (keep control-ast-normalize (:children then)),) :else else)))
     ;; default
     (throw (parsing-exception (str open-tag "else" close-tag)
                               "Too many {%else%} tags in one condition!"))))
@@ -151,7 +151,7 @@
     (throw (parsing-exception (str open-tag "else" close-tag)
                               "Unexpected {%else%} in a loop!")))
   (let [[{:keys [children before after]}] (:blocks control-ast)
-        children (keepv control-ast-normalize children)]
+        children (keep control-ast-normalize children)]
     (-> control-ast
         (dissoc :blocks)
         (assoc :body-run-none (vec (concat (stack-revert-close before) after))
@@ -162,7 +162,7 @@
   "Mélységi bejárással rekurzívan normalizálja az XML fát."
   [control-ast]
   (cond
-    (vector? control-ast) (vec (flatten (keepv control-ast-normalize control-ast)))
+    (vector? control-ast) (vec (flatten (keep control-ast-normalize control-ast)))
     (:text control-ast)   control-ast
     (:open control-ast)   control-ast
     (:close control-ast)  control-ast

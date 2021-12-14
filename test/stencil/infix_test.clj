@@ -135,6 +135,10 @@
     (is (= nil (run "a[1]"     {}))))
 
   (testing "array access"
+    (is (= \t (run "a[1]"     {"a" "stencil"})))
+    (is (= nil (run "a['1']"  {"a" "stencil"})))
+    (is (= "y" (run "a[1]"    {"a" (new java.util.ArrayList ["x" "y" "z"])})))
+    (is (= nil (run "a['1']"  {"a" (new java.util.ArrayList ["x" "y" "z"])})))
     (is (= nil (run "a[1]"    {"a" []})))
     (is (= nil (run "a['1']"  {"a" ["x" "y" "z"]})))
     (is (= "y" (run "a[1]"    {"a" ["x" "y" "z"]})))))

@@ -1,6 +1,7 @@
 (ns stencil.functions
   "Function definitions"
-  (:require [stencil.types :refer [->HideTableColumnMarker ->HideTableRowMarker]]
+  (:require [clojure.string]
+            [stencil.types :refer [->HideTableColumnMarker ->HideTableRowMarker]]
             [stencil.util :refer [fail find-first]]))
 
 (set! *warn-on-reflection* true)
@@ -20,7 +21,7 @@
 (defmethod call-fn "decimal" [_ f] (some-> f bigdec))
 
 ;; The format() function calls java.lang.String.format()
-;; but it predicts the argumet types from the format string and
+;; but it predicts the argument types from the format string and
 ;; converts the argument values to the correct types to prevent runtime errors.
 (let [fs-pattern #"%(?:(\d+)\$)?([-#+ 0,(\<]*)?(\d+)?(\.\d+)?([tT])?([a-zA-Z%])"
       get-types  (fn [pattern-str]
@@ -91,7 +92,9 @@
     (fail "First parameter of map() must be a string!" {}))
   (reduce (fn [elems p]
             (if (empty? p)
-              (do (doseq [e elems :when (not (or (nil? e) (sequential? e)))]
+              (do (doseq [e elems :when (not (or (nil? e)
+                                                 (sequential? e)
+                                                 (instance? java.util.List e)))]
                     (fail "Wrong data, expected sequence, got: " {:data e}))
                   (mapcat seq elems))
               (do (doseq [e elems :when (not (or (nil? e) (map? e)))]
@@ -99,3 +102,9 @@
                   (keep (partial lookup p) elems))))
           data
           (.split column "\\.")))
+
+(defmethod call-fn "joinAnd" [_ elements ^String separator1 ^String separator2]
+  (case (count elements)
+     0 ""
+     1 (str (first elements))
+     (str (clojure.string/join separator1 (butlast elements)) separator2 (last elements))))

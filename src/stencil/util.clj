@@ -52,9 +52,6 @@
 (defn find-first [pred xs] (first (filter pred xs)))
 (defn find-last [pred xs] (last (filter pred xs)))
 
-(defn keepv [f xs] (vec (keep f xs)))
-(defn concatv [& xs] (vec (apply concat xs)))
-
 (def xml-zip
   "Like clojure.zip/xml-zip but more flexible. Only maps are considered branches."
   (partial clojure.zip/zipper

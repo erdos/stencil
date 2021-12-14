@@ -108,6 +108,25 @@ public class JsonParserTest {
     }
 
     @Test
+    public void readNumberNegativeTest() throws IOException {
+        final String input = "-3";
+        PushbackReader pbr = pbr(input);
+
+        final Number result = JsonParser.readNumber(pbr);
+        assertEquals(new BigDecimal("-3"), result);
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void readMapWithNegativeValue() throws IOException {
+        String input = "{\n" + "  \"test\": -3\n" + "}";
+        PushbackReader pbr = pbr(input);
+
+        Map<String, Object> result = (Map<String, Object>) JsonParser.read(pbr);
+        assertEquals(new BigDecimal("-3"), result.get("test"));
+    }
+
+    @Test
     public void readScalarsTest() throws IOException {
         assertEquals(true, JsonParser.read(pbr("true")));
         assertEquals(false, JsonParser.read(pbr("false")));

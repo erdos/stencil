@@ -1,25 +1,24 @@
 (ns stencil.log)
 
-(def get-logger
+(def ^org.slf4j.Logger get-logger
   (memoize (fn [^String name] (.getLogger (org.slf4j.LoggerFactory/getILoggerFactory) name))))
-
-(defn ^org.slf4j.Logger logger []
-  (get-logger (.toString (.getName *ns*))))
 
 (defmacro ^:private def-log-level [level]
   `(defmacro ~level
      ([^String msg#]
       (assert (string? msg#))
       (assert (not (.contains msg# "{}")))
-      (list '. '(stencil.log/logger) '~level msg#))
+      (list '. (list 'stencil.log/get-logger (str *ns*)) '~level msg#))
      ([msg# arg#]
       (assert (string? msg#))
-      (list '. '(stencil.log/logger) '~level msg# arg#))
+      (assert (>= 1 (count (re-seq #"\{\}" msg#))))
+      (list '. (list 'stencil.log/get-logger (str *ns*)) '~level msg# arg#))
      ([msg# arg0# ~'& args#]
       (assert (string? msg#))
+      (assert (< (count args#) (count (re-seq #"\{\}" msg#)) (+ 2 (count args#))))
       (->> (list* 'list arg0# args#)
            (list 'to-array)
-           (list '. '(stencil.log/logger) '~level msg#)))))
+           (list '. (list 'stencil.log/get-logger (str *ns*)) '~level msg#)))))
 
 (declare trace debug info warn error fatal)
 

@@ -19,6 +19,7 @@ This is a short description of the functions implemented in Stencil:
 - [html](#html)
 - [integer](#integer)
 - [join](#join)
+- [joinAnd](#joinand)
 - [length](#length)
 - [list](#list)
 - [lowercase](#lowercase)
@@ -101,6 +102,13 @@ Joins a list of items with an optional separator.
 **Example:** call join(xs, ",") to join them with a comma.
 
 **Example:** call join(xs) to just concatenate the items.
+
+### JoinAnd
+
+Joins a list of items using two separators. The first separator is used to join the items except for the last item. The second separator is used to join the last item. When two items are supplied, then
+only the second separator is used.
+
+**Example:** call <code>joinAnd(xs, ", ", " and ")</code> to get <code>"1, 2, 3 and 4"</code>.
 
 ### Date
 
@@ -208,3 +216,44 @@ Expects two arguments: a value and a list. Checks if list contains the value. Us
 ### Sum
 
 Expects one number argument containing a list with numbers. Sums up the numbers and returns result. Usage: `sum(myList)`
+
+## Custom functions
+
+You can register custom implementations of `io.github.erdos.stencil.functions.Function` or the `stencil.functions/call-fn` multimethod.
+
+Clojure example:
+
+```clojure
+(defmethod call-fn "first" [_ data]
+  (if (seq? data) (first data) data))
+```
+
+Java example:
+
+```java
+public class FirstFuncion implements Function {
+
+    @Override
+    public String getName() {
+        return "first";
+    }
+
+    @Override
+    public Object call(final Object... arguments) throws IllegalArgumentException {
+        if (arguments.length != 1) {
+            throw new IllegalArgumentException("Unexpected argument count");
+        }
+        final Object arg = arguments[0];
+        if (arg instanceof Iterable<?>) {
+            final Iterator<?> iterator = ((Iterable<?>) arg).iterator();
+            return iterator.hasNext() ? iterator.next() : null;
+        } else {
+            return null;
+        }
+    }
+}
+
+/* .... later you can register it in render stage .... */
+
+API.render(preparedTemplate, fragments, data, Arrays.asList(new FirstFunction()));
+```

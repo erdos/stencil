@@ -58,7 +58,7 @@ public final class JsonParser {
         } else if (c == 'n') {
             expectWord("null", pb);
             return null;
-        } else if (Character.isDigit(c)) {
+        } else if (Character.isDigit(c) || c == '+' || c == '-') {
             return readNumber(pb);
         } else {
             throw new IllegalStateException("Unexpected character: '" + c + "'");
@@ -69,7 +69,7 @@ public final class JsonParser {
         char[] arr = new char[128];
         int len = pb.read(arr, 0, arr.length);
 
-        assert Character.isDigit(arr[0]);
+        assert arr[0] == '+' || arr[0] == '-' || Character.isDigit(arr[0]);
 
         int i = 0;
         while (i < len && (arr[i] == '.' || arr[i] == '-' || arr[i] == 'e' || Character.isDigit(arr[i]))) {
