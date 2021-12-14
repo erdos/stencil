@@ -255,7 +255,7 @@
 (defmulti ^:private action-arity (partial reduce-step-dispatch []))
 
 ;; throws exception if there are operators out of place, returns input otherwise
-(defn validate-rpn [rpn]
+(defn- validate-rpn [rpn]
   (let [steps (map #(- 1 (action-arity %)) rpn)]
     (if (or (not-every? pos? (reductions + steps)) (not (= 1 (reduce + steps))))
       (throw (ex-info (str "Wrong tokens, unsupported arities: " rpn) {:rpn rpn}))
