@@ -11,11 +11,11 @@
       (list '. (list 'stencil.log/get-logger (str *ns*)) '~level msg#))
      ([msg# arg#]
       (assert (string? msg#))
-      (assert (= 1 (count (re-seq #"\{\}" msg#))))
+      (assert (>= 1 (count (re-seq #"\{\}" msg#))))
       (list '. (list 'stencil.log/get-logger (str *ns*)) '~level msg# arg#))
      ([msg# arg0# ~'& args#]
       (assert (string? msg#))
-      (assert (= (inc (count args#)) (count (re-seq #"\{\}" msg#))))
+      (assert (< (count args#) (count (re-seq #"\{\}" msg#)) (+ 2 (count args#))))
       (->> (list* 'list arg0# args#)
            (list 'to-array)
            (list '. (list 'stencil.log/get-logger (str *ns*)) '~level msg#)))))
