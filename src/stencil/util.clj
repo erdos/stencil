@@ -28,16 +28,16 @@
         (conj (pop (first stack))
               (apply f (peek (first stack)) args))))
 
-(defn mod-stack-top-conj
-  "Egy stack legfelso elemehez hozzafuz egy elemet"
-  [stack & items]
-  (conj (rest stack) (apply conj (first stack) items)))
-
 (defn update-peek
-  "Egy stack legfelso elemet modositja."
+  "Updates top element of a stack."
   [xs f & args]
   (assert (ifn? f))
   (conj (pop xs) (apply f (peek xs) args)))
+
+(defn mod-stack-top-conj
+  "Conjoins an element to the top item of a stack."
+  [stack & items]
+  (update-peek stack into items))
 
 (defn update-some [m path f]
   (if-some [x (get-in m path)]

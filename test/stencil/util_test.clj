@@ -28,13 +28,15 @@
 
 (deftest mod-stack-top-conj-test
   (testing "empty input"
-    (is (= '([2]) (mod-stack-top-conj '() 2)))
+    (is (thrown? IllegalStateException (mod-stack-top-conj '() 2)))
     (is (= '([2]) (mod-stack-top-conj '([]) 2))))
 
   (testing "simple cases"
     (is (= '([1 2]) (mod-stack-top-conj '([1]) 2)))
     (is (= '([1 1 1] [2 2] [3 3])
-           (mod-stack-top-conj '([1 1] [2 2] [3 3]) 1)))))
+           (mod-stack-top-conj '([1 1] [2 2] [3 3]) 1)))
+    (is (= '([1 1 1 2 3] [2 2] [3 3])
+           (mod-stack-top-conj '([1 1] [2 2] [3 3]) 1 2 3)))))
 
 (deftest update-peek-test
   (testing "simple cases"
