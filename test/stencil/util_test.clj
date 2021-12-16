@@ -79,3 +79,28 @@
   (is (= {:a 1} (update-some {:a 1} [:b] inc)))
   (is (= {:a 2 :x 1} (update-some {:a 1 :x 1} [:a] inc)))
   (is (= {:a 1 :x 1} (update-some {:a 1 :x 1} [:a] #{}))))
+
+(deftest fixpt-test
+  (is (= nil (fixpt first [])))
+  (is (= :a (fixpt {:a :a :b :a :c :b} :c))))
+
+(deftest find-first-test
+  (is (= 1 (find-first odd? [0 1 2 3 4])))
+  (is (= nil (find-first odd? [0 2 4])))
+  (is (= nil (find-first odd? []) (find-first odd? nil))))
+
+(deftest find-last-test
+  (is (= 3 (find-last odd? [0 1 2 3 4])))
+  (is (= nil (find-last odd? [0 2 4])))
+  (is (= nil (find-last odd? []) (find-last odd? nil))))
+
+(deftest fail-test
+  (is (thrown? clojure.lang.ExceptionInfo (fail "test error" {}))))
+
+(deftest prefixes-test
+  (is (= [] (prefixes []) (prefixes nil)))
+  (is (= [[1 2 3] [1 2] [1]] (prefixes [1 2 3]))))
+
+(deftest suffixes-test
+  (is (= [] (suffixes []) (suffixes nil)))
+  (is (= [[1 2 3] [2 3] [3]] (suffixes [1 2 3]))))
