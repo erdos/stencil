@@ -5,16 +5,16 @@
 
 (deftest stacks-difference-test
   (testing "Empty cases"
-    (is (= [[] []] (stacks-difference nil nil)))
-    (is (= [[] []] (stacks-difference () ())))
-    (is (= [[] []] (stacks-difference '(:a :b :c) '(:a :b :c)))))
+    (is (= [[] []] (stacks-difference-key identity nil nil)))
+    (is (= [[] []] (stacks-difference-key identity () ())))
+    (is (= [[] []] (stacks-difference-key identity '(:a :b :c) '(:a :b :c)))))
 
   (testing "simple cases"
-    (is (= [[:a :b] []] (stacks-difference '(:a :b) ())))
-    (is (= [[] [:a :b]] (stacks-difference '() '(:a :b))))
-    (is (= [[:a] [:b]] (stacks-difference '(:a :x :y) '(:b :x :y))))
-    (is (= [[:a] []] (stacks-difference '(:a :x :y) '(:x :y))))
-    (is (= [[] [:b]] (stacks-difference '(:x :y) '(:b :x :y))))))
+    (is (= [[:a :b] []] (stacks-difference-key identity '(:a :b) ())))
+    (is (= [[] [:a :b]] (stacks-difference-key identity '() '(:a :b))))
+    (is (= [[:a] [:b]] (stacks-difference-key identity '(:a :x :y) '(:b :x :y))))
+    (is (= [[:a] []] (stacks-difference-key identity '(:a :x :y) '(:x :y))))
+    (is (= [[] [:b]] (stacks-difference-key identity '(:x :y) '(:b :x :y))))))
 
 (deftest mod-stack-top-last-test
   (testing "Invalid input"
