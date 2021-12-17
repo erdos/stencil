@@ -36,17 +36,15 @@
   (update-peek stack into items))
 
 (defn update-some [m path f]
-  (if-some [x (get-in m path)]
-    (if-some [fx (f x)]
-      (assoc-in m path fx)
-      m)
-    m))
+  (or (some->> (get-in m path) f (assoc-in m path)) m))
 
 (defn fixpt [f x] (let [fx (f x)] (if (= fx x) x (recur f fx))))
 (defn zipper? [loc] (-> loc meta (contains? :zip/branch?)))
 (defn iterations [f xs] (take-while some? (iterate f xs)))
 (defn find-first [pred xs] (first (filter pred xs)))
-(defn find-last [pred xs] (last (filter pred xs)))
+
+;; same as (last (filter pred xs))
+(defn find-last [pred xs] (reduce (fn [a x] (if (pred x) x a)) nil xs))
 
 (def xml-zip
   "Like clojure.zip/xml-zip but more flexible. Only maps are considered branches."
