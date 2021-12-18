@@ -74,28 +74,28 @@
 (defn- associativity [token]
   (if (#{:power :not :neg} token) :right :left))
 
+(def ^:private quotation-marks
+  {\" \"   ;; programmer quotes
+   \' \'   ;; programmer quotes
+   \“ \”   ;; english double quotes
+   \‘ \’   ;; english single quotes
+   \’ \’   ;; hungarian single quotes (felidezojel)
+   \„ \”}) ;; hungarian double quotes (macskakorom)
+
 (defn read-string-literal
   "Reads a string literal from a sequence.
    Returns a tuple.
    - First elem is read string literal.
    - Second elem is seq of remaining characters."
   [characters]
-  (letfn [(read-until [x]
-            (loop [[c & cs] (next characters)
-                   out      ""]
-              (cond (nil? c) (throw (ex-info "String parse error"
-                                             {:reason "Unexpected end of stream"}))
-                    (= c (first "\\"))  (recur (next cs) (str out (first cs)))
-                    (= c x)             [out cs]
-                    :else               (recur cs (str out c)))))]
-    (case (first characters)
-      \" (read-until \") ;; programmer quotes
-      \' (read-until \') ;; programmer quotes
-      \“ (read-until \”) ;; english double quotes
-      \‘ (read-until \’) ;; english single quotes
-      \’ (read-until \’) ;; hungarian single quotes (felidezojel)
-      \„ (read-until \”) ;; hungarian double quotes (macskakorom)
-      (fail "No string literal" {:c (first characters)}))))
+  (let [until (quotation-marks (first characters))
+        sb    (new StringBuilder)]
+    (loop [[c & cs] (next characters)]
+      (cond (nil? c) (throw (ex-info "String parse error"
+                                     {:reason "Unexpected end of stream"}))
+            (= c until)        [(.toString sb) cs]
+            (= c (first "\\")) (do (.append sb (first cs)) (recur (next cs)))
+            :else              (do (.append sb c) (recur cs))))))
 
 (defn read-number
   "Reads a number literal from a sequence. Returns a tuple of read
@@ -137,7 +137,7 @@
       (let [[n tail] (read-number characters)]
         (recur tail (conj tokens n)))
 
-      (#{\" \' \“ \‘ \’ \„} first-char)
+      (quotation-marks first-char)
       (let [[s tail] (read-string-literal characters)]
         (recur tail (conj tokens s)))
 
