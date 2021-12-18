@@ -51,7 +51,10 @@
   (partial clojure.zip/zipper
            map?
            (comp seq :content)
-           (fn [node children] (assoc node :content (and children (apply vector children))))))
+           (fn [node children] (assoc node :content (some-> children vec)))))
+
+(defn assoc-if-val [m k v]
+  (if (some? v) (assoc m k v) m))
 
 (defn suffixes [xs] (take-while seq (iterate next xs)))
 (defn prefixes [xs] (take-while seq (iterate butlast xs)))

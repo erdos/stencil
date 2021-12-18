@@ -3,7 +3,7 @@
   (:require [clojure.data.xml :as xml]
             [stencil.infix :as infix]
             [stencil.types :refer [open-tag close-tag]]
-            [stencil.util :refer [mod-stack-top-conj mod-stack-top-last parsing-exception]]))
+            [stencil.util :refer [assoc-if-val mod-stack-top-conj mod-stack-top-last parsing-exception]]))
 
 (set! *warn-on-reflection* true)
 
@@ -58,8 +58,7 @@
 
     (seq (:content parsed))
     (concat
-     [(cond-> {:open (:tag parsed)}
-        (seq (:attrs parsed)) (assoc :attrs (:attrs parsed)))]
+     [(assoc-if-val {:open (:tag parsed)} :attrs (not-empty (:attrs parsed)))]
      (mapcat structure->seq (:content parsed))
      [{:close (:tag parsed)}])
 
