@@ -81,10 +81,7 @@
 
     (:close token)
     (let [[s & stack] stack]
-      ;; TODO: itt megnezhetnenk, hogy a verem tetejen milyen elem volt utoljara es ossze lehetne hasonlitani oket.
-      (if (seq s)
-        (mod-stack-top-last stack assoc :content s)
-        stack))
+      (mod-stack-top-last stack assoc-if-val :content (not-empty s)))
 
     :else
     (throw (ex-info (str "Unexpected token: " token " of " (type token)) {:token token}))))
