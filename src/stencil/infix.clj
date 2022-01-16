@@ -266,6 +266,10 @@
     (default-fn fn-name args-seq)
     (throw (new IllegalArgumentException (str "Unknown function: " fn-name)))))
 
+;; Gives access to whole input payload. Useful when top level keys contain strange characters.
+;; Example: you can write data()['key1']['key2'] instead of key1.key2.
+(defmethod call-fn "data" [_] *calc-vars*)
+
 (defmethod action-arity FnCall [{:keys [args]}] args)
 
 (defmethod reduce-step FnCall [stack {:keys [fn args]}]

@@ -121,6 +121,9 @@
   (is (= 5 (run "a[(1)]"   {"a" {"1" 5}})))
   (is (= 6 (run "(a)[1]"   {"a" {"1" 6}})))
 
+  (is (= {"a" {"b" 1}} (run "data()" {"a" {"b" 1}})))
+  (is (= 6 (run "data()['a-b']" {"a-b" 6})))
+
   (testing "multiple expressions"
     (is (= 7 (run "a[a[1]+4]" {"a" {"1" 2 "6" 7}})))
     (is (= 8 (run "a[1][2]" {"a" {"1" {"2" 8}}}))))
