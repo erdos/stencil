@@ -127,7 +127,7 @@
       (contains? ops2 [first-char (first next-chars)])
       (recur (next next-chars) (conj tokens (ops2 [first-char (first next-chars)])))
 
-      (and (= \- first-char) (or (nil? (peek tokens)) (keyword? (peek tokens))))
+      (and (= \- first-char) (or (nil? (peek tokens)) (and (not= (peek tokens) :close) (keyword? (peek tokens)))))
       (recur next-chars (conj tokens :neg))
 
       (contains? ops first-char)
