@@ -17,12 +17,14 @@
 (defn- find-first-in-tree [pred tree]
   (assert (zipper? tree))
   (assert (fn? pred))
-  (find-first (comp pred zip/node) (take-while (complement zip/end?) (iterate zip/next tree))))
+  (->> (iterate zip/next tree)
+       (eduction (take-while (complement zip/end?)) (filter (comp pred zip/node)))
+       (first)))
 
 (defn- find-last-child [pred tree]
   (assert (zipper? tree))
   (assert (fn? pred))
-  (last (filter (comp pred zip/node) (iterations zip/right (zip/down tree)))))
+  (find-last (comp pred zip/node) (iterations zip/right (zip/down tree))))
 
 (defn- first-right-sibling
   "Finds first right sibling that matches the predicate."

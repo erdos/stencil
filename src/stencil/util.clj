@@ -40,10 +40,10 @@
 
 (defn fixpt [f x] (let [fx (f x)] (if (= fx x) x (recur f fx))))
 (defn zipper? [loc] (-> loc meta (contains? :zip/branch?)))
-(defn iterations [f xs] (take-while some? (iterate f xs)))
-(defn find-first [pred xs] (first (filter pred xs)))
+(defn iterations [f elem] (eduction (take-while some?) (iterate f elem)))
 
-;; same as (last (filter pred xs))
+;; same as (first (filter pred xs))
+(defn find-first [pred xs] (reduce (fn [_ x] (if (pred x) (reduced x))) nil xs))
 (defn find-last [pred xs] (reduce (fn [a x] (if (pred x) x a)) nil xs))
 
 (def xml-zip
@@ -98,5 +98,9 @@
 (defmacro when-pred [pred body]
   `(let [b# ~body]
      (when (~pred b#) b#)))
+
+(defn ^String apply-str
+  ([values] (apply str values))
+  ([xform coll] (transduce xform (fn ([^Object s] (.toString s)) ([^StringBuilder b v] (.append b v))) (StringBuilder.) coll)))
 
 :OK

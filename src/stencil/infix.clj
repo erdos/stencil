@@ -2,7 +2,7 @@
   "Parsing and evaluating infix algebraic expressions.
 
   https://en.wikipedia.org/wiki/Shunting-yard_algorithm"
-  (:require [stencil.util :refer [fail update-peek ->int]]
+  (:require [stencil.util :refer [fail update-peek ->int apply-str]]
             [stencil.log :as log]
             [stencil.functions :refer [call-fn]]))
 
@@ -101,8 +101,7 @@
   "Reads a number literal from a sequence. Returns a tuple of read
    number (Double or Long) and the sequence of remaining characters."
   [characters]
-  (let [content (take-while (set "1234567890._") characters)
-        content ^String (apply str content)
+  (let [content (apply-str (take-while (set "1234567890._")) characters)
         content (.replaceAll content "_" "")
         number  (if (some #{\.} content)
                   (Double/parseDouble content)
@@ -142,7 +141,7 @@
         (recur tail (conj tokens s)))
 
       :else
-      (let [content (apply str (take-while identifier characters))]
+      (let [content (apply-str (take-while identifier) characters)]
         (if (seq content)
           (let [tail (drop-while #{\space \tab} (drop (count content) characters))]
             (if (= \( (first tail))
