@@ -33,3 +33,20 @@
      {})))
 
 ;; (test-eval "<a>Sum:<b> {%=x </b>%} pieces</a>" {"x" 1})
+
+(let [target (the-ns 'stencil.postprocess.whitespaces)]
+  (doseq [[k v] (ns-map target)
+          :when (and (var? v) (= target (.ns v)))]
+    (eval `(defn ~(symbol (str "-" k)) [~'& args#] (apply (deref ~v) args#)))))
+
+(deftest test-lines-of
+  (is (= ["ab" :newline :newline "bc"] (-lines-of "ab\n\nbc")))
+  (is (= [:newline "xy" :newline] (-lines-of "\nxy\n")))
+  (is (= () (-lines-of ""))))
+
+(deftest test-multi-replace
+  (let [tree     (stencil.util/xml-zip {:tag :a :content ["x" "y" "z"]})
+        loc      (clojure.zip/right (clojure.zip/down tree))
+        replaced (-multi-replace loc ["1" "2" "3"])]
+    (is (= "3" (clojure.zip/node replaced)))
+    (is (= ["x" "1" "2" "3" "z"] (:content (clojure.zip/root replaced))))))
