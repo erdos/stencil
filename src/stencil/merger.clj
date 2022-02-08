@@ -73,7 +73,7 @@
 (defn -last-chars-count [sts-tokens]
   (assert (sequential? sts-tokens))
   (when-let [last-text (some-> sts-tokens last :text string)]
-    (some #(when (.endsWith last-text (apply str %))
+    (some #(when (.endsWith last-text (string %))
              (count %))
           (prefixes open-tag))))
 
@@ -109,7 +109,7 @@
               [ap]
               (reverse (:stack that))
               (if (seq (:text-rest that))
-                (lazy-seq (cleanup-runs-1 (cons {:text (apply str (:text-rest that))} (:rest that))))
+                (lazy-seq (cleanup-runs-1 (cons {:text (string (:text-rest that))} (:rest that))))
                 (lazy-seq (cleanup-runs (:rest that)))))
              (list* {:text (str open-tag (:action-part sts))}
                     (lazy-seq (cleanup-runs rest-tokens)))))))
@@ -123,7 +123,7 @@
              [{:text (apply str s)}])
 
            (let [tail (cleanup-runs-1
-                       (concat [{:text (str open-tag (apply str (:text-rest this)))}]
+                       (concat [{:text (apply str open-tag (:text-rest this))}]
                                (reverse (:stack this))
                                (:rest this)))]
              (if (:action (first tail))
