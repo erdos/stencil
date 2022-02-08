@@ -21,6 +21,8 @@
   (assert (not-empty items))
   (reduce (comp zip/right zip/insert-right) (zip/replace loc (first items)) (next items)))
 
+;; (defn- lines-of [s] (remove #{""} (interpose :newline (clojure.string/split s "\n" -1))))
+
 (defn- lines-of [s]
   (if-let [idx (index-of s "\n")]
     (if (zero? idx)

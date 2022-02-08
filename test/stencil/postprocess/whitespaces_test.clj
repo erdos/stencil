@@ -26,6 +26,11 @@
      "<a:a xmlns:a=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"><a:t>Sum: 1</a:t><a:t xml:space=\"preserve\"> pieces</a:t></a:a>"
      "<x:a xmlns:x=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"><x:t>Sum: {%=x </x:t><x:t>%} pieces</x:t></x:a>"
      {"x" 1}))
+  (testing "newline value splits t tags"
+    (test-equals
+     "<a:a xmlns:a=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"><a:t>two lines: first</a:t><a:br/><a:t>second</a:t><a:t xml:space=\"preserve\"> </a:t></a:a>"
+     "<x:a xmlns:x=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"><x:t>two lines: {%=x </x:t><x:t>%} </x:t></x:a>"
+     {"x" "first\nsecond"}))
   (testing "existing space=preserve attributes are kept intact"
     (test-equals
      "<a:a xmlns:a=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" xml:space=\"preserve\"> Hello </a:a>"
