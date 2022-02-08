@@ -24,11 +24,12 @@
 (def data {"value" "hello world 99"})
 
 (defn main [n template]
+  (println "Start" n "measurements on" template)
   (let [n (Long/parseLong (str n))
         [mean stdev] (stats-of n (partial api/prepare template))]
     (println "Ran" n "times:")
     (println :mean mean :stdev stdev)
     (let [prepared (api/prepare template)
-          [mean stdev] (stats-of n #(api/render! template data :output (black-hole)))]
+          [mean stdev] (stats-of n #(api/render! prepared data :output (black-hole)))]
       (println "Rendering:")
       (println :mean mean :stdev stdev))))
