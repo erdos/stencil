@@ -5,7 +5,7 @@
             [stencil
              [types :refer [open-tag close-tag]]
              [tokenizer :as tokenizer]
-             [util :refer [prefixes suffixes subs-last apply-str]]]))
+             [util :refer [prefixes suffixes subs-last string]]]))
 
 (set! *warn-on-reflection* true)
 
@@ -72,7 +72,7 @@
 
 (defn -last-chars-count [sts-tokens]
   (assert (sequential? sts-tokens))
-  (when-let [last-text (some-> sts-tokens last :text apply-str)]
+  (when-let [last-text (some-> sts-tokens last :text string)]
     (some #(when (.endsWith last-text (apply str %))
              (count %))
           (prefixes open-tag))))
@@ -103,7 +103,7 @@
             ]
         (concat
          (map map-action-token (:tokens sts))
-         (let [ap (map-action-token {:action (apply-str (map (comp :char first)) this)})]
+         (let [ap (map-action-token {:action (string (map (comp :char first)) this)})]
            (if (:action ap)
              (concat
               [ap]

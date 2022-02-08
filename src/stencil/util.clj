@@ -99,7 +99,7 @@
   `(let [b# ~body]
      (when (~pred b#) b#)))
 
-(defn ^String apply-str
+(defn ^String string
   ([values] (apply str values))
   ([xform coll] (transduce xform (fn ([^Object s] (.toString s)) ([^StringBuilder b v] (.append b v))) (StringBuilder.) coll)))
 
