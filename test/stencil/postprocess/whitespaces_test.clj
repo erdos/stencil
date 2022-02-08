@@ -45,8 +45,8 @@
     (eval `(defn ~(symbol (str "-" k)) [~'& args#] (apply (deref ~v) args#)))))
 
 (deftest test-lines-of
-  (is (= ["ab" :newline :newline "bc"] (-lines-of "ab\n\nbc")))
-  (is (= [:newline "xy" :newline] (-lines-of "\nxy\n")))
+  (is (= ["ab" "\n" "\n" "bc"] (-lines-of "ab\n\nbc")))
+  (is (= ["\n" "xy" "\n"] (-lines-of "\nxy\n")))
   (is (= () (-lines-of ""))))
 
 (deftest test-multi-replace

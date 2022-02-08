@@ -21,17 +21,18 @@
   (assert (not-empty items))
   (reduce (comp zip/right zip/insert-right) (zip/replace loc (first items)) (next items)))
 
-;; (defn- lines-of [s] (remove #{""} (interpose :newline (clojure.string/split s "\n" -1))))
+;; (defn- lines-of [s] (enumeration-seq (java.util.StringTokenizer. s "\n" true)))
+;; (defn- lines-of [s] (remove #{""} (interpose "\n" (clojure.string/split s "\n" -1))))
 
 (defn- lines-of [s]
   (if-let [idx (index-of s "\n")]
     (if (zero? idx)
-      (cons :newline (lazy-seq (lines-of (subs s 1))))
-      (list* (subs s 0 idx) :newline (lazy-seq (lines-of (subs s (inc idx))))))
+      (cons "\n" (lazy-seq (lines-of (subs s 1))))
+      (list* (subs s 0 idx) "\n" (lazy-seq (lines-of (subs s (inc idx))))))
     (if (empty? s) [] (list s))))
 
 (defn item->elem [item]
-  (cond (= :newline item)
+  (cond (= "\n" item)
         ,,,{:tag ooxml/br}
         (or (starts-with? item " ") (ends-with? item " "))
         ,,,{:tag ooxml/t :content [item] :attrs {ooxml/space "preserve"}}
