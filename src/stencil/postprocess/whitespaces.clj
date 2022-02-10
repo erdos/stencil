@@ -2,7 +2,6 @@
   (:require [clojure.string :refer [includes? starts-with? ends-with? index-of]]
             [clojure.zip :as zip]
             [stencil.ooxml :as ooxml]
-            [stencil.types :refer :all]
             [stencil.util :refer :all]))
 
 (defn- should-fix? [element]
