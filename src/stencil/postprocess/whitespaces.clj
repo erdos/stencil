@@ -5,16 +5,13 @@
             [stencil.types :refer :all]
             [stencil.util :refer :all]))
 
-(defn- should-fix?
-  "We only fix <t> tags where the enclosed string starts or ends with whitespace."
-  [element]
-  (boolean
-   (when (and (map? element)
-              (= ooxml/t (:tag element))
-              (seq (:content element)))
-     (or (starts-with? (first (:content element)) " ")
-         (ends-with? (last (:content element)) " ")
-         (some #(includes? % "\n") (:content element))))))
+(defn- should-fix? [element]
+  (when (and (map? element)
+             (= ooxml/t (:tag element))
+             (not-empty (:content element)))
+    (or (starts-with? (first (:content element)) " ")
+        (ends-with? (last (:content element)) " ")
+        (some #(includes? % "\n") (:content element)))))
 
 (defn- multi-replace [loc items]
   (assert (zipper? loc))
@@ -31,7 +28,7 @@
       (list* (subs s 0 idx) "\n" (lazy-seq (lines-of (subs s (inc idx))))))
     (if (empty? s) [] (list s))))
 
-(defn item->elem [item]
+(defn- item->elem [item]
   (cond (= "\n" item)
         ,,,{:tag ooxml/br}
         (or (starts-with? item " ") (ends-with? item " "))
