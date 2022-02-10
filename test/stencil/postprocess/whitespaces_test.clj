@@ -26,6 +26,11 @@
      "<a:a xmlns:a=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"><a:t>Sum: 1</a:t><a:t xml:space=\"preserve\"> pieces</a:t></a:a>"
      "<x:a xmlns:x=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"><x:t>Sum: {%=x </x:t><x:t>%} pieces</x:t></x:a>"
      {"x" 1}))
+  (testing "newline value splits t tags"
+    (test-equals
+     "<a:a xmlns:a=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"><a:t>two lines: first</a:t><a:br/><a:t>second</a:t><a:t xml:space=\"preserve\"> </a:t></a:a>"
+     "<x:a xmlns:x=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"><x:t>two lines: {%=x </x:t><x:t>%} </x:t></x:a>"
+     {"x" "first\nsecond"}))
   (testing "existing space=preserve attributes are kept intact"
     (test-equals
      "<a:a xmlns:a=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" xml:space=\"preserve\"> Hello </a:a>"
@@ -33,3 +38,20 @@
      {})))
 
 ;; (test-eval "<a>Sum:<b> {%=x </b>%} pieces</a>" {"x" 1})
+
+(let [target (the-ns 'stencil.postprocess.whitespaces)]
+  (doseq [[k v] (ns-map target)
+          :when (and (var? v) (= target (.ns v)))]
+    (eval `(defn ~(symbol (str "-" k)) [~'& args#] (apply (deref ~v) args#)))))
+
+(deftest test-lines-of
+  (is (= ["ab" "\n" "\n" "bc"] (-lines-of "ab\n\nbc")))
+  (is (= ["\n" "xy" "\n"] (-lines-of "\nxy\n")))
+  (is (= () (-lines-of ""))))
+
+(deftest test-multi-replace
+  (let [tree     (stencil.util/xml-zip {:tag :a :content ["x" "y" "z"]})
+        loc      (clojure.zip/right (clojure.zip/down tree))
+        replaced (-multi-replace loc ["1" "2" "3"])]
+    (is (= "3" (clojure.zip/node replaced)))
+    (is (= ["x" "1" "2" "3" "z"] (:content (clojure.zip/root replaced))))))
