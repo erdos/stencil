@@ -21,6 +21,15 @@
        (eduction (take-while (complement zip/end?)) (filter (comp pred zip/node)))
        (first)))
 
+;; like find-first-in-tree but faster on negative case
+(defn- find-first-in-tree-safe [pred tree]
+  (assert (zipper? tree))
+  (letfn [(safe-find [node]
+            (cond (pred node) true
+                  (map? node) (some safe-find (:content node))))]
+    (when (safe-find (zip/node tree))
+      (find-first-in-tree pred tree))))
+
 (defn- find-last-child [pred tree]
   (assert (zipper? tree))
   (assert (fn? pred))
@@ -341,7 +350,7 @@
   "Megkeresi az elso HideTableColumnMarkert es a tablazatbol a hozza tartozo
    oszlopot kitorli. Visszaadja az XML fat."
   [xml-tree]
-  (if-let [marker (find-first-in-tree hide-table-column-marker? (xml-zip xml-tree))]
+  (if-let [marker (find-first-in-tree-safe hide-table-column-marker? (xml-zip xml-tree))]
     (let [resize-strategy (:columns-resize (zip/node marker))]
       (remove-current-column marker resize-strategy))
     xml-tree))
@@ -350,7 +359,7 @@
   "Megkeresi az elso HideTableRowMarkert es a tablazatbol a hozza tartozo
    sort kitorli. Visszaadja az XML fat."
   [xml-tree]
-  (if-let [marker (find-first-in-tree hide-table-row-marker? (xml-zip xml-tree))]
+  (if-let [marker (find-first-in-tree-safe hide-table-row-marker? (xml-zip xml-tree))]
     (remove-current-row marker)
     xml-tree))
 
@@ -358,7 +367,7 @@
   "Ha a tablazatban van olyan oszlop, amely szelessege nagyon kicsi, az egesz oszlopot eltavolitja."
   [xml-tree]
   ;; Ha talalunk olyan gridCol oszlopot, ami nagyon kicsi
-  (if-let [loc (find-first-in-tree #(and (tag-matches? "gridCol" %)
+  (if-let [loc (find-first-in-tree-safe #(and (tag-matches? "gridCol" %)
                                          (some-> % :attrs ooxml/w ->int (< min-col-width))) (xml-zip xml-tree))]
     (let [col-idx (count (filter #(some-> % zip/node :tag) (next (iterations zip/left loc))))
           table-loc (find-enclosing-table (zip/remove loc))]
