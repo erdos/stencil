@@ -84,23 +84,24 @@
         (recur (clojure.zip/next (edit-fn loc)))
         (recur (clojure.zip/next loc))))))
 
+(defn- coords-of-first [xml-tree predicate]
+  (when (map? xml-tree)
+    (loop [children (:content xml-tree)
+          i 0]
+      (when-let [[c & cs] (not-empty children)]
+        (if (predicate c)
+          [i]
+          (if-let [cf (coords-of-first c predicate)]
+            (cons i cf)
+            (recur cs (inc i))))))))
+
 ;; xml tree is not a loc!
 (defn- loc-of-first [xml-tree predicate]
   (assert (map? xml-tree))
-  (when-let [coords ((fn f [x]
-                   (when (map? x)
-                      (loop [children (:content x)
-                             i 0]
-                        (when-let [[c & cs] (not-empty children)]
-                          (if (predicate c)
-                            [i]                            
-                            (if-let [cf (f c)]
-                              (cons i cf)
-                              (recur cs (inc i))))))))
-                xml-tree)]
+  (when-let [coords (coords-of-first xml-tree predicate)]
     (reduce (fn [loc i]
               (loop [loc (clojure.zip/down loc), i i]
-                (if (pos? i) (recur (clojure.zip/right loc) (dec i)) loc)))
+                (if (zero? i) loc (recur (clojure.zip/right loc) (dec i)))))
             (xml-zip xml-tree) coords)))
 
 (defn dfs-walk-xml-node [xml-tree predicate edit-fn]
