@@ -6,7 +6,7 @@
             [stencil.log :as log]
             [stencil.slf4j :as slf4j]
             [clojure.data :refer [diff]]
-            [clojure.java.io :refer [file]]
+            [clojure.java.io :as io :refer [file]]
             [ring.middleware.json :refer [wrap-json-body]]))
 
 (set! *warn-on-reflection* true)
@@ -22,6 +22,20 @@
       (throw (ex-info "Template directory does not exist!" {:status 500}))
       dir)
     (throw (ex-info "Missing STENCIL_TEMPLATE_DIR property!" {}))))
+
+
+(let [f (file (get-template-dir) "stencil.js")]
+  (when (.exists f)
+    (def manager (new javax.script.ScriptEngineManager))
+    (def engine (.getEngineByName manager "rhino"))
+    (def context (.getContext engine))
+
+    (log/info "Evaluating stencil.js file")
+    (with-open [r (io/reader f)]
+      (.eval engine r context))
+    (doseq [[k] (.getBindings context)]
+      (defmethod stencil.functions/call-fn k [k & args]
+        (.invokeFunction engine k (into-array Object args))))))
 
 (def -prepared
   "Map of {file-name {timestamp prepared}}."
