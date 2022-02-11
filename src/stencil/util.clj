@@ -75,16 +75,41 @@
 (defn parsing-exception [expression message]
   (ParsingException/fromMessage (str expression) (str message)))
 
-(defn dfs-walk-xml-node [xml-tree predicate edit-fn]
-  (assert (map? xml-tree))
-  (assert (fn? predicate))
-  (assert (fn? edit-fn))
-  (loop [loc (xml-zip xml-tree)]
+(defn- dfs-walk-xml-node-1 [loc predicate edit-fn]
+  (assert (zipper? loc))
+  (loop [loc loc]
     (if (clojure.zip/end? loc)
       (clojure.zip/root loc)
       (if (predicate (clojure.zip/node loc))
         (recur (clojure.zip/next (edit-fn loc)))
         (recur (clojure.zip/next loc))))))
+
+;; xml tree is not a loc!
+(defn- loc-of-first [xml-tree predicate]
+  (assert (map? xml-tree))
+  (when-let [coords ((fn f [x]
+                   (when (map? x)
+                      (loop [children (:content x)
+                             i 0]
+                        (when-let [[c & cs] (not-empty children)]
+                          (if (predicate c)
+                            [i]                            
+                            (if-let [cf (f c)]
+                              (cons i cf)
+                              (recur cs (inc i))))))))
+                xml-tree)]
+    (reduce (fn [loc i]
+              (loop [loc (clojure.zip/down loc), i i]
+                (if (pos? i) (recur (clojure.zip/right loc) (dec i)) loc)))
+            (xml-zip xml-tree) coords)))
+
+(defn dfs-walk-xml-node [xml-tree predicate edit-fn]
+  (assert (fn? predicate))
+  (assert (fn? edit-fn))
+  (assert (map? xml-tree))
+  (if-let [loc (loc-of-first xml-tree predicate)]
+    (dfs-walk-xml-node-1 loc predicate edit-fn)
+    xml-tree))
 
 (defn dfs-walk-xml [xml-tree predicate edit-fn]
   (assert (fn? edit-fn))
