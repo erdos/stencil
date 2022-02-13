@@ -75,6 +75,27 @@
 (defn parsing-exception [expression message]
   (ParsingException/fromMessage (str expression) (str message)))
 
+;; return xml zipper of location that matches predicate or nil
+(defn find-first-in-tree [predicate tree-loc]
+  (assert (ifn? predicate))
+  (assert (zipper? tree-loc))
+  (letfn [(coords-of-first [node]
+            (loop [children (:content node)
+                   index 0]
+              (when-let [[c & cs] (not-empty children)]
+                (if (predicate c)
+                  [index]
+                  (if-let [cf (coords-of-first c)]
+                    (cons index cf)
+                    (recur cs (inc index)))))))
+          (nth-child [loc i]
+            (loop [loc (clojure.zip/down loc), i i]
+              (if (zero? i) loc (recur (clojure.zip/right loc) (dec i)))))]
+    (if (predicate (clojure.zip/node tree-loc))
+      tree-loc
+      (when-let [coords (coords-of-first (clojure.zip/node tree-loc))]
+        (reduce nth-child tree-loc coords)))))
+
 (defn- dfs-walk-xml-node-1 [loc predicate edit-fn]
   (assert (zipper? loc))
   (loop [loc loc]
@@ -84,30 +105,11 @@
         (recur (clojure.zip/next (edit-fn loc)))
         (recur (clojure.zip/next loc))))))
 
-;; find zipper loc of first node in xml tree matched by predicate.
-;; finding the starting loc with recursion is faster than iterating with zippers.
-(defn- loc-of-first [xml-tree predicate]
-  (assert (map? xml-tree))
-  (letfn [(coords-of-first [xml-tree]
-            (loop [children (:content xml-tree)
-                   index 0]
-              (when-let [[c & cs] (not-empty children)]
-                (if (predicate c)
-                  [index]
-                  (if-let [cf (coords-of-first c)]
-                    (cons index cf)
-                    (recur cs (inc index)))))))
-          (reducer-step [loc i]
-            (loop [loc (clojure.zip/down loc), i i]
-              (if (zero? i) loc (recur (clojure.zip/right loc) (dec i)))))]
-    (when-let [coords (coords-of-first xml-tree)]
-      (reduce reducer-step (xml-zip xml-tree) coords))))
-
 (defn dfs-walk-xml-node [xml-tree predicate edit-fn]
   (assert (fn? predicate))
   (assert (fn? edit-fn))
   (assert (map? xml-tree))
-  (if-let [loc (loc-of-first xml-tree predicate)]
+  (if-let [loc (find-first-in-tree predicate (xml-zip xml-tree))]
     (dfs-walk-xml-node-1 loc predicate edit-fn)
     xml-tree))
 
