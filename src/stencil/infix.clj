@@ -178,7 +178,7 @@
 
       (empty? expr)
       (if (zero? parentheses)
-        (into result (remove #{:open} opstack))
+        (into result (remove #{:open}) opstack)
         (throw (ex-info "Too many open parentheses!" {})))
 
       (number? e0)
@@ -234,7 +234,7 @@
                            (< (precedence e0) (precedence %))) opstack)]
         (recur next-expr
                (conj keep-ops e0)
-               (into result (remove #{:open :comma} popped-ops))
+               (into result (remove #{:open :comma}) popped-ops)
                parentheses
                (if (= :comma e0)
                  (if (first functions)
