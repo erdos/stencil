@@ -85,15 +85,14 @@
         (recur (clojure.zip/next loc))))))
 
 (defn- coords-of-first [xml-tree predicate]
-  (when (map? xml-tree)
-    (loop [children (:content xml-tree)
-          i 0]
-      (when-let [[c & cs] (not-empty children)]
-        (if (predicate c)
-          [i]
-          (if-let [cf (coords-of-first c predicate)]
-            (cons i cf)
-            (recur cs (inc i))))))))
+  (loop [children (:content xml-tree)
+         index 0]
+    (when-let [[c & cs] (not-empty children)]
+      (if (predicate c)
+        [index]
+        (if-let [cf (coords-of-first c predicate)]
+          (cons index cf)
+          (recur cs (inc index)))))))
 
 ;; xml tree is not a loc!
 (defn- loc-of-first [xml-tree predicate]
