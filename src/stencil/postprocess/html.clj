@@ -8,6 +8,8 @@
             [stencil.util :refer :all]
             [stencil.ooxml :as ooxml]))
 
+(set! *warn-on-reflection* true)
+
 (defrecord HtmlChunk [content] ControlMarker)
 
 (defmethod call-fn "html" [_ content] (->HtmlChunk content))
@@ -16,19 +18,22 @@
   "Set of supported HTML tags"
   #{:b :em :i :u :s :sup :sub :span :br :strong})
 
+(defn- kw-lowercase [kw] (-> kw name .toLowerCase keyword))
+
 (defn- validate-tags
   "Throws ExceptionInfo on invalid HTML tag in tree"
   [xml-tree]
   (->>
    (fn [node]
-     (if (legal-tags (:tag node))
+     (if (legal-tags (-> node :tag kw-lowercase))
        node
        (throw (ex-info (str "Unexpected HTML tag: " (:tag node)) {:tag (:tag node)}))))
    (dfs-walk-xml xml-tree map?)))
 
 (defn- parse-html [xml]
   (-> (str xml)
-      (.replaceAll "<br>" "<br/>")
+      (.replaceAll "<br>" "<BR/>")
+      (.replaceAll "<BR>" "<BR/>")
       (xml/parse-str)
       (doto (validate-tags))
       (try (catch javax.xml.stream.XMLStreamException e
@@ -36,11 +41,11 @@
 
 (defn- walk-children [xml]
   (if (map? xml)
-    (if (= :br (:tag xml))
+    (if (#{:br :BR} (:tag xml))
       [{:text ::br}]
       (for [c (:content xml)
             x (walk-children c)]
-        (update x :path conj (:tag xml))))
+        (update x :path conj (kw-lowercase (:tag xml)))))
     [{:text xml}]))
 
 (defn- path->styles [path]
