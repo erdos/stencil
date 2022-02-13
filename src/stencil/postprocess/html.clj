@@ -8,6 +8,8 @@
             [stencil.util :refer :all]
             [stencil.ooxml :as ooxml]))
 
+(set! *warn-on-reflection* true)
+
 (defrecord HtmlChunk [content] ControlMarker)
 
 (defmethod call-fn "html" [_ content] (->HtmlChunk content))
