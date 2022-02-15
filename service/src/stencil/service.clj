@@ -3,6 +3,7 @@
   (:import [java.io File])
   (:require [org.httpkit.server :refer [run-server]]
             [stencil.api :as api]
+            [stencil.functions]
             [stencil.log :as log]
             [stencil.slf4j :as slf4j]
             [clojure.data :refer [diff]]
@@ -23,19 +24,20 @@
       dir)
     (throw (ex-info "Missing STENCIL_TEMPLATE_DIR property!" {}))))
 
-
-(let [f (file (get-template-dir) "stencil.js")]
-  (when (.exists f)
-    (def manager (new javax.script.ScriptEngineManager))
-    (def engine (.getEngineByName manager "rhino"))
-    (def context (.getContext engine))
-
-    (log/info "Evaluating stencil.js file")
-    (with-open [r (io/reader f)]
-      (.eval engine r context))
-    (doseq [[k] (.getBindings context)]
-      (defmethod stencil.functions/call-fn k [k & args]
-        (.invokeFunction engine k (into-array Object args))))))
+(defn eval-js-file []
+  (let [f (file (get-template-dir) "stencil.js")]
+    (when (.exists f)
+      (log/info "Evaluating stencil.js file")
+      (let [manager (new javax.script.ScriptEngineManager)
+            engine (.getEngineByName manager "rhino")
+            invocable ^javax.script.Invocable engine
+            context (.getContext engine)]
+        (with-open [r (io/reader f)]
+          (.eval engine r context))
+        (doseq [[k] (.getBindings context javax.script.ScriptContext/ENGINE_SCOPE)]
+          (log/info "Defining function created in stencil.js file: {}" k)
+          (defmethod stencil.functions/call-fn k [k & args]
+            (.invokeFunction invocable k (into-array Object args))))))))
 
 (def -prepared
   "Map of {file-name {timestamp prepared}}."
@@ -108,6 +110,7 @@
 
 (defn -main [& args]
   (log/info "Starting Stencil Service {}" api/version)
+  (eval-js-file)
   (let [http-port    (get-http-port)
         template-dir ^File (get-template-dir)
         server (run-server app {:port http-port})]
