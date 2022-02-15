@@ -5,7 +5,7 @@
             [stencil
              [types :refer [open-tag close-tag]]
              [tokenizer :as tokenizer]
-             [util :refer [prefixes suffixes subs-last]]]))
+             [util :refer [prefixes suffixes subs-last string]]]))
 
 (set! *warn-on-reflection* true)
 
@@ -72,9 +72,8 @@
 
 (defn -last-chars-count [sts-tokens]
   (assert (sequential? sts-tokens))
-  (when (:text (last sts-tokens))
-    (some #(when (.endsWith
-                  (str (apply str (:text (last sts-tokens)))) (apply str %))
+  (when-let [last-text (some-> sts-tokens last :text string)]
+    (some #(when (.endsWith last-text (string %))
              (count %))
           (prefixes open-tag))))
 
@@ -104,13 +103,13 @@
             ]
         (concat
          (map map-action-token (:tokens sts))
-         (let [ap (map-action-token {:action (apply str (map (comp :char first) this))})]
+         (let [ap (map-action-token {:action (string (map (comp :char first)) this)})]
            (if (:action ap)
              (concat
               [ap]
               (reverse (:stack that))
               (if (seq (:text-rest that))
-                (lazy-seq (cleanup-runs-1 (cons {:text (apply str (:text-rest that))} (:rest that))))
+                (lazy-seq (cleanup-runs-1 (cons {:text (string (:text-rest that))} (:rest that))))
                 (lazy-seq (cleanup-runs (:rest that)))))
              (list* {:text (str open-tag (:action-part sts))}
                     (lazy-seq (cleanup-runs rest-tokens)))))))
@@ -124,7 +123,7 @@
              [{:text (apply str s)}])
 
            (let [tail (cleanup-runs-1
-                       (concat [{:text (str open-tag (apply str (:text-rest this)))}]
+                       (concat [{:text (apply str open-tag (:text-rest this))}]
                                (reverse (:stack this))
                                (:rest this)))]
              (if (:action (first tail))

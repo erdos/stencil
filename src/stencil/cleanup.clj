@@ -136,7 +136,7 @@
     1 (let [[then] (:blocks control-ast)
             else   (:after then)]
         (-> (dissoc control-ast :blocks)
-            (assoc :then (vec (keep control-ast-normalize (:children then))) :else else)))
+            (assoc :then (vec (keep control-ast-normalize (:children then))) :else (vec else))))
     ;; default
     (throw (parsing-exception (str open-tag "else" close-tag)
                               "Too many {%else%} tags in one condition!"))))

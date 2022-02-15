@@ -239,7 +239,7 @@
            style-ids-rename (-> fragment-model :main :style :parsed (doto assert) (style/insert-styles!))
 
            relation-ids-rename (relations/ids-rename fragment-model frag-name)
-           relation-rename-map (into {} (map (juxt :old-id :new-id) relation-ids-rename))
+           relation-rename-map (into {} (map (juxt :old-id :new-id)) relation-ids-rename)
 
            ;; evaluate
            evaled (eval-template-model fragment-model local-data-map {} {})
