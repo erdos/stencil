@@ -5,7 +5,7 @@
 (set! *warn-on-reflection* true)
 
 (defn stacks-difference-key
-  "Removes prefixes of two lists where key-fn gives the same result."
+  "Removes suffixes of two lists where key-fn gives the same result."
   [key-fn stack1 stack2]
   (assert (ifn? key-fn))
   (let [cnt (count (take-while true?
@@ -13,10 +13,6 @@
                                     (reverse stack1) (reverse stack2))))]
     [(take (- (count stack1) cnt) stack1)
      (take (- (count stack2) cnt) stack2)]))
-
-(def stacks-difference
-  "Removes comomn prefix of two lists."
-  (partial stacks-difference-key identity))
 
 (defn mod-stack-top-last
   "Egy stack legfelso elemenek legutolso elemet modositja.
@@ -28,36 +24,37 @@
         (conj (pop (first stack))
               (apply f (peek (first stack)) args))))
 
-(defn mod-stack-top-conj
-  "Egy stack legfelso elemehez hozzafuz egy elemet"
-  [stack & items]
-  (conj (rest stack) (apply conj (first stack) items)))
-
 (defn update-peek
-  "Egy stack legfelso elemet modositja."
+  "Updates top element of a stack."
   [xs f & args]
   (assert (ifn? f))
   (conj (pop xs) (apply f (peek xs) args)))
 
+(defn mod-stack-top-conj
+  "Conjoins an element to the top item of a stack."
+  [stack & items]
+  (update-peek stack into items))
+
 (defn update-some [m path f]
-  (if-some [x (get-in m path)]
-    (if-some [fx (f x)]
-      (assoc-in m path fx)
-      m)
-    m))
+  (or (some->> (get-in m path) f (assoc-in m path)) m))
 
 (defn fixpt [f x] (let [fx (f x)] (if (= fx x) x (recur f fx))))
 (defn zipper? [loc] (-> loc meta (contains? :zip/branch?)))
-(defn iterations [f xs] (take-while some? (iterate f xs)))
-(defn find-first [pred xs] (first (filter pred xs)))
-(defn find-last [pred xs] (last (filter pred xs)))
+(defn iterations [f elem] (eduction (take-while some?) (iterate f elem)))
+
+;; same as (first (filter pred xs))
+(defn find-first [pred xs] (reduce (fn [_ x] (if (pred x) (reduced x))) nil xs))
+(defn find-last [pred xs] (reduce (fn [a x] (if (pred x) x a)) nil xs))
 
 (def xml-zip
   "Like clojure.zip/xml-zip but more flexible. Only maps are considered branches."
   (partial clojure.zip/zipper
            map?
            (comp seq :content)
-           (fn [node children] (assoc node :content (and children (apply vector children))))))
+           (fn [node children] (assoc node :content (some-> children vec)))))
+
+(defn assoc-if-val [m k v]
+  (if (some? v) (assoc m k v) m))
 
 (defn suffixes [xs] (take-while seq (iterate next xs)))
 (defn prefixes [xs] (take-while seq (iterate butlast xs)))
@@ -78,16 +75,43 @@
 (defn parsing-exception [expression message]
   (ParsingException/fromMessage (str expression) (str message)))
 
-(defn dfs-walk-xml-node [xml-tree predicate edit-fn]
-  (assert (map? xml-tree))
-  (assert (fn? predicate))
-  (assert (fn? edit-fn))
-  (loop [loc (xml-zip xml-tree)]
+;; return xml zipper of location that matches predicate or nil
+(defn find-first-in-tree [predicate tree-loc]
+  (assert (ifn? predicate))
+  (assert (zipper? tree-loc))
+  (letfn [(coords-of-first [node]
+            (loop [children (:content node)
+                   index 0]
+              (when-let [[c & cs] (not-empty children)]
+                (if (predicate c)
+                  [index]
+                  (if-let [cf (coords-of-first c)]
+                    (cons index cf)
+                    (recur cs (inc index)))))))
+          (nth-child [loc i]
+            (loop [loc (clojure.zip/down loc), i i]
+              (if (zero? i) loc (recur (clojure.zip/right loc) (dec i)))))]
+    (if (predicate (clojure.zip/node tree-loc))
+      tree-loc
+      (when-let [coords (coords-of-first (clojure.zip/node tree-loc))]
+        (reduce nth-child tree-loc coords)))))
+
+(defn- dfs-walk-xml-node-1 [loc predicate edit-fn]
+  (assert (zipper? loc))
+  (loop [loc loc]
     (if (clojure.zip/end? loc)
       (clojure.zip/root loc)
       (if (predicate (clojure.zip/node loc))
         (recur (clojure.zip/next (edit-fn loc)))
         (recur (clojure.zip/next loc))))))
+
+(defn dfs-walk-xml-node [xml-tree predicate edit-fn]
+  (assert (fn? predicate))
+  (assert (fn? edit-fn))
+  (assert (map? xml-tree))
+  (if-let [loc (find-first-in-tree predicate (xml-zip xml-tree))]
+    (dfs-walk-xml-node-1 loc predicate edit-fn)
+    xml-tree))
 
 (defn dfs-walk-xml [xml-tree predicate edit-fn]
   (assert (fn? edit-fn))
@@ -101,5 +125,9 @@
 (defmacro when-pred [pred body]
   `(let [b# ~body]
      (when (~pred b#) b#)))
+
+(defn ^String string
+  ([values] (apply str values))
+  ([xform coll] (transduce xform (fn ([^Object s] (.toString s)) ([^StringBuilder b v] (.append b v))) (StringBuilder.) coll)))
 
 :OK

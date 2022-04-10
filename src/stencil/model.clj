@@ -10,7 +10,7 @@
             [stencil.model.numbering :as numbering]
             [stencil.types :refer [->FragmentInvoke ->ReplaceImage]]
             [stencil.postprocess.images :refer [img-data->extrafile]]
-            [stencil.util :refer [unlazy-tree]]
+            [stencil.util :refer [unlazy-tree assoc-if-val]]
             [stencil.model.relations :as relations]
             [stencil.model.common :refer [unix-path ->xml-writer resource-copier]]
             [stencil.functions :refer [call-fn]]
@@ -73,7 +73,6 @@
                      {::path rels-path, :source-file rels-file, :parsed (relations/parse rels-file)})))
 
         main-document-rels (->rels main-document)
-        assoc-if-val (fn [m k v] (if (some? v) (assoc m k v) m))
 
         ->exec (binding [merger/*only-includes* (boolean (:only-includes options-map))]
                  (bound-fn* ->exec))]
@@ -240,7 +239,7 @@
            style-ids-rename (-> fragment-model :main :style :parsed (doto assert) (style/insert-styles!))
 
            relation-ids-rename (relations/ids-rename fragment-model frag-name)
-           relation-rename-map (into {} (map (juxt :old-id :new-id) relation-ids-rename))
+           relation-rename-map (into {} (map (juxt :old-id :new-id)) relation-ids-rename)
 
            ;; evaluate
            evaled (eval-template-model fragment-model local-data-map {} {})

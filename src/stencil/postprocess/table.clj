@@ -14,15 +14,10 @@
 (defn- loc-row?   [loc] (some-> loc zip/node :tag name #{"tr"}))
 (defn- loc-table? [loc] (some-> loc zip/node :tag name #{"tbl" "table"}))
 
-(defn- find-first-in-tree [pred tree]
-  (assert (zipper? tree))
-  (assert (fn? pred))
-  (find-first (comp pred zip/node) (take-while (complement zip/end?) (iterate zip/next tree))))
-
 (defn- find-last-child [pred tree]
   (assert (zipper? tree))
   (assert (fn? pred))
-  (last (filter (comp pred zip/node) (iterations zip/right (zip/down tree)))))
+  (find-last (comp pred zip/node) (iterations zip/right (zip/down tree))))
 
 (defn- first-right-sibling
   "Finds first right sibling that matches the predicate."

@@ -2,7 +2,7 @@
   "Parsing and evaluating infix algebraic expressions.
 
   https://en.wikipedia.org/wiki/Shunting-yard_algorithm"
-  (:require [stencil.util :refer [fail update-peek ->int]]
+  (:require [stencil.util :refer [fail update-peek ->int string]]
             [stencil.log :as log]
             [stencil.functions :refer [call-fn]]))
 
@@ -74,35 +74,34 @@
 (defn- associativity [token]
   (if (#{:power :not :neg} token) :right :left))
 
+(def ^:private quotation-marks
+  {\" \"   ;; programmer quotes
+   \' \'   ;; programmer quotes
+   \“ \”   ;; english double quotes
+   \‘ \’   ;; english single quotes
+   \’ \’   ;; hungarian single quotes (felidezojel)
+   \„ \”}) ;; hungarian double quotes (macskakorom)
+
 (defn read-string-literal
   "Reads a string literal from a sequence.
    Returns a tuple.
    - First elem is read string literal.
    - Second elem is seq of remaining characters."
   [characters]
-  (letfn [(read-until [x]
-            (loop [[c & cs] (next characters)
-                   out      ""]
-              (cond (nil? c) (throw (ex-info "String parse error"
-                                             {:reason "Unexpected end of stream"}))
-                    (= c (first "\\"))  (recur (next cs) (str out (first cs)))
-                    (= c x)             [out cs]
-                    :else               (recur cs (str out c)))))]
-    (case (first characters)
-      \" (read-until \") ;; programmer quotes
-      \' (read-until \') ;; programmer quotes
-      \“ (read-until \”) ;; english double quotes
-      \‘ (read-until \’) ;; english single quotes
-      \’ (read-until \’) ;; hungarian single quotes (felidezojel)
-      \„ (read-until \”) ;; hungarian double quotes (macskakorom)
-      (fail "No string literal" {:c (first characters)}))))
+  (let [until (quotation-marks (first characters))
+        sb    (new StringBuilder)]
+    (loop [[c & cs] (next characters)]
+      (cond (nil? c) (throw (ex-info "String parse error"
+                                     {:reason "Unexpected end of stream"}))
+            (= c until)        [(.toString sb) cs]
+            (= c (first "\\")) (do (.append sb (first cs)) (recur (next cs)))
+            :else              (do (.append sb c) (recur cs))))))
 
 (defn read-number
   "Reads a number literal from a sequence. Returns a tuple of read
    number (Double or Long) and the sequence of remaining characters."
   [characters]
-  (let [content (take-while (set "1234567890._") characters)
-        content ^String (apply str content)
+  (let [content (string (take-while (set "1234567890._")) characters)
         content (.replaceAll content "_" "")
         number  (if (some #{\.} content)
                   (Double/parseDouble content)
@@ -127,7 +126,7 @@
       (contains? ops2 [first-char (first next-chars)])
       (recur (next next-chars) (conj tokens (ops2 [first-char (first next-chars)])))
 
-      (and (= \- first-char) (or (nil? (peek tokens)) (keyword? (peek tokens))))
+      (and (= \- first-char) (or (nil? (peek tokens)) (and (not= (peek tokens) :close) (keyword? (peek tokens)))))
       (recur next-chars (conj tokens :neg))
 
       (contains? ops first-char)
@@ -137,12 +136,12 @@
       (let [[n tail] (read-number characters)]
         (recur tail (conj tokens n)))
 
-      (#{\" \' \“ \‘ \’ \„} first-char)
+      (quotation-marks first-char)
       (let [[s tail] (read-string-literal characters)]
         (recur tail (conj tokens s)))
 
       :else
-      (let [content (apply str (take-while identifier characters))]
+      (let [content (string (take-while identifier) characters)]
         (if (seq content)
           (let [tail (drop-while #{\space \tab} (drop (count content) characters))]
             (if (= \( (first tail))
@@ -179,7 +178,7 @@
 
       (empty? expr)
       (if (zero? parentheses)
-        (into result (remove #{:open} opstack))
+        (into result (remove #{:open}) opstack)
         (throw (ex-info "Too many open parentheses!" {})))
 
       (number? e0)
@@ -235,7 +234,7 @@
                            (< (precedence e0) (precedence %))) opstack)]
         (recur next-expr
                (conj keep-ops e0)
-               (into result (remove #{:open :comma} popped-ops))
+               (into result (remove #{:open :comma}) popped-ops)
                parentheses
                (if (= :comma e0)
                  (if (first functions)
@@ -265,6 +264,10 @@
   (if-let [default-fn (::functions *calc-vars*)]
     (default-fn fn-name args-seq)
     (throw (new IllegalArgumentException (str "Unknown function: " fn-name)))))
+
+;; Gives access to whole input payload. Useful when top level keys contain strange characters.
+;; Example: you can write data()['key1']['key2'] instead of key1.key2.
+(defmethod call-fn "data" [_] *calc-vars*)
 
 (defmethod action-arity FnCall [{:keys [args]}] args)
 

@@ -80,6 +80,9 @@
     (testing "Aritmetika"
       (is (= 5 (run "2 +3")))
       (is (= 3 (run "5 - 2")))
+      (is (= 3 (run "(3 + 2) - 2")))
+      (is (= 3 (run "coalesce(5, 1, 0) - 2")))
+      (is (= 3 (run "coalesce(5, 1, 0) - coalesce(2, 1)")))
       (is (= 6 (run "2 * 3")))
       (is (= 3 (run "6 / 2")))
       (is (= 36.0 (run "6 ^ 2")))
@@ -120,6 +123,9 @@
   (is (= 4 (run "a['1']"   {"a" {"1" 4}})))
   (is (= 5 (run "a[(1)]"   {"a" {"1" 5}})))
   (is (= 6 (run "(a)[1]"   {"a" {"1" 6}})))
+
+  (is (= {"a" {"b" 1}} (run "data()" {"a" {"b" 1}})))
+  (is (= 6 (run "data()['a-b']" {"a-b" 6})))
 
   (testing "multiple expressions"
     (is (= 7 (run "a[a[1]+4]" {"a" {"1" 2 "6" 7}})))
@@ -198,6 +204,8 @@
   (is (= 4.123 (run " 4.123")))
   (is (= -6 (run "-3*2")))
   (is (= -6 (run "2*-3")))
+  (is (= -6 (run "2*-(3)")))
+  (is (= -6 (run "(2)*-3")))
   (is (= -6 (run "2*(-3)")))
   (testing "a minusz jel precedenciaja nagyon magas"
     (is (= 20 (run "10/-1*-2 ")))))

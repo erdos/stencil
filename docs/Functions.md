@@ -8,6 +8,7 @@ This is a short description of the functions implemented in Stencil:
 - [ceil](#ceil)
 - [coalesce](#coalesce)
 - `currency`
+- [data](#data)
 - [date](#date)
 - [decimal](#decimal)
 - [empty](#empty)
@@ -40,6 +41,10 @@ This is a short description of the functions implemented in Stencil:
 ### Coalesce
 
 Accepts any number of arguments, returns the first not-empty value.
+
+### Data
+
+Can be used to access the whole template data.
 
 **Exampe:**
 

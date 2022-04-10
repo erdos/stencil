@@ -20,7 +20,7 @@
            (list 'to-array)
            (list '. (list 'stencil.log/get-logger (str *ns*)) '~level msg#)))))
 
-(declare trace debug info warn error fatal)
+(declare trace debug info warn error)
 
 (def-log-level trace)
 (def-log-level debug)

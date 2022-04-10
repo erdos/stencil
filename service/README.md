@@ -101,3 +101,27 @@ For example:
 ```
 
 You can bind the `STENCIL_LOG_LEVEL` environment variable to change the default logging level from `info`. Acceptible values: `trace`, `debug`, `info`, `warn`, `error`, `fatal`.
+
+### Custom Functions
+
+It is possible to extend Stencil service with custom functions defined in Javascript. Add a `stencil.js` file in the template directory so it can be read and executed when the service loads.
+The functions defined in the script will be available in the templates when rendered.
+
+The [Rhino](https://developer.mozilla.org/en-US/docs/Mozilla/Projects/Rhino) scripting engine is used for evaluating the scripts.
+
+In current version, the script file is not reloaded automatically, therefore a service restart is necessary on changes.
+
+Add a `stencil.js` file in the template directory with the following contents:
+```
+function daysBetweenTimestamps(ts1, ts2) {
+    var time1 = java.time.LocalDateTime.ofInstant(java.time.Instant.ofEpochSecond(ts1), java.util.TimeZone.getDefault().toZoneId());  
+    var time2 = java.time.LocalDateTime.ofInstant(java.time.Instant.ofEpochSecond(ts2), java.util.TimeZone.getDefault().toZoneId());  
+    var duration = java.time.Duration.between(time1, time2);
+    return duration.toDays();
+}
+```
+
+The function now can be called in the templates like the following:
+```
+   {%=daysBetweenTimestamps(1499070300, 1644956311)%}
+```

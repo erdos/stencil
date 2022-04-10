@@ -40,10 +40,11 @@
       (loop [[queue & ss0] stack]
         (let [new-stack (mod-stack-top-last ss0 update :blocks conj {:children queue})]
           (if (:r (peek (first new-stack)))
-            (recur (mod-stack-top-last  new-stack dissoc :r))
+            (recur (mod-stack-top-last new-stack dissoc :r))
             new-stack))))
 
-    (:echo nil :cmd/include) (mod-stack-top-conj stack token)))
+    (:echo nil :cmd/include)
+    (mod-stack-top-conj stack token)))
 
 (defn tokens->ast
   "Flat token listabol nested AST-t csinal (listak listai)"
@@ -67,12 +68,11 @@
     (vec
      (for [token nested-tokens]
        (if (:cmd token)
-         (as-> token token
-           (update token :blocks
-                   (partial mapv
-                            (comp (partial f-cmd-block-after token)
-                                  update-children
-                                  (partial f-cmd-block-before token)))))
+         (update token :blocks
+                 (partial mapv
+                          (comp (partial f-cmd-block-after token)
+                                update-children
+                                (partial f-cmd-block-before token))))
          (f-child token))))))
 
 (defn annotate-environments
@@ -136,7 +136,7 @@
     1 (let [[then] (:blocks control-ast)
             else   (:after then)]
         (-> (dissoc control-ast :blocks)
-            (assoc :then (vec (keep control-ast-normalize (:children then)),) :else else)))
+            (assoc :then (vec (keep control-ast-normalize (:children then))) :else (vec else))))
     ;; default
     (throw (parsing-exception (str open-tag "else" close-tag)
                               "Too many {%else%} tags in one condition!"))))
