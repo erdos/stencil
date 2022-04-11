@@ -15,9 +15,8 @@
 (defmethod eval-step :if [function data item]
   (let [condition (eval-rpn data function (:condition item))]
     (log/trace "Condition {} evaluated to {}" (:condition item) condition)
-    (if condition
-      (mapcat (partial eval-step function data) (:then item))
-      (mapcat (partial eval-step function data) (:else item)))))
+    (mapcat (partial eval-step function data)
+            (if condition (:then item) (:else item)))))
 
 (defmethod eval-step :echo [function data item]
   (let [value (eval-rpn data function (:expression item))]
@@ -41,6 +40,7 @@
 
 (defn eval-executable [part data functions]
   (assert (:executable part))
-  (tree-postprocess/postprocess
-   (tokenizer/tokens-seq->document
-    (normal-control-ast->evaled-seq data functions (:executable part)))))
+  (->> (:executable part)
+       (normal-control-ast->evaled-seq data functions)
+       (tokenizer/tokens-seq->document)
+       (tree-postprocess/postprocess)))

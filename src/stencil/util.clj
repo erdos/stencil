@@ -8,27 +8,26 @@
   "Removes suffixes of two lists where key-fn gives the same result."
   [key-fn stack1 stack2]
   (assert (ifn? key-fn))
-  (let [cnt (count (take-while true?
-                               (map (fn [a b] (= (key-fn a) (key-fn b)))
-                                    (reverse stack1) (reverse stack2))))]
-    [(take (- (count stack1) cnt) stack1)
-     (take (- (count stack2) cnt) stack2)]))
-
-(defn mod-stack-top-last
-  "Egy stack legfelso elemenek legutolso elemet modositja.
-   Ha nincs elem, IllegalStateException kivetelt dob."
-  [stack f & args]
-  (assert (list? stack) (str "Stack is not a list: " (pr-str stack)))
-  (assert (ifn? f))
-  (conj (rest stack)
-        (conj (pop (first stack))
-              (apply f (peek (first stack)) args))))
+  (loop [stack1rev (seq (reverse stack1))
+         stack2rev (seq (reverse stack2))]
+    (if (and (some? stack1rev)
+             (some? stack2rev)
+             (= (key-fn (first stack1rev)) (key-fn (first stack2rev))))
+      (recur (next stack1rev) (next stack2rev))
+      [(reverse stack1rev) (reverse stack2rev)])))
 
 (defn update-peek
   "Updates top element of a stack."
   [xs f & args]
   (assert (ifn? f))
   (conj (pop xs) (apply f (peek xs) args)))
+
+(defn mod-stack-top-last
+  "Egy stack legfelso elemenek legutolso elemet modositja.
+   Ha nincs elem, IllegalStateException kivetelt dob."
+  [stack f & args]
+  (assert (list? stack) (str "Stack is not a list: " (pr-str stack)))
+  (apply update-peek stack update-peek f args))
 
 (defn mod-stack-top-conj
   "Conjoins an element to the top item of a stack."
