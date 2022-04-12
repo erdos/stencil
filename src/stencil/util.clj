@@ -23,8 +23,7 @@
   (conj (pop xs) (apply f (peek xs) args)))
 
 (defn mod-stack-top-last
-  "Egy stack legfelso elemenek legutolso elemet modositja.
-   Ha nincs elem, IllegalStateException kivetelt dob."
+  "Updates the last element of the top element of the stack."
   [stack f & args]
   (assert (list? stack) (str "Stack is not a list: " (pr-str stack)))
   (apply update-peek stack update-peek f args))
