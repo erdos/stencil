@@ -56,9 +56,7 @@
       (first result))))
 
 (defn nested-tokens-fmap-postwalk
-  "Melysegi bejaras egy XML fan.
-
-  https://en.wikipedia.org/wiki/Depth-first_search"
+  "Depth-first traversal of the tree."
   [f-cmd-block-before f-cmd-block-after f-child nested-tokens]
   (let [update-children
         #(update % :children
@@ -102,8 +100,9 @@
      control-ast)))
 
 (defn stack-revert-close
-  "Megfordítja a listát es az :open elemeket :close elemekre kicseréli."
-  [stack] (reduce (fn [stack item] (if (:open item) (conj stack (->CloseTag (:open item))) stack)) () stack))
+  "Creates a seq of :close tags for each :open tag in the list in reverse order."
+  [stack]
+  (into () (comp (keep :open) (map ->CloseTag)) stack))
 
 ;; egy {:cmd ...} parancs objektumot kibont:
 ;; a :blocks kulcs alatt levo elemeket normalizalja es specialis kulcsok alatt elhelyezi
