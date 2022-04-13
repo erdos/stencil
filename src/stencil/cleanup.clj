@@ -58,11 +58,8 @@
 (defn nested-tokens-fmap-postwalk
   "Depth-first traversal of the tree."
   [f-cmd-block-before f-cmd-block-after f-child nested-tokens]
-  (let [update-children
-        #(update % :children
-                 (partial nested-tokens-fmap-postwalk
-                          f-cmd-block-before f-cmd-block-after
-                          f-child))]
+  (let [update-child-fn (partial nested-tokens-fmap-postwalk f-cmd-block-before f-cmd-block-after f-child)
+        update-children #(update % :children update-child-fn)]
     (vec
      (for [token nested-tokens]
        (if (:cmd token)
