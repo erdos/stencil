@@ -97,7 +97,7 @@
                                                  (instance? java.util.List e)))]
                     (fail "Wrong data, expected sequence, got: " {:data e}))
                   (mapcat seq elems))
-              (do (doseq [e elems :when (not (or (nil? e) (map? e)))]
+              (do (doseq [e elems :when (not (or (nil? e) (map? e) (instance? java.util.Map e)))]
                     (fail "Wrong data, expected map, got: " {:data e}))
                   (keep (partial lookup p) elems))))
           data
