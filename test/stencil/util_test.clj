@@ -19,7 +19,7 @@
 (deftest mod-stack-top-last-test
   (testing "Invalid input"
     (is (thrown? IllegalStateException (mod-stack-top-last '([]) inc)))
-    (is (thrown? NullPointerException (mod-stack-top-last '() inc))))
+    (is (thrown? IllegalStateException (mod-stack-top-last '() inc))))
 
   (testing "simple cases"
     (is (= '([3]) (mod-stack-top-last '([2]) inc)))
