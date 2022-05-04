@@ -85,6 +85,7 @@
       (is (= 3 (run "coalesce(5, 1, 0) - coalesce(2, 1)")))
       (is (= 6 (run "2 * 3")))
       (is (= 3 (run "6 / 2")))
+      (is (= 0.33333333M (run "1 / x" {"x" (bigdec 3)}))) ;; infinite expansion error
       (is (= 36.0 (run "6 ^ 2")))
       (is (= 2 (run "12 % 5"))))
 
