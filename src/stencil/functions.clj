@@ -1,7 +1,8 @@
 (ns stencil.functions
   "Function definitions"
   (:require [clojure.string]
-            [stencil.types :refer [->HideTableColumnMarker ->HideTableRowMarker]]
+            [stencil.ooxml :as ooxml]
+            [stencil.types :refer [->HideTableColumnMarker ->HideTableRowMarker ->FragmentInvoke]]
             [stencil.util :refer [fail find-first]]))
 
 (set! *warn-on-reflection* true)
@@ -108,3 +109,8 @@
      0 ""
      1 (str (first elements))
      (str (clojure.string/join separator1 (butlast elements)) separator2 (last elements))))
+
+;; inserts a page break at the current run.
+(let [br {:tag ooxml/br :attrs {ooxml/type "page"}}
+      page-break (->FragmentInvoke {:frag-evaled-parts [br]})]
+  (defmethod call-fn "pageBreak" [_] page-break))

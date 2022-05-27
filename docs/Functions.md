@@ -25,6 +25,7 @@ This is a short description of the functions implemented in Stencil:
 - [list](#list)
 - [lowercase](#lowercase)
 - [map](#map)
+- [pageBreak](#pagebreak)
 - `percent`
 - `range`
 - [round](#round)
@@ -163,6 +164,10 @@ The rendering throws an exception on invalid HTML input or unexpected HTML tags.
 
 Write the following to embed the content of `x` as HTML in the document:
 - <code>{<i>%=html(x) %</i>}</code>.
+
+### PageBreak
+
+Inserts a page break at the place of the call. Example: <code>{<i>%=pageBreak()%</i>}</code>
 
 ### XML
 
