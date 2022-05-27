@@ -43,7 +43,7 @@
 
 (def identifier
   "Characters found in an identifier"
-  (set "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM_.1234567890"))
+  (set "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM_1234567890"))
 
 (def operation-tokens
   "Operator precedences.
@@ -140,15 +140,22 @@
       (let [[s tail] (read-string-literal characters)]
         (recur tail (conj tokens s)))
 
+      (= \. first-char)
+      (if-let [xs (not-empty (string (take-while identifier) (next characters)))]
+        (let [tail (drop (inc (count xs)) characters)]
+          (recur tail (conj tokens :open-bracket xs :close-bracket)))
+        (throw (ex-info "Unexpected characters" {})))
+
+      (identifier first-char)
+      (let [content (string (take-while identifier) characters)
+            tail    (drop-while {\space \tab} (drop (count content) characters))]
+        (if (= \( (first tail))
+          (recur (next tail) (conj tokens (->FnCall content)))
+          (recur tail (conj tokens (symbol content)))))
+
       :else
-      (let [content (string (take-while identifier) characters)]
-        (if (seq content)
-          (let [tail (drop-while #{\space \tab} (drop (count content) characters))]
-            (if (= \( (first tail))
-              (recur (next tail) (conj tokens (->FnCall content)))
-              (recur tail (conj tokens (symbol content)))))
-          (throw (ex-info (str "Unexpected character: " first-char)
-                          {:character first-char})))))))
+      (throw (ex-info (str "Unexpected character: " first-char)
+                          {:character first-char})))))
 
 ;; throws ExceptionInfo when token sequence has invalid elems
 (defn- validate-tokens [tokens]
@@ -292,7 +299,7 @@
 
 (def-reduce-step :string [] +action+)
 (def-reduce-step :number [] +action+)
-(def-reduce-step :symbol [] (get-in *calc-vars* (vec (.split (name +action+) "\\."))))
+(def-reduce-step :symbol [] (get *calc-vars* (name +action+)))
 
 (def-reduce-step :neg [s0] (- s0))
 (def-reduce-step :times [s0 s1] (* s0 s1))

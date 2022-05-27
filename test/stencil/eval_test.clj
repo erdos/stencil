@@ -44,7 +44,7 @@
     (test-eval [{:cmd :echo :expression '[1 2 :plus]}]
                [{:text "3"}]))
   (testing "Nested data access with path"
-    (test-eval [{:cmd :echo :expression '[abc.def]}]
+    (test-eval [{:cmd :echo :expression '[abc "def" :get]}]
                [{:text "Okay"}])))
 
 (deftest test-for

@@ -46,7 +46,7 @@
 
   (testing "Simple values"
     (is (= [12] (infix/parse "  12 ") (infix/parse "12")))
-    (is (= '[ax.y] (infix/parse "   ax.y  "))))
+    (is (= '[ax "y" :get] (infix/parse "   ax.y  "))))
 
   (testing "Simple operations"
     (is (= [1 2 :plus]
@@ -131,6 +131,10 @@
   (testing "multiple expressions"
     (is (= 7 (run "a[a[1]+4]" {"a" {"1" 2 "6" 7}})))
     (is (= 8 (run "a[1][2]" {"a" {"1" {"2" 8}}}))))
+
+  (testing "mixed lookup"
+    (is (= 7 (run "a['x'].y" {"a" {"x" {"y" 7}}})))
+    (is (= 8 (run "a.x['y']" {"a" {"x" {"y" 8}}}))))
 
   (testing "syntax error"
     (is (thrown? ExceptionInfo (run "[3]" {})))
