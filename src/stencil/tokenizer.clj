@@ -23,10 +23,15 @@
       {:cmd       :if
        :condition (conj (vec (infix/parse (.substring text 7))) :not)}
 
+      ;; here: for x, y in ... syntax should also be supported!!!!!!
       (.startsWith text "for ")
-      (let [[v expr] (vec (.split (.substring text 4) " in " 2))]
+      (let [[v expr] (vec (.split (.substring text 4) " in " 2))
+             [idx v] (if (pos? (.indexOf v ","))
+                        (.split v ",")
+                        ["$index" v])]
         {:cmd        :for
          :variable   (symbol (.trim ^String v))
+         :index-var  (symbol (.trim ^String idx))
          :expression (infix/parse expr)})
 
       (.startsWith text "=")

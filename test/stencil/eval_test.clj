@@ -51,6 +51,7 @@
   (testing "loop without any items"
     (test-eval [{:cmd :for
                  :variable "index"
+                 :index-var "i"
                  :expression '[list0]
                  :body-run-once [{:text "xx"}]
                  :body-run-none [{:text "meh"}]
@@ -60,6 +61,7 @@
   (testing "loop with exactly 1 item"
     (test-eval [{:cmd :for
                  :variable "index"
+                 :index-var "i"
                  :expression '[list1]
                  :body-run-once [{:cmd :echo :expression '[index]}]
                  :body-run-none [{:text "meh"}]
@@ -69,6 +71,7 @@
   (testing "loop with exactly 3 items"
     (test-eval [{:cmd :for
                  :variable "index"
+                 :index-var "i"
                  :expression '[list3]
                  :body-run-once [{:cmd :echo :expression '[index]}]
                  :body-run-none [{:text "meh"}]
