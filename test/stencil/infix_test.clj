@@ -138,6 +138,7 @@
 
   (testing "syntax error"
     (is (thrown? ExceptionInfo (run "[3]" {})))
+    (is (thrown? ExceptionInfo (run "a..b" {})))
     (is (thrown? ExceptionInfo (run "a[[3]]" {})))
     (is (thrown? ExceptionInfo (run "a[1,2]" {}))))
 
