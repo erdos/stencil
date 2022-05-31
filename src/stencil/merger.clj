@@ -33,11 +33,11 @@
   (when-let [ind        (index-of s (str open-tag))]
     (if-let [after-idx  (index-of s (str close-tag))]
       (cond-> {:action (subs s (+ ind (count open-tag)) after-idx)}
-        (not (zero? ind)) (assoc :before (subs s 0 ind))
-        (not (= (+ (count close-tag) after-idx) (count s)))
+        (pos? ind) (assoc :before (subs s 0 ind))
+        (not= (+ (count close-tag) after-idx) (count s))
         (assoc :after (subs s (+ (count close-tag) after-idx))))
       (cond-> {:action-part (subs s (+ ind (count open-tag)))}
-      (not (zero? ind)) (assoc :before (subs s 0 ind))))))
+        (pos? ind) (assoc :before (subs s 0 ind))))))
 
 (defn text-split-tokens [^String s]
   (assert (string? s))
