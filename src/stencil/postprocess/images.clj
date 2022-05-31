@@ -1,5 +1,6 @@
 (ns stencil.postprocess.images
   (:require [clojure.java.io :as io]
+            [clojure.string :refer [starts-with? lower-case]]
             [clojure.zip :as zip]
             [stencil.log :as log]
             [stencil.ooxml :as ooxml]
@@ -21,15 +22,15 @@
   (fail "Can not parse image from template data!" {:type (type value)}))
 
 (defmethod parse-data-uri String [^String data-uri-str]
-  (when-not (.startsWith data-uri-str "data:")
+  (when-not (starts-with? data-uri-str "data:")
     (fail "Image data should be a valid data uri!" {}))
   (let [end-of-mimetype (.indexOf data-uri-str ";")
         start-of-data   (inc (.indexOf data-uri-str ","))]
     (when-not (and (pos? start-of-data)
-                   (= "base64" (.substring data-uri-str (inc end-of-mimetype) (dec start-of-data))))
+                   (= "base64" (subs data-uri-str (inc end-of-mimetype) (dec start-of-data))))
       (fail "Image data should be in valid base64-encoded data uri format!" {}))
-    {:mime-type (.toLowerCase (.substring data-uri-str 5 end-of-mimetype))
-     :bytes     (.decode (java.util.Base64/getDecoder) (.getBytes (.substring data-uri-str start-of-data)))}))
+    {:mime-type (lower-case (subs data-uri-str 5 end-of-mimetype))
+     :bytes     (.decode (java.util.Base64/getDecoder) (.getBytes (subs data-uri-str start-of-data)))}))
 
 (defn- update-image [img-node, ^ReplaceImage data]
   (assert (= ooxml/blip (:tag img-node)))

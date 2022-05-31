@@ -7,7 +7,8 @@
 
   valid XML String -> tokens -> Annotated Control AST -> Normalized Control AST -> Evaled AST -> Hiccup or valid XML String
   "
-  (:require [stencil.util :refer [mod-stack-top-conj mod-stack-top-last parsing-exception stacks-difference-key]]
+  (:require [clojure.string :refer [includes?]]
+            [stencil.util :refer [mod-stack-top-conj mod-stack-top-last parsing-exception stacks-difference-key]]
             [stencil.types :refer [open-tag close-tag ->CloseTag]]))
 
 (set! *warn-on-reflection* true)
@@ -175,7 +176,7 @@
             (assert (symbol? s))
             ;; megprobal egy adott szimbolumot a mapping alapjan rezolvalni.
             ;; visszaad egy stringet
-            (if (.contains (name s) ".")
+            (if (includes? (name s) ".")
               (let [[p1 p2] (vec (.split (name s) "\\." 2))]
                 (if-let [pt (mapping (symbol p1))]
                   (str pt "." p2)

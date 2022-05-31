@@ -56,7 +56,7 @@
          p))))
 
 (defn get-template [template-name]
-  (let [template-name (.substring (str template-name) 1) ;; so they dont start with /
+  (let [template-name (subs (str template-name) 1) ;; so they dont start with /
         parent (get-template-dir)
         template (file parent template-name)]
     (if (.exists template)

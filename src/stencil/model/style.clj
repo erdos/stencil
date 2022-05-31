@@ -2,6 +2,7 @@
   (:import [java.io File])
   (:require [clojure.data.xml :as xml]
             [clojure.java.io :as io]
+            [clojure.string :refer [ends-with?]]
             [stencil.ooxml :as ooxml]
             [stencil.model.common :refer :all]
             [stencil.util :refer :all]))
@@ -82,7 +83,7 @@
 
 (defn xml-rename-style-ids [style-id-renames xml-tree]
   (if (map? xml-tree)
-    (if (-> xml-tree :tag name (.endsWith "Style"))
+    (if (-> xml-tree :tag name (ends-with? "Style"))
       (update-some xml-tree [:attrs ooxml/val] style-id-renames)
       (update xml-tree :content (partial map (partial xml-rename-style-ids style-id-renames))))
     xml-tree))

@@ -9,8 +9,8 @@
 (defn- tag-and-attrs-namespaces [form]
   (when (map? form)
     (for [x (keep namespace (list* (:tag form) (keys (:attrs form))))
-          :when (.startsWith (str x) "xmlns.")]
-      (url-decode (.substring (str x) 6)))))
+          :when (s/starts-with? (str x) "xmlns.")]
+      (url-decode (subs (str x) 6)))))
 
 (defn- elem-meta-namespaces [form]
   (when (map? form)

@@ -1,6 +1,7 @@
 (ns stencil.tokenizer
   "Fog egy XML dokumentumot es tokenekre bontja"
   (:require [clojure.data.xml :as xml]
+            [clojure.string :refer [starts-with?]]
             [stencil.infix :as infix]
             [stencil.types :refer [open-tag close-tag]]
             [stencil.util :refer [assoc-if-val mod-stack-top-conj mod-stack-top-last parsing-exception]]))
@@ -15,34 +16,34 @@
       (#{"end" "endfor" "endif"} text) {:cmd :end}
       (= text "else") {:cmd :else}
 
-      (.startsWith text "if ")
+      (starts-with? text "if ")
       {:cmd       :if
-       :condition (infix/parse (.substring text 3))}
+       :condition (infix/parse (subs text 3))}
 
-      (.startsWith text "unless ")
+      (starts-with? text "unless ")
       {:cmd       :if
-       :condition (conj (vec (infix/parse (.substring text 7))) :not)}
+       :condition (conj (vec (infix/parse (subs text 7))) :not)}
 
-      (.startsWith text "for ")
-      (let [[v expr] (vec (.split (.substring text 4) " in " 2))]
+      (starts-with? text "for ")
+      (let [[v expr] (vec (.split (subs text 4) " in " 2))]
         {:cmd        :for
          :variable   (symbol (.trim ^String v))
          :expression (infix/parse expr)})
 
-      (.startsWith text "=")
+      (starts-with? text "=")
       {:cmd        :echo
-       :expression (infix/parse (.substring text 1))}
+       :expression (infix/parse (subs text 1))}
 
       ;; fragment inclusion
-      (.startsWith text "include ")
+      (starts-with? text "include ")
       {:cmd :cmd/include
-       :name (first (infix/parse (.substring text 8)))}
+       :name (first (infix/parse (subs text 8)))}
 
       ;; `else if` expression
       (seq (re-seq pattern-elseif text))
       (let [prefix-len (count (ffirst (re-seq pattern-elseif text)))]
         {:cmd :else-if
-         :condition (infix/parse (.substring text prefix-len))})
+         :condition (infix/parse (subs text prefix-len))})
 
       :else (throw (ex-info "Unexpected command" {:command text})))))
 

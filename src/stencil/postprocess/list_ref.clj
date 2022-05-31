@@ -3,6 +3,7 @@
             [stencil.ooxml :as ooxml]
             [stencil.model.numbering :as numbering]
             [stencil.log :as log]
+            [clojure.string :refer [last-index-of lower-case starts-with?]]
             [clojure.zip :as zip]))
 
 (set! *warn-on-reflection* true)
@@ -32,7 +33,7 @@
         (recur (conj buf romnum) (- n value))))))
 
 (defmethod render-number "lowerRoman" [_ number]
-  (.toLowerCase (str (render-number "upperRoman" number))))
+  (lower-case (render-number "upperRoman" number)))
 
 (defmethod render-number "decimal" [_ number] (str (int number)))
 (defmethod render-number "decimalZero" [_ number]
@@ -57,7 +58,7 @@
           (recur q (str (nth abc r) out)))))))
 
 (defmethod render-number "lowerLetter" [_ number]
-  (.toLowerCase (str (render-number "upperLetter" number))))
+  (lower-case (str (render-number "upperLetter" number))))
 
 (defmethod render-number "chicago" [_ number]
   (nth (for [i (next (range)), c "*†‡§‖#"]
@@ -73,9 +74,9 @@
 ;; "%1/%2."  -> "%1/%2"
 ;; "%1/%2"   -> "%1/%2"
 (defn pattern-rm-prefix-if-no-suffix [^String pattern]
-  (if-not (.startsWith pattern "%")
+  (if-not (starts-with? pattern "%")
     pattern
-    (.substring pattern 0 (+ 2 (.lastIndexOf pattern "%")))))
+    (subs pattern 0 (+ 2 (last-index-of pattern "%")))))
 
 ;; full context is joining of patterns.
 (defn- render-list-full-context [styles levels drop-start]

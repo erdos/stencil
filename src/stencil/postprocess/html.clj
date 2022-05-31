@@ -1,6 +1,7 @@
 (ns stencil.postprocess.html
   "Replaces results of html() calls with external part relationships."
   (:require [clojure.zip :as zip]
+            [clojure.string :refer [lower-case]]
             [clojure.data.xml :as xml]
             [stencil.functions :refer [call-fn]]
             [stencil.postprocess.fragments :as fragments]
@@ -18,7 +19,7 @@
   "Set of supported HTML tags"
   #{:b :em :i :u :s :sup :sub :span :br :strong})
 
-(defn- kw-lowercase [kw] (-> kw name .toLowerCase keyword))
+(defn- kw-lowercase [kw] (-> kw name lower-case keyword))
 
 (defn- validate-tags
   "Throws ExceptionInfo on invalid HTML tag in tree"

@@ -38,6 +38,8 @@
 (defn zipper? [loc] (-> loc meta (contains? :zip/branch?)))
 (defn iterations [f elem] (eduction (take-while some?) (iterate f elem)))
 
+;; same aiterations [f elem] (eduction (take-while some?) (iterate f elem)))
+
 ;; same as (first (filter pred xs))
 (defn find-first [pred xs] (reduce (fn [_ x] (if (pred x) (reduced x))) nil xs))
 (defn find-last [pred xs] (reduce (fn [a x] (if (pred x) x a)) nil xs))
@@ -66,7 +68,7 @@
         (number? x) (int x)
         :else       (fail "Unexpected type of input" {:type (:type x) :input x})))
 
-(defn subs-last [^String s ^long n] (.substring s (- (.length s) n)))
+(defn subs-last [^String s ^long n] (subs s (- (count s) n)))
 
 (defn parsing-exception [expression message]
   (ParsingException/fromMessage (str expression) (str message)))

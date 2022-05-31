@@ -1,6 +1,7 @@
 (ns stencil.merger
   "Token listaban a text tokenekbol kiszedi a parancsokat es action tokenekbe teszi."
   (:require [clojure.data.xml :as xml]
+            [clojure.string :refer [index-of ends-with?]]
             [stencil.postprocess.ignored-tag :as ignored-tag]
             [stencil
              [types :refer [open-tag close-tag]]
@@ -29,17 +30,14 @@
 
 (defn find-first-code [^String s]
   (assert (string? s))
-  (let [ind        (.indexOf s (str open-tag))]
-    (when-not (neg? ind)
-      (let [after-idx  (.indexOf s (str close-tag))]
-        (if (neg? after-idx)
-          (cond-> {:action-part (.substring s (+ ind (count open-tag)))}
-            (not (zero? ind)) (assoc :before (.substring s 0 ind)))
-          (cond-> {:action (.substring s (+ ind (count open-tag))
-                                       after-idx)}
-            (not (zero? ind)) (assoc :before (.substring s 0 ind))
-            (not (= (+ (count close-tag) after-idx) (count s)))
-            (assoc :after (.substring s (+ (count close-tag) after-idx)))))))))
+  (when-let [ind        (index-of s (str open-tag))]
+    (if-let [after-idx  (index-of s (str close-tag))]
+      (cond-> {:action (subs s (+ ind (count open-tag)) after-idx)}
+        (not (zero? ind)) (assoc :before (subs s 0 ind))
+        (not (= (+ (count close-tag) after-idx) (count s)))
+        (assoc :after (subs s (+ (count close-tag) after-idx))))
+      (cond-> {:action-part (subs s (+ ind (count open-tag)))}
+      (not (zero? ind)) (assoc :before (subs s 0 ind))))))
 
 (defn text-split-tokens [^String s]
   (assert (string? s))
@@ -73,7 +71,7 @@
 (defn -last-chars-count [sts-tokens]
   (assert (sequential? sts-tokens))
   (when-let [last-text (some-> sts-tokens last :text string)]
-    (some #(when (.endsWith last-text (string %))
+    (some #(when (ends-with? last-text (string %))
              (count %))
           (prefixes open-tag))))
 
