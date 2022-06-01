@@ -30,10 +30,15 @@
     [{:text (if (control? value) value (str value))}]))
 
 (defmethod eval-step :for [function data item]
-  (let [items (seq (eval-rpn data function (:expression item)))]
+  (let [items (eval-rpn data function (:expression item))]
     (log/trace "Loop on {} will repeat {} times" (:expression item) (count items))
-    (if (seq items)
-      (let [datas  (map #(assoc data (name (:variable item)) %) items)
+    (if (not-empty items)
+      (let [index-var-name (name (:index-var item))
+            loop-var-name  (name (:variable item))
+            datamapper     (fn [key val] (assoc data, index-var-name key, loop-var-name val))
+            datas          (if (or (instance? java.util.Map items) (map? items))
+                             (map datamapper (keys items) (vals items))
+                             (map-indexed datamapper items))
             bodies (cons (:body-run-once item) (repeat (:body-run-next item)))]
         (mapcat (fn [data body] (normal-control-ast->evaled-seq data function body)) datas bodies))
       (:body-run-none item))))
