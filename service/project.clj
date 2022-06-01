@@ -8,6 +8,6 @@
                  [org.slf4j/slf4j-api "2.0.0-alpha7"]
                  [org.mozilla/rhino-engine "1.7.14"]
                  [http-kit "2.5.0"]
-                 [ring/ring-json "0.5.0"]]
+                 [ring/ring-json "0.5.1"]]
   :aot :all
   :main stencil.service)
