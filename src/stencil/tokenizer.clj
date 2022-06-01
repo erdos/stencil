@@ -26,7 +26,7 @@
 
       ;; here: for x, y in ... syntax should also be supported!!!!!!
       (.startsWith text "for ")
-      (let [[v expr] (vec (.split (.substring text 4) " in " 2))
+      (let [[v expr] (split (subs text 4) #" in " 2)
              [idx v] (if (includes? v ",") (split v #",") ["$" v])]
         {:cmd        :for
          :variable   (symbol (trim v))
