@@ -68,6 +68,16 @@
                  :body-run-next [{:text "x"}]}]
                [{:text "1"}]))
 
+  (testing "loop with exactly 1 item and index var used"
+    (test-eval [{:cmd :for
+                 :variable "index"
+                 :index-var "i"
+                 :expression '[abc]
+                 :body-run-once [{:cmd :echo :expression '[i]} {:text "==>"} {:cmd :echo :expression '[index]}]
+                 :body-run-none [{:text "should-not-run"}]
+                 :body-run-next [{:text "should-not-run"}]}]
+               [{:text "def"} {:text "==>"} {:text "Okay"}]))
+
   (testing "loop with exactly 3 items"
     (test-eval [{:cmd :for
                  :variable "index"
