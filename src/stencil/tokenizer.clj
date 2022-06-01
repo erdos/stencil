@@ -24,7 +24,6 @@
       {:cmd       :if
        :condition (conj (vec (infix/parse (.substring text 7))) :not)}
 
-      ;; here: for x, y in ... syntax should also be supported!!!!!!
       (.startsWith text "for ")
       (let [[v expr] (split (subs text 4) #" in " 2)
              [idx v] (if (includes? v ",") (split v #",") ["$" v])]
