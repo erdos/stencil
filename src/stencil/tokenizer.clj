@@ -1,6 +1,7 @@
 (ns stencil.tokenizer
   "Fog egy XML dokumentumot es tokenekre bontja"
   (:require [clojure.data.xml :as xml]
+            [clojure.string :refer [includes? split]]
             [stencil.infix :as infix]
             [stencil.types :refer [open-tag close-tag]]
             [stencil.util :refer [assoc-if-val mod-stack-top-conj mod-stack-top-last parsing-exception]]))
@@ -26,9 +27,7 @@
       ;; here: for x, y in ... syntax should also be supported!!!!!!
       (.startsWith text "for ")
       (let [[v expr] (vec (.split (.substring text 4) " in " 2))
-             [idx v] (if (pos? (.indexOf v ","))
-                        (.split v ",")
-                        ["$index" v])]
+             [idx v] (if (includes? v ",") (split v #",") ["$" v])]
         {:cmd        :for
          :variable   (symbol (.trim ^String v))
          :index-var  (symbol (.trim ^String idx))

@@ -106,7 +106,7 @@
 
 (deftest read-tokens-for
   (testing "Simple loop"
-    (is (= '[{:open :a} {:cmd :for, :expression [xs], :variable x}
+    (is (= '[{:open :a} {:cmd :for, :expression [xs], :variable x :index-var $}
              {:text "item"} {:cmd :end} {:close :a}]
            (run "<a>{%for x in xs%}item{% end %}</a>")))))
 
