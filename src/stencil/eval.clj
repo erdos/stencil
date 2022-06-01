@@ -35,10 +35,10 @@
     (if (not-empty items)
       (let [index-var-name (name (:index-var item))
             loop-var-name  (name (:variable item))
-            datamapper     (fn [val key] (assoc data, index-var-name key, loop-var-name val))
+            datamapper     (fn [key val] (assoc data, index-var-name key, loop-var-name val))
             datas          (if (or (instance? java.util.Map items) (map? items))
-                             (map datamapper (vals items) (keys items))
-                             (map datamapper items (range)))
+                             (map datamapper (keys items) (vals items))
+                             (map-indexed datamapper items))
             bodies (cons (:body-run-once item) (repeat (:body-run-next item)))]
         (mapcat (fn [data body] (normal-control-ast->evaled-seq data function body)) datas bodies))
       (:body-run-none item))))
