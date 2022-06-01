@@ -33,11 +33,12 @@
   (let [items (eval-rpn data function (:expression item))]
     (log/trace "Loop on {} will repeat {} times" (:expression item) (count items))
     (if (not-empty items)
-      (let [datamapper (fn [val key] (assoc data (name (:variable item)) val
-                                                 (name (:index-var item)) key))
-            datas  (if (or (instance? java.util.Map items) (map? items))
-                      (map datamapper (vals items) (keys items))
-                      (map datamapper items (range)))
+      (let [index-var-name (name (:index-var item))
+            loop-var-name  (name (:variable item))
+            datamapper     (fn [val key] (assoc data, index-var-name key, loop-var-name val))
+            datas          (if (or (instance? java.util.Map items) (map? items))
+                             (map datamapper (vals items) (keys items))
+                             (map datamapper items (range)))
             bodies (cons (:body-run-once item) (repeat (:body-run-next item)))]
         (mapcat (fn [data body] (normal-control-ast->evaled-seq data function body)) datas bodies))
       (:body-run-none item))))
