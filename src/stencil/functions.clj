@@ -19,7 +19,7 @@
   ([_ x y z] (range x y z)))
 
 (defmethod call-fn "integer" [_ n] (some-> n biginteger))
-(defmethod call-fn "decimal" [_ f] (some-> f bigdec))
+(defmethod call-fn "decimal" [_ f] (with-precision 8 (some-> f bigdec)))
 
 ;; The format() function calls java.lang.String.format()
 ;; but it predicts the argument types from the format string and
