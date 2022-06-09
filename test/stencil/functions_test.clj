@@ -27,6 +27,8 @@
     (is (= "Hello null" (call-fn "format" "Hello %c" nil)))
     (is (= "Hello x" (call-fn "format" "Hello %c" "x")))
     (is (= "Hello X" (call-fn "format" "Hello %C" \x))))
+  (testing "decimal precision"
+    (is (= "0.33" (call-fn "format" "%,.2f" 1/3))))
   (testing "Indexed parameters"
     (is (= "hello 42 41.00" (call-fn "format" "hello %2$d %1$,.2f" 41.0 42.0))))
   (is (= "hello john" (call-fn "format" "hello %s" "john")))

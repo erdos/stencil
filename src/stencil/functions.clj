@@ -51,7 +51,7 @@
                                                                 (string? value) (first value)
                                                                 :else (char (int value)))
                             ("d" "o" "x" "X")             (some-> value biginteger)
-                            ("e" "E" "f" "g" "G" "a" "A") (some-> value bigdec)
+                            ("e" "E" "f" "g" "G" "a" "A") (with-precision 8 (some-> value bigdec))
                             value)))
            (to-array)
            (String/format locale pattern-str)))))
