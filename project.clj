@@ -32,7 +32,7 @@
                    :dependencies [[org.slf4j/slf4j-simple "1.7.32"]]
                    :jvm-opts ["-Dorg.slf4j.simpleLogger.defaultLogLevel=debug"]}
              :test {:aot :all
-                    :dependencies [[junit/junit "4.12"]
+                    :dependencies [[junit/junit "4.13.2"]
                                    [org.xmlunit/xmlunit-core "2.5.1"]
                                    [hiccup "1.0.5"]]
                     :plugins      [[lein-test-out "0.3.1"]]
