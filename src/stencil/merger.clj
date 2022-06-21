@@ -57,18 +57,16 @@
         {:tokens (conj output {:text s})}
         {:tokens output}))))
 
-(declare cleanup-runs)
-
 ;; returns a map of {:char :stack :text-rest :rest}
 (defn -find-open-tag [last-chars-count next-token-list]
   (assert (integer? last-chars-count))
   (assert (pos? last-chars-count))
   (assert (sequential? next-token-list))
-  (when (= (drop last-chars-count open-tag)
-           (take (- (count open-tag) last-chars-count)
-                 (map :char (peek-next-text next-token-list))))
-    (nth (peek-next-text next-token-list)
-         (dec (- (count open-tag) last-chars-count)))))
+  (let [next-text (peek-next-text next-token-list)
+        n         (- (count open-tag) last-chars-count)]
+    (when (= (drop last-chars-count open-tag)
+             (take n (map :char next-text)))
+      (nth next-text (dec n)))))
 
 (defn -last-chars-count [sts-tokens]
   (assert (sequential? sts-tokens))
@@ -85,6 +83,8 @@
         {:text (str open-tag action close-tag)}
         {:action parsed}))
     token))
+
+(declare cleanup-runs)
 
 (defn cleanup-runs-1 [[first-token & rest-tokens]]
   (assert (:text first-token))

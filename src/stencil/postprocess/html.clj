@@ -48,14 +48,15 @@
         (update x :path conj (kw-lowercase (:tag xml)))))
     [{:text xml}]))
 
-(defn- path->styles [path]
-  (cond-> []
-    (some #{:b :em :strong} path) (conj {:tag ooxml/b :attrs {ooxml/val "true"}})
-    (some #{:i} path) (conj {:tag ooxml/i :attrs {ooxml/val "true"}})
-    (some #{:s} path) (conj {:tag ooxml/strike :attrs {ooxml/val "true"}})
-    (some #{:u} path) (conj {:tag ooxml/u :attrs {ooxml/val "single"}})
-    (some #{:sup} path) (conj {:tag ooxml/vertAlign :attrs {ooxml/val "superscript"}})
-    (some #{:sub} path) (conj {:tag ooxml/vertAlign :attrs {ooxml/val "subscript"}})))
+(defn- path->style [p]
+  (case p
+    (:b :em :strong) {:tag ooxml/b :attrs {ooxml/val "true"}}
+    (:i)             {:tag ooxml/i :attrs {ooxml/val "true"}}
+    (:s)             {:tag ooxml/strike :attrs {ooxml/val "true"}}
+    (:u)             {:tag ooxml/u :attrs {ooxml/val "single"}}
+    (:sup)           {:tag ooxml/vertAlign :attrs {ooxml/val "superscript"}}
+    (:sub)           {:tag ooxml/vertAlign :attrs {ooxml/val "subscript"}}
+    nil))
 
 (defn html->ooxml-runs
   "Parses html string and returns a seq of ooxml run elements.
@@ -64,7 +65,7 @@
   (when (seq html)
     (let [ch (walk-children (parse-html (str "<span>" html "</span>")))]
       (for [parts (partition-by :path ch)
-            :let [prs (into (set base-style) (path->styles (:path (first parts))))]]
+            :let [prs (into (set base-style) (keep path->style) (:path (first parts)))]]
         {:tag ooxml/r
          :content (cons {:tag ooxml/rPr :content (vec prs)}
                         (for [{:keys [text]} parts]
