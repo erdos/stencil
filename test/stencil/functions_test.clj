@@ -117,7 +117,8 @@
 (deftest test-replace
   (is (= "a1c" (call-fn "replace" "abc" "b" "1")))
   (is (= "a1a1" (call-fn "replace" "abab" "b" "1")))
-  (is (= "a1a1" (call-fn "replace" "a.a." "." "1"))))
+  (is (= "a1a1" (call-fn "replace" "a.a." "." "1")))
+  (is (= "123456" (call-fn "replace" "   12 34   56 " " " ""))))
 
 (import '[stencil.types ReplaceImage])
 (def data-uri "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==")
