@@ -106,6 +106,11 @@
     (is (thrown? ExceptionInfo (call-fn "map" "x" {:x 1 :y 2})))
     (is (thrown? ExceptionInfo (call-fn "map" 1 [])))))
 
+(deftest test-coalesce
+  (is (= 1 (call-fn "coalesce" 1 2)))
+  (is (= 1 (call-fn "coalesce" nil nil 1 nil 2 nil)))
+  (is (= nil (call-fn "coalesce" nil nil nil))))
+
 (deftest test-join-and
   (are [expect param] (= expect (call-fn "joinAnd" param ", " " and "))
     ""           nil
