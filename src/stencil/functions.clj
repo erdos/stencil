@@ -110,6 +110,9 @@
      1 (str (first elements))
      (str (clojure.string/join separator1 (butlast elements)) separator2 (last elements))))
 
+(defmethod call-fn "replace" [_ text pattern replacement]
+  (clojure.string/replace (str text) (str pattern) (str replacement)))
+
 ;; inserts a page break at the current run.
 (let [br {:tag ooxml/br :attrs {ooxml/type "page"}}
       page-break (->FragmentInvoke {:frag-evaled-parts [br]})]
