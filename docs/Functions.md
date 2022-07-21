@@ -205,6 +205,10 @@ The `lowercase(x)` function turns its string argument into a lowercase string. F
 
 The `str(x)` functions convers its non-null arguments into a string. Returns an empty string when all arguments are null.
 
+## Replace
+
+The `replace(text, pattern, replacement)` function replaces all occurrence of `pattern` in `text` by `replacement`.
+
 ## Numeric functions
 
 ### Round
