@@ -31,7 +31,7 @@
   (assert (string? s))
   (let [ind        (.indexOf s (str open-tag))]
     (when-not (neg? ind)
-      (let [after-idx  (.indexOf s (str close-tag))]
+      (let [after-idx  (.indexOf s (str close-tag) ind)]
         (if (neg? after-idx)
           (cond-> {:action-part (.substring s (+ ind (count open-tag)))}
             (not (zero? ind)) (assoc :before (.substring s 0 ind)))

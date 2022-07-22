@@ -127,8 +127,7 @@
             [{:text "abc"} {:text "{"} O1 {:text "%"} O2 {:text "=1"} O3 {:text "2"} O4 {:text "%"} O5 {:text "}"} {:text "b"}]
             [{:text "abc"} {:action {:cmd :echo, :expression [12]}} O1 O2 O3 O4 O5 {:text "b"}]
 
-            ;; TODO: this is failing!
             [O1 {:text "{%if p"} C1 O1 {:text "%}one{%end%}"} C1]
-            [O1 {:text "{%if p"} C1 O1 {:text "%}one{%end%}"} C1]
+            [O1 {:text "{%if p"} C1 O1 {:text "%}one"} {:text "{%end%}"} C1]
             [O1 {:action {:cmd :if, :condition '[p]}} C1 O1 {:text "one"} {:action {:cmd :end}} C1]           
             ))))
