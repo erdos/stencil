@@ -25,6 +25,12 @@
 ;; Content Break: http://officeopenxml.com/WPtextSpecialContent-break.php
 (def br :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/br)
 
+;; TODO what is this for? ezt kene hasznalni br page helyett? >_-ovvo-_<
+(def last-rendered-page-break :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/lastRenderedPageBreak)
+
+;; TODO: es ezek mik?
+;;  w:rsidR="00F979C3" w:rsidRPr="002A24B2"
+
 (def type :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/type)
 
 (def w :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/w)
