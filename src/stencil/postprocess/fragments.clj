@@ -102,8 +102,7 @@
 
         (zip/remove))))
 
-;; return loc of first p? idk
-;; chunk-loc must be in a <T> node.
+
 (defn- split-paragraphs [chunk-loc & insertable-paragraphs]
   (let [p-left (-> chunk-loc
                    (remove-all-rights)
