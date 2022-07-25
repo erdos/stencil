@@ -126,4 +126,8 @@
             [{:text "abc{"} O1 {:text "%"} O2 {:text "=1"} O3 {:text "2"} O4 {:text "%"} O5 {:text "}"} {:text "b"}]
             [{:text "abc"} {:text "{"} O1 {:text "%"} O2 {:text "=1"} O3 {:text "2"} O4 {:text "%"} O5 {:text "}"} {:text "b"}]
             [{:text "abc"} {:action {:cmd :echo, :expression [12]}} O1 O2 O3 O4 O5 {:text "b"}]
+
+            [O1 {:text "{%if p"} O2 O3 {:text "%}one{%end%}"} O4]
+            [O1 {:text "{%if p"} O2 O3 {:text "%}one"} {:text "{%end%}"} O4]
+            [O1 {:action {:cmd :if, :condition '[p]}} O2 O3 {:text "one"} {:action {:cmd :end}} O4]           
             ))))
