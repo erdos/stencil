@@ -2,6 +2,7 @@ package io.github.erdos.stencil.impl;
 
 import clojure.lang.AFunction;
 import clojure.lang.IFn;
+import clojure.lang.PersistentHashMap;
 import io.github.erdos.stencil.*;
 import io.github.erdos.stencil.exceptions.EvalException;
 import io.github.erdos.stencil.functions.FunctionEvaluator;
@@ -49,7 +50,7 @@ public final class NativeEvaluator {
         stopwatch.accept(() -> "Starting document rendering for template " + template.getTemplateFile());
 
         final IFn fn = ClojureHelper.findFunction("eval-template");
-        final Map argsMap = makeArgsMap(template.getSecretObject(), fragments, data.getData());
+        final Object argsMap = makeArgsMap(template.getSecretObject(), fragments, data.getData());
 
         final Map result;
         try {
@@ -94,7 +95,7 @@ public final class NativeEvaluator {
     }
 
     @SuppressWarnings("unchecked")
-    private Map makeArgsMap(Object template, Map<String, PreparedFragment> fragments, Object data) {
+    private Object makeArgsMap(Object template, Map<String, PreparedFragment> fragments, Object data) {
         final Map result = new HashMap();
         result.put(ClojureHelper.Keywords.TEMPLATE.kw, template);
         result.put(ClojureHelper.Keywords.DATA.kw, data);
@@ -103,9 +104,9 @@ public final class NativeEvaluator {
         // string to clojure map
         final Map<String, Object> kvs = fragments.entrySet().stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, v -> v.getValue().getImpl()));
-        result.put(ClojureHelper.Keywords.FRAGMENTS.kw, kvs);
+        result.put(ClojureHelper.Keywords.FRAGMENTS.kw, PersistentHashMap.create(kvs));
 
-        return result;
+        return PersistentHashMap.create(result);
     }
 
     private final class FunctionCaller extends AFunction {
