@@ -54,7 +54,7 @@
               text (:content run)
               :when (map? text)
               :when (= ooxml/t (:tag text))
-              c (:content run)
+              c (:content text)
               :when (string? c)
               :when (not-empty c)] c))))
 

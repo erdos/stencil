@@ -1,6 +1,6 @@
 (ns stencil.ooxml
   "Contains common xml element tags and attributes"
-  (:refer-clojure :exclude [val name]))
+  (:refer-clojure :exclude [val name type]))
 
 ;; run and properties
 (def r :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/r)
@@ -24,6 +24,8 @@
 
 ;; Content Break: http://officeopenxml.com/WPtextSpecialContent-break.php
 (def br :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/br)
+
+(def type :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/type)
 
 (def w :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/w)
 

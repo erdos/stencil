@@ -105,8 +105,12 @@
            (run "<a>Hello {%if x%}iksz{%elif y%}ipszilon{%else%}egyebkent{%end%} Hola</a>")))))
 
 (deftest read-tokens-for
+  (testing "Indexed loop"
+    (is (= '[{:open :a} {:cmd :for, :expression [xs], :variable x :index-var idx}
+             {:text "item"} {:cmd :end} {:close :a}]
+           (run "<a>{%for idx, x in xs%}item{% end %}</a>"))))
   (testing "Simple loop"
-    (is (= '[{:open :a} {:cmd :for, :expression [xs], :variable x}
+    (is (= '[{:open :a} {:cmd :for, :expression [xs], :variable x :index-var $}
              {:text "item"} {:cmd :end} {:close :a}]
            (run "<a>{%for x in xs%}item{% end %}</a>")))))
 

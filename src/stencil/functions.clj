@@ -1,7 +1,8 @@
 (ns stencil.functions
   "Function definitions"
   (:require [clojure.string]
-            [stencil.types :refer [->HideTableColumnMarker ->HideTableRowMarker]]
+            [stencil.ooxml :as ooxml]
+            [stencil.types :refer [->HideTableColumnMarker ->HideTableRowMarker ->FragmentInvoke]]
             [stencil.util :refer [fail find-first]]))
 
 (set! *warn-on-reflection* true)
@@ -18,7 +19,7 @@
   ([_ x y z] (range x y z)))
 
 (defmethod call-fn "integer" [_ n] (some-> n biginteger))
-(defmethod call-fn "decimal" [_ f] (some-> f bigdec))
+(defmethod call-fn "decimal" [_ f] (with-precision 8 (some-> f bigdec)))
 
 ;; The format() function calls java.lang.String.format()
 ;; but it predicts the argument types from the format string and
@@ -50,7 +51,7 @@
                                                                 (string? value) (first value)
                                                                 :else (char (int value)))
                             ("d" "o" "x" "X")             (some-> value biginteger)
-                            ("e" "E" "f" "g" "G" "a" "A") (some-> value bigdec)
+                            ("e" "E" "f" "g" "G" "a" "A") (with-precision 8 (some-> value bigdec))
                             value)))
            (to-array)
            (String/format locale pattern-str)))))
@@ -97,7 +98,7 @@
                                                  (instance? java.util.List e)))]
                     (fail "Wrong data, expected sequence, got: " {:data e}))
                   (mapcat seq elems))
-              (do (doseq [e elems :when (not (or (nil? e) (map? e)))]
+              (do (doseq [e elems :when (not (or (nil? e) (map? e) (instance? java.util.Map e)))]
                     (fail "Wrong data, expected map, got: " {:data e}))
                   (keep (partial lookup p) elems))))
           data
@@ -108,3 +109,11 @@
      0 ""
      1 (str (first elements))
      (str (clojure.string/join separator1 (butlast elements)) separator2 (last elements))))
+
+(defmethod call-fn "replace" [_ text pattern replacement]
+  (clojure.string/replace (str text) (str pattern) (str replacement)))
+
+;; inserts a page break at the current run.
+(let [br {:tag ooxml/br :attrs {ooxml/type "page"}}
+      page-break (->FragmentInvoke {:frag-evaled-parts [br]})]
+  (defmethod call-fn "pageBreak" [_] page-break))

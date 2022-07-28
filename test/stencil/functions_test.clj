@@ -27,6 +27,8 @@
     (is (= "Hello null" (call-fn "format" "Hello %c" nil)))
     (is (= "Hello x" (call-fn "format" "Hello %c" "x")))
     (is (= "Hello X" (call-fn "format" "Hello %C" \x))))
+  (testing "decimal precision"
+    (is (= "0.33" (call-fn "format" "%,.2f" 1/3))))
   (testing "Indexed parameters"
     (is (= "hello 42 41.00" (call-fn "format" "hello %2$d %1$,.2f" 41.0 42.0))))
   (is (= "hello john" (call-fn "format" "hello %s" "john")))
@@ -104,6 +106,11 @@
     (is (thrown? ExceptionInfo (call-fn "map" "x" {:x 1 :y 2})))
     (is (thrown? ExceptionInfo (call-fn "map" 1 [])))))
 
+(deftest test-coalesce
+  (is (= 1 (call-fn "coalesce" 1 2)))
+  (is (= 1 (call-fn "coalesce" nil nil 1 nil 2 nil)))
+  (is (= nil (call-fn "coalesce" nil nil nil))))
+
 (deftest test-join-and
   (are [expect param] (= expect (call-fn "joinAnd" param ", " " and "))
     ""           nil
@@ -111,6 +118,12 @@
     "1"          [1]
     "1 and 2"    [1 2]
     "1, 2 and 3" [1 2 3]))
+
+(deftest test-replace
+  (is (= "a1c" (call-fn "replace" "abc" "b" "1")))
+  (is (= "a1a1" (call-fn "replace" "abab" "b" "1")))
+  (is (= "a1a1" (call-fn "replace" "a.a." "." "1")))
+  (is (= "123456" (call-fn "replace" "   12 34   56 " " " ""))))
 
 (import '[stencil.types ReplaceImage])
 (def data-uri "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==")

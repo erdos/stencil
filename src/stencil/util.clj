@@ -14,21 +14,17 @@
     [(take (- (count stack1) cnt) stack1)
      (take (- (count stack2) cnt) stack2)]))
 
-(defn mod-stack-top-last
-  "Egy stack legfelso elemenek legutolso elemet modositja.
-   Ha nincs elem, IllegalStateException kivetelt dob."
-  [stack f & args]
-  (assert (list? stack) (str "Stack is not a list: " (pr-str stack)))
-  (assert (ifn? f))
-  (conj (rest stack)
-        (conj (pop (first stack))
-              (apply f (peek (first stack)) args))))
-
 (defn update-peek
   "Updates top element of a stack."
   [xs f & args]
   (assert (ifn? f))
   (conj (pop xs) (apply f (peek xs) args)))
+
+(defn mod-stack-top-last
+  "Updatest last element of top elem of stack."
+  [stack f & args]
+  (assert (list? stack) (str "Stack is not a list: " (pr-str stack)))
+  (apply update-peek stack update-peek f args))
 
 (defn mod-stack-top-conj
   "Conjoins an element to the top item of a stack."

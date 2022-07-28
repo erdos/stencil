@@ -104,6 +104,13 @@ Syntax:
 In this example we iterate over the contents of the `elements` array.
 The text `BODY` is inserted for every element.
 
+### Iteration with index
+
+A special syntax is implemented for iterating over a collection (vector or map) with the indices bound to a new variable. Syntax:
+
+- <code>{<i>%for idx, x in elements %</i>}BODY{<i>%end%</i>}</code>
+
+
 ## Finding errors
 
 - Check that every control structure is properly closed!

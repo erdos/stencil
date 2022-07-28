@@ -296,7 +296,7 @@
 
 (def-reduce-step :neg [s0] (- s0))
 (def-reduce-step :times [s0 s1] (* s0 s1))
-(def-reduce-step :divide [s0 s1] (/ s1 s0))
+(def-reduce-step :divide [s0 s1] (with-precision 8 (/ s1 s0)))
 (def-reduce-step :plus [s0 s1] (if (or (string? s0) (string? s1)) (str s1 s0) (+ s1 s0)))
 (def-reduce-step :minus [s0 s1] (- s1 s0))
 (def-reduce-step :eq [a b] (= a b))
