@@ -75,7 +75,7 @@
 
 (defn- current-run-style [chunk-loc]
   (let [r (zip/node (zip/up (zip/up chunk-loc)))]
-    (some #(when (= ooxml/rPr (:tag %)) %) (:content r))))
+    (find-first #(= ooxml/rPr (:tag %)) (:content r))))
 
 (defn- fix-html-chunk [chunk-loc]
   (assert (instance? HtmlChunk (zip/node chunk-loc)))

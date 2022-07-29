@@ -4,7 +4,7 @@
             [clojure.java.io :as io :refer [file]]
             [stencil.ooxml :as ooxml]
             [stencil.util :refer :all]
-            [stencil.model.common :refer :all]))
+            [stencil.model.common :refer [->xml-writer]]))
 
 (def tag-relationships
   :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fpackage%2F2006%2Frelationships/Relationships)

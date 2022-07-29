@@ -28,7 +28,7 @@
   (loop [buf [], n number]
     (if (zero? n)
       (apply str buf)
-      (let [[value romnum] (some #(if (>= n (first %)) %) roman-digits)]
+      (let [[value romnum] (find-first #(>= n (first %)) roman-digits)]
         (recur (conj buf romnum) (- n value))))))
 
 (defmethod render-number "lowerRoman" [_ number]
