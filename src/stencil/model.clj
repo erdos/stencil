@@ -230,7 +230,7 @@
      elem)))
 
 
-(defmethod eval/eval-step :cmd/include [_ local-data-map {frag-name :name}]
+(defmethod eval/eval-step :cmd/include [function local-data-map {frag-name :name}]
   (assert (map? local-data-map))
   (assert (string? frag-name))
   (expect-fragment-context!
@@ -242,7 +242,7 @@
            relation-rename-map (into {} (map (juxt :old-id :new-id)) relation-ids-rename)
 
            ;; evaluate
-           evaled (eval-template-model fragment-model local-data-map {} {})
+           evaled (eval-template-model fragment-model local-data-map function {})
 
            ;; write back
            get-xml      (fn [x] (or (:xml x) @(:xml-delay x)))
