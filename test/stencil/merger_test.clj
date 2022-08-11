@@ -25,6 +25,7 @@
       "asdf{%xy%}"   {:action "xy" :before "asdf"}
       "{%xy%}"       {:action "xy"}
       "a{%xy"        {:action-part "xy" :before "a"}
+      "a{%x%"        {:action-part "x%" :before "a"}
       "{%xy"         {:action-part "xy"})))
 
 (deftest text-split-tokens-test
