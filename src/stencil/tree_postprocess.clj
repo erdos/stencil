@@ -26,6 +26,8 @@
 
    #'fix-list-dirty-refs
 
+   #'fix-numbering-reset
+
    #'replace-images
 
    ;; call this first. includes fragments and evaluates them too.

@@ -307,3 +307,21 @@
   (let [xml-tree (enrich-dirty-refs-meta xml-tree)
         bookmark-meta (get-bookmark-meta xml-tree)]
     (rerender-refs xml-tree bookmark-meta)))
+
+;; finds nodes with unique id and if these are not unique anymore, replace the numbering id with a duplicate numbering definition
+(defn fix-numbering-reset [xml-tree]
+  (let [found      (atom #{})
+        last-val   (atom nil)
+        edit-attrs (fn [attrs]
+          (let [old-id (ooxml/val attrs)
+                unq-id (:stencil.model/unique attrs)
+                new-id old-id] ;; TODO
+            ;; ha az unique id benne van a found set-ben
+            ;; akkor uj value-t szamolunk es beallitjuk a last-val-t.
+            ;; egyebkent ha a last-val nem ugyanaz mint a mostani, akkor beallitjuk a last val-t (?)
+            (-> attrs
+                (dissoc :stencil.model/unique)
+                (assoc ooxml/val new-id))))]
+    ;; find nodes with unique id in attrs
+    (dfs-walk-xml-node xml-tree (fn [n] (and (map? n) (:stencil.model/unique (:attrs n))))
+                                (fn [n] (zip/edit n update :attrs edit-attrs)))))
