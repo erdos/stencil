@@ -233,7 +233,9 @@ Expects one number argument containing a list with numbers. Sums up the numbers 
 
 ## Custom functions
 
-You can register custom implementations of `io.github.erdos.stencil.functions.Function` or the `stencil.functions/call-fn` multimethod.
+You can register custom implementations of `io.github.erdos.stencil.functions.Function` or the `stencil.functions/call-fn` multimethod.  
+If you implement the `call-fn` multimethod, the namespace containing these implementations should be loaded before rendering a document.  
+(Keep in mind, that `call-fn` implementations always have priority over `io.github.erdos.stencil.functions.Function` implementations)
 
 Clojure example:
 
@@ -271,3 +273,8 @@ public class FirstFuncion implements Function {
 
 API.render(preparedTemplate, fragments, data, Arrays.asList(new FirstFunction()));
 ```
+
+### Automatic registration of custom functions
+
+Stencil uses the JVM's [ServiceLoader](https://docs.oracle.com/javase/8/docs/api/java/util/ServiceLoader.html) facility to load function provider implementations. If you want to register your custom functions automatically, implement the `io.github.erdos.stencil.functions.FunctionProvider` interface, and add these implementations to your extension library's `META-INF/services/io.github.erdos.stencil.functions.FunctionProvider` file.  
+The `call-fn` implementations which are defined in your namespaces can also be loaded using this facility, if you override `io.github.erdos.stencil.functions.ClojureCallFnProvider` abstract class, and register it as a `FunctionProvider`. See `io.github.erdos.stencil.functions.DefaultCallFnProvider` as an example.

@@ -5,7 +5,9 @@ import clojure.lang.Keyword;
 import clojure.lang.RT;
 import clojure.lang.Symbol;
 
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Clojure utilities.
@@ -29,10 +31,14 @@ public final class ClojureHelper {
         }
     }
 
+    //Do not require namespace which is already loaded.
+    private static final Set<Symbol> ALREADY_REQUIRED_NAMESPACES;
+
+
     // requires stencil.process namespace so stencil is loaded.
     static {
-        final IFn req = RT.var("clojure.core", "require");
-        req.invoke(Symbol.intern("stencil.process"));
+        ALREADY_REQUIRED_NAMESPACES = new HashSet<>();
+        requireNs("stencil.process");
     }
 
     /**
@@ -43,5 +49,16 @@ public final class ClojureHelper {
      */
     public static IFn findFunction(String functionName) {
         return RT.var("stencil.process", functionName);
+    }
+
+
+    public static void requireNs(String ns) {
+        final Symbol nsSym = Symbol.intern(ns);
+        if (ALREADY_REQUIRED_NAMESPACES.contains(nsSym)) {
+            return;
+        }
+        final IFn req = RT.var("clojure.core", "require");
+        req.invoke(nsSym);
+        ALREADY_REQUIRED_NAMESPACES.add(nsSym);
     }
 }

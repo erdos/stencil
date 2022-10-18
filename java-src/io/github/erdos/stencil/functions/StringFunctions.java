@@ -2,7 +2,7 @@ package io.github.erdos.stencil.functions;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.IllegalFormatException;
+import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -112,5 +112,15 @@ public enum StringFunctions implements Function {
     @Override
     public String getName() {
         return name().toLowerCase();
+    }
+
+    public static class Provider implements FunctionProvider {
+
+        private static final List<Function> FUNCTIONS = Arrays.asList(values());
+
+        @Override
+        public Collection<Function> functions() {
+            return FUNCTIONS;
+        }
     }
 }

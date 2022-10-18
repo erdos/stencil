@@ -1,0 +1,6 @@
+io.github.erdos.stencil.functions.DefaultCallFnProvider
+io.github.erdos.stencil.functions.BasicFunctions$Provider
+io.github.erdos.stencil.functions.StringFunctions$Provider
+io.github.erdos.stencil.functions.NumberFunctions$Provider
+io.github.erdos.stencil.functions.DateFunctions$Provider
+io.github.erdos.stencil.functions.LocaleFunctions$Provider
