@@ -1,6 +1,9 @@
 package io.github.erdos.stencil.functions;
 
 import java.text.NumberFormat;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 import java.util.Locale;
 
 import static java.util.Locale.forLanguageTag;
@@ -52,5 +55,15 @@ public enum LocaleFunctions implements Function {
     @Override
     public String getName() {
         return name().toLowerCase();
+    }
+
+    public static class Provider implements FunctionProvider {
+
+        private static final List<Function> FUNCTIONS = Arrays.asList(values());
+
+        @Override
+        public Collection<Function> functions() {
+            return FUNCTIONS;
+        }
     }
 }

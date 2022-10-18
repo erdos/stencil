@@ -1,6 +1,7 @@
 package io.github.erdos.stencil.functions;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -8,12 +9,14 @@ public final class FunctionEvaluator {
 
     private final Map<String, Function> functions = new HashMap<>();
 
-    {
-        registerFunctions(BasicFunctions.values());
-        registerFunctions(StringFunctions.values());
-        registerFunctions(NumberFunctions.values());
-        registerFunctions(DateFunctions.values());
-        registerFunctions(LocaleFunctions.values());
+    public FunctionEvaluator() {
+        this(FunctionLoader.getFunctions());
+    }
+
+    public FunctionEvaluator(Collection<? extends Function> functions) {
+        for (Function f : functions) {
+            registerFunction(f);
+        }
     }
 
     private void registerFunction(Function function) {
