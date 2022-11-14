@@ -25,18 +25,18 @@
               (throw (eval-exception (str "Error evaluating expression: " raw) e)))))
 
 (defmethod eval-step :if [function data item]
-  (let [condition (eval-rpn* data function (:condition item) (:raw item))]
+  (let [condition (eval-rpn* data function (:condition item) (:raw (meta item)))]
     (log/trace "Condition {} evaluated to {}" (:condition item) condition)
     (->> (if condition (:then item) (:else item))
          (normal-control-ast->evaled-seq data function))))
 
 (defmethod eval-step :echo [function data item]
-  (let [value (eval-rpn* data function (:expression item) (:raw item))]
+  (let [value (eval-rpn* data function (:expression item) (:raw (meta item)))]
     (log/trace "Echoing {} as {}" (:expression item) value)
     [{:text (if (control? value) value (str value))}]))
 
 (defmethod eval-step :for [function data item]
-  (let [items (eval-rpn* data function (:expression item) (:raw item))]
+  (let [items (eval-rpn* data function (:expression item) (:raw (meta item)))]
     (log/trace "Loop on {} will repeat {} times" (:expression item) (count items))
     (if (not-empty items)
       (let [index-var-name (name (:index-var item))

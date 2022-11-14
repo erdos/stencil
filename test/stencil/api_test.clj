@@ -1,5 +1,5 @@
 (ns stencil.api-test
-  (:import [io.github.erdos.stencil.exceptions EvalException])
+  (:import [io.github.erdos.stencil.exceptions EvalException ParsingException])
   (:require [clojure.test :refer [deftest testing is]]
             [stencil.api :refer [prepare render! fragment cleanup!]]
             [stencil.functions :refer [call-fn]]))
@@ -66,6 +66,29 @@
         (cleanup! template))
       (testing "Rendering fails on cleaned template"
         (is (thrown? IllegalStateException (render! template data)))))))
+
+(deftest test-failures
+  (testing "Evaluation errors"
+    (testing "Division by zero"
+      (try (render! (prepare "test-resources/failures/test-eval-division.docx")
+                    {:x 1 :y 0}
+                    :overwrite? true
+                    :output (java.io.File/createTempFile "stencil" ".docx"))
+           (assert false)
+           (catch Exception e
+             (is (instance? EvalException e))
+             (is (= "Error evaluating expression: x/y" (.getMessage e)))
+             (is (instance? java.lang.ArithmeticException (.getCause e))))))
+    (testing "NPE"
+      (try (render! (prepare "test-resources/failures/test-eval-division.docx")
+                {:x nil :y nil}
+                :overwrite? true
+                :output (java.io.File/createTempFile "stencil" ".docx"))
+        (assert false)
+        (catch Exception e
+          (is (instance? EvalException e))
+          (is (= "Error evaluating expression: x/y" (.getMessage e)))
+          (is (instance? java.lang.NullPointerException (.getCause e))))))))
 
 (deftest test-prepare-nil
   (is (thrown? clojure.lang.ExceptionInfo (prepare nil))))
