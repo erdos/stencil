@@ -10,7 +10,7 @@ public enum LocaleFunctions implements Function {
 
 
     /**
-     * Formats number as localized currency. An optional second argument can be used to specify locale code.
+     * Formats number as a localized monetary amount with currency. An optional second argument can be used to specify locale code.
      * Returns a string.
      * <p>
      * Usage: currency(34) or currency(34, "HU")
@@ -23,7 +23,7 @@ public enum LocaleFunctions implements Function {
     },
 
     /**
-     * Formats number as localized percent. An optional second argument can be used to specify locale code.
+     * Formats number as a localized percentage value. An optional second argument can be used to specify locale code.
      * Returns a string.
      * <p>
      * Usage: percent(34) or percent(34, "HU")

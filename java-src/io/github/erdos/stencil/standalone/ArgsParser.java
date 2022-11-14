@@ -10,7 +10,7 @@ import static java.util.Collections.unmodifiableMap;
 @SuppressWarnings("WeakerAccess")
 public class ArgsParser {
 
-    private final Set<ParamMarker> markers = new HashSet<>();
+    private final Set<ParamMarker<?>> markers = new HashSet<>();
 
     public <T> ParamMarker<T> addParam(char shortForm, String longForm, String description, Function<String, T> parser) {
         final ParamMarker<T> added = new ParamMarker<>(parser, shortForm, longForm, description, false);
@@ -20,7 +20,7 @@ public class ArgsParser {
 
     public ParseResult parse(String... args) {
 
-        final Map<ParamMarker, String> result = new HashMap<>();
+        final Map<ParamMarker<?>, String> result = new HashMap<>();
 
         final List<String> restArgs = new ArrayList<>(args.length);
 
@@ -39,7 +39,7 @@ public class ArgsParser {
                     final String argName = parts[0];
                     final String argValue = parts[1];
 
-                    final Map.Entry<ParamMarker, String> flag = parsePair(argName, argValue);
+                    final Map.Entry<ParamMarker<?>, String> flag = parsePair(argName, argValue);
 
                     result.put(flag.getKey(), flag.getValue());
                 } else {
@@ -47,21 +47,21 @@ public class ArgsParser {
                     if (item.startsWith("--no-")) {
                         // long form
                         if (markerForLong(item.substring(5)).orElseThrow(() -> new IllegalArgumentException("Unexpected option: " + item)).isFlag()) {
-                            Map.Entry<ParamMarker, String> pair = parsePair(item, null);
+                            Map.Entry<ParamMarker<?>, String> pair = parsePair(item, null);
                             result.put(pair.getKey(), pair.getValue());
                             continue;
                         }
                     } else if (item.startsWith("--")) {
                         // long form
                         if (markerForLong(item.substring(2)).orElseThrow(() -> new IllegalArgumentException("Unexpected option: " + item)).isFlag()) {
-                            Map.Entry<ParamMarker, String> pair = parsePair(item, null);
+                            Map.Entry<ParamMarker<?>, String> pair = parsePair(item, null);
                             result.put(pair.getKey(), pair.getValue());
                             continue;
                         }
                     } else {
                         // short form
                         if (markerForShort(item.charAt(1)).orElseThrow(() -> new IllegalArgumentException("Unexpected option: " + item)).isFlag()) {
-                            Map.Entry<ParamMarker, String> pair = parsePair(item, null);
+                            Map.Entry<ParamMarker<?>, String> pair = parsePair(item, null);
                             result.put(pair.getKey(), pair.getValue());
                             continue;
                         }
@@ -70,10 +70,10 @@ public class ArgsParser {
                     // maybe the next item is a value
                     final String nextItem = i + 1 < args.length ? args[i + 1] : null;
                     if (nextItem == null || nextItem.startsWith("-")) {
-                        final Map.Entry<ParamMarker, String> flag = parsePair(item, null);
+                        final Map.Entry<ParamMarker<?>, String> flag = parsePair(item, null);
                         result.put(flag.getKey(), flag.getValue());
                     } else {
-                        final Map.Entry<ParamMarker, String> flag = parsePair(item, nextItem);
+                        final Map.Entry<ParamMarker<?>, String> flag = parsePair(item, nextItem);
                         result.put(flag.getKey(), flag.getValue());
                     }
                 }
@@ -88,32 +88,32 @@ public class ArgsParser {
         return new ParseResult(result, restArgs);
     }
 
-    private Map.Entry<ParamMarker, String> parsePair(String k, String v) {
+    private Map.Entry<ParamMarker<?>, String> parsePair(String k, String v) {
         if (k.startsWith("--no-") && v == null) {
             final String longName = k.substring(5);
-            final ParamMarker marker = markerForLong(longName).get();
+            final ParamMarker<?> marker = markerForLong(longName).get();
             return new AbstractMap.SimpleImmutableEntry<>(marker, "false");
         } else if (k.startsWith("--")) {
             final String longName = k.substring(2);
-            final ParamMarker marker = markerForLong(longName).get();
+            final ParamMarker<?> marker = markerForLong(longName).get();
             if (v == null) {
                 return new AbstractMap.SimpleImmutableEntry<>(marker, "true");
             } else {
                 return new AbstractMap.SimpleImmutableEntry<>(marker, v);
             }
         } else if (k.startsWith("-") && k.length() == 2 && v == null) {
-            final ParamMarker marker = markerForShort(k.charAt(1)).get();
+            final ParamMarker<?> marker = markerForShort(k.charAt(1)).get();
             return new AbstractMap.SimpleImmutableEntry<>(marker, "true");
         } else {
             throw new IllegalArgumentException("Unexpected key, not a parameter: " + k);
         }
     }
 
-    private Optional<ParamMarker> markerForLong(String longName) {
+    private Optional<ParamMarker<?>> markerForLong(String longName) {
         return markers.stream().filter(x -> x.getLongName().equals(longName)).findAny();
     }
 
-    private Optional<ParamMarker> markerForShort(char shortName) {
+    private Optional<ParamMarker<?>> markerForShort(char shortName) {
         return markers.stream().filter(x -> x.getShortForm() == shortName).findAny();
     }
 
@@ -138,17 +138,17 @@ public class ArgsParser {
     }
 
     public static final class ParseResult {
-        private final Map<ParamMarker, String> args;
+        private final Map<ParamMarker<?>, String> args;
         private final List<String> varargs;
 
-        private ParseResult(Map<ParamMarker, String> args, List<String> varargs) {
+        private ParseResult(Map<ParamMarker<?>, String> args, List<String> varargs) {
             this.args = unmodifiableMap(args);
             this.varargs = unmodifiableList(varargs);
         }
 
 
         public List<String> getRestArgs() {
-            return Collections.unmodifiableList(varargs);
+            return varargs;
         }
 
 

@@ -43,7 +43,7 @@ public final class TemplateData {
      *
      * @return template data map. Not null.
      */
-    public final Map<String, Object> getData() {
+    public Map<String, Object> getData() {
         return data;
     }
 }

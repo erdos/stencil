@@ -151,14 +151,13 @@ public final class TemplateVariables {
         return validateImpl("", data, schema).collect(toList());
     }
 
-    @SuppressWarnings("unchecked")
     private Stream<SchemaError> validateImpl(String path, Object data, Node schema) {
         return schema.accept(new NodeVisitor<Stream<SchemaError>>() {
             @Override
             public Stream<SchemaError> visitArray(Node wrapped) {
                 if (data instanceof List) {
                     final AtomicInteger index = new AtomicInteger();
-                    return ((List) data).stream().flatMap(x -> {
+                    return ((List<?>) data).stream().flatMap(x -> {
                         final String newPath = path + "[" + index.getAndIncrement() + "]";
                         return validateImpl(newPath, x, wrapped);
                     });
@@ -170,7 +169,7 @@ public final class TemplateVariables {
             @Override
             public Stream<SchemaError> visitMap(Map<String, Node> items) {
                 if (data instanceof Map) {
-                    Map dataMap = (Map) data;
+                    Map<?, ?> dataMap = (Map<?, ?>) data;
                     return items.entrySet().stream().flatMap(schemaEntry -> {
                         if (dataMap.containsKey(schemaEntry.getKey())) {
                             return validateImpl(path + "." + schemaEntry.getKey(), dataMap.get(schemaEntry.getKey()), schemaEntry.getValue());
@@ -192,7 +191,7 @@ public final class TemplateVariables {
     }
 
     @SuppressWarnings("unused")
-    class SchemaError {
+    private static final class SchemaError {
         private final String path;
         private final String msg;
 
