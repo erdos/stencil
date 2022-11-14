@@ -3,7 +3,6 @@ package io.github.erdos.stencil.impl;
 import clojure.lang.IFn;
 import clojure.lang.Keyword;
 import io.github.erdos.stencil.*;
-import io.github.erdos.stencil.exceptions.EvalException;
 import io.github.erdos.stencil.exceptions.ParsingException;
 
 import java.io.File;
@@ -50,7 +49,7 @@ public final class NativeTemplateFactory implements TemplateFactory {
 
         try {
             prepared = invokePrepareFunction(fragmentFile, options);
-        } catch (EvalException | IOException e) {
+        } catch (ParsingException | IOException e) {
             throw e;
         } catch (Exception e) {
             throw ParsingException.wrapping("Could not parse template file!", e);
