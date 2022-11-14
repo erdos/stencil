@@ -72,7 +72,11 @@
                  {:status status
                   :body (str "ERROR: " (.getMessage e))})
              (do (log/error "Error" e)
-                 (throw e)))))))
+                 (throw e))))
+         (catch Exception e
+            {:status 400
+             :body (pr-str e)}
+         ))))
 
 (defn- wrap-log [handler]
   (fn [req]

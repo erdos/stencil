@@ -1,6 +1,6 @@
 (ns stencil.util
   (:require [clojure.zip])
-  (:import [io.github.erdos.stencil.exceptions ParsingException]))
+  (:import [io.github.erdos.stencil.exceptions ParsingException EvalException]))
 
 (set! *warn-on-reflection* true)
 
@@ -70,6 +70,10 @@
 
 (defn parsing-exception [expression message]
   (ParsingException/fromMessage (str expression) (str message)))
+
+(defn eval-exception [message expression]
+  (assert (string? message))
+  (EvalException. message expression))
 
 ;; return xml zipper of location that matches predicate or nil
 (defn find-first-in-tree [predicate tree-loc]
