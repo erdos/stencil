@@ -63,6 +63,9 @@
       (prepared template)
       (throw (ex-info "Template file does not exist!" {:status 404})))))
 
+(defn- exception->str [e]
+  (clojure.string/join "\n" (for [e (iterate #(.getCause %) e) :while e] (.getMessage e))))
+
 (defn wrap-err [handler]
   (fn [request]
     (try (handler request)
@@ -74,9 +77,8 @@
              (do (log/error "Error" e)
                  (throw e))))
          (catch Exception e
-            {:status 400
-             :body (pr-str e)}
-         ))))
+           {:status 400
+            :body (exception->str e)}))))
 
 (defn- wrap-log [handler]
   (fn [req]
