@@ -77,7 +77,7 @@
            (assert false)
            (catch Exception e
              (is (instance? EvalException e))
-             (is (= "Error evaluating expression: x/y" (.getMessage e)))
+             (is (= "Error evaluating expression: =x/y" (.getMessage e)))
              (is (instance? java.lang.ArithmeticException (.getCause e))))))
     (testing "NPE"
       (try (render! (prepare "test-resources/failures/test-eval-division.docx")
@@ -87,7 +87,7 @@
         (assert false)
         (catch Exception e
           (is (instance? EvalException e))
-          (is (= "Error evaluating expression: x/y" (.getMessage e)))
+          (is (= "Error evaluating expression: =x/y" (.getMessage e)))
           (is (instance? java.lang.NullPointerException (.getCause e))))))))
 
 (deftest test-prepare-nil
