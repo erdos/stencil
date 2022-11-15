@@ -67,28 +67,36 @@
       (testing "Rendering fails on cleaned template"
         (is (thrown? IllegalStateException (render! template data)))))))
 
+(defmacro ^:private test-fail [path payload & bodies]
+  `(try (render! (prepare ~path) ~payload
+                 :overwrite? true
+                 :output (java.io.File/createTempFile "stencil" ".docx"))
+           (assert false)
+           (catch Exception ~'*e ~@bodies)))
+
 (deftest test-failures
   (testing "Evaluation errors"
     (testing "Division by zero"
-      (try (render! (prepare "test-resources/failures/test-eval-division.docx")
-                    {:x 1 :y 0}
-                    :overwrite? true
-                    :output (java.io.File/createTempFile "stencil" ".docx"))
-           (assert false)
-           (catch Exception e
-             (is (instance? EvalException e))
-             (is (= "Error evaluating expression: =x/y" (.getMessage e)))
-             (is (instance? java.lang.ArithmeticException (.getCause e))))))
+      (test-fail "test-resources/failures/test-eval-division.docx"
+                 {:x 1 :y 0}
+        (is (instance? EvalException *e))
+        (is (= "Error evaluating expression: {%=x/y%}" (.getMessage *e)))
+        (is (instance? java.lang.ArithmeticException (.getCause *e)))))
     (testing "NPE"
-      (try (render! (prepare "test-resources/failures/test-eval-division.docx")
-                {:x nil :y nil}
-                :overwrite? true
-                :output (java.io.File/createTempFile "stencil" ".docx"))
-        (assert false)
-        (catch Exception e
-          (is (instance? EvalException e))
-          (is (= "Error evaluating expression: =x/y" (.getMessage e)))
-          (is (instance? java.lang.NullPointerException (.getCause e))))))))
+      (test-fail "test-resources/failures/test-eval-division.docx"
+                 {:x nil :y nil}
+        (is (instance? EvalException *e))
+        (is (= "Error evaluating expression: {%=x/y%}" (.getMessage *e)))
+        (is (instance? java.lang.NullPointerException (.getCause *e)))))
+    (testing "function does not exist"
+      (test-fail "test-resources/failures/test-no-such-fn.docx" {}
+        (is (instance? EvalException *e))
+        (is (= "Error evaluating expression: {%=nofun()%}" (.getMessage *e)))
+        (is (instance? java.lang.IllegalArgumentException (.getCause *e)))
+        (is (= "Did not find function for name nofun" (.getMessage (.getCause *e))))))
+    (testing "function invocation error"
+      ;; TODO: invoke fn with wrong types
+    )))
 
 (deftest test-prepare-nil
   (is (thrown? clojure.lang.ExceptionInfo (prepare nil))))
