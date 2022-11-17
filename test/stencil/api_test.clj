@@ -74,29 +74,45 @@
            (assert false)
            (catch Exception ~'*e ~@bodies)))
 
-(deftest test-failures
-  (testing "Evaluation errors"
-    (testing "Division by zero"
-      (test-fail "test-resources/failures/test-eval-division.docx"
-                 {:x 1 :y 0}
-        (is (instance? EvalException *e))
-        (is (= "Error evaluating expression: {%=x/y%}" (.getMessage *e)))
-        (is (instance? java.lang.ArithmeticException (.getCause *e)))))
-    (testing "NPE"
-      (test-fail "test-resources/failures/test-eval-division.docx"
-                 {:x nil :y nil}
-        (is (instance? EvalException *e))
-        (is (= "Error evaluating expression: {%=x/y%}" (.getMessage *e)))
-        (is (instance? java.lang.NullPointerException (.getCause *e)))))
-    (testing "function does not exist"
-      (test-fail "test-resources/failures/test-no-such-fn.docx" {}
-        (is (instance? EvalException *e))
-        (is (= "Error evaluating expression: {%=nofun()%}" (.getMessage *e)))
-        (is (instance? java.lang.IllegalArgumentException (.getCause *e)))
-        (is (= "Did not find function for name nofun" (.getMessage (.getCause *e))))))
-    (testing "function invocation error"
-      ;; TODO: invoke fn with wrong types
-    )))
+(deftest test-parsing-errors
+  (testing "Closing tag is missing"
+    (test-fail "test-resources/failures/test-syntax-nonclosed.docx" nil
+      (is (instance? ParsingException *e))
+      (is (= "Missing {%end%} tag from document!" (.getMessage *e)))
+      (is (= nil (.getCause *e)))))
+  (testing "Extra closing tag is present"
+    (test-fail "test-resources/failures/test-syntax-closed.docx" nil
+      (is (instance? ParsingException *e))
+      (is (= "Too many {%end%} tags!" (.getMessage *e)))
+      (is (= nil (.getCause *e)))))
+  (testing "A tag not closed until the end of document"
+    (test-fail "test-resources/failures/test-syntax-incomplete.docx" nil
+      (is (instance? ParsingException *e))
+      (is (= "Stencil tag is not closed. Reading {% if x + y" (.getMessage *e)))
+      (is (= nil (.getCause *e))))))
+
+(deftest test-evaluation-errors
+  (testing "Division by zero"
+    (test-fail "test-resources/failures/test-eval-division.docx"
+               {:x 1 :y 0}
+      (is (instance? EvalException *e))
+      (is (= "Error evaluating expression: {%=x/y%}" (.getMessage *e)))
+      (is (instance? java.lang.ArithmeticException (.getCause *e)))))
+  (testing "NPE"
+    (test-fail "test-resources/failures/test-eval-division.docx"
+               {:x nil :y nil}
+      (is (instance? EvalException *e))
+      (is (= "Error evaluating expression: {%=x/y%}" (.getMessage *e)))
+      (is (instance? java.lang.NullPointerException (.getCause *e)))))
+  (testing "function does not exist"
+    (test-fail "test-resources/failures/test-no-such-fn.docx" {}
+      (is (instance? EvalException *e))
+      (is (= "Error evaluating expression: {%=nofun()%}" (.getMessage *e)))
+      (is (instance? java.lang.IllegalArgumentException (.getCause *e)))
+      (is (= "Did not find function for name nofun" (.getMessage (.getCause *e))))))
+  (testing "function invocation error"
+    ;; TODO: invoke fn with wrong types
+  ))
 
 (deftest test-prepare-nil
   (is (thrown? clojure.lang.ExceptionInfo (prepare nil))))

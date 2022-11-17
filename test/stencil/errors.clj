@@ -9,10 +9,6 @@
   (->> xml-str (str) (.getBytes) (new java.io.ByteArrayInputStream) (model/->exec)))
 
 
-(defmacro ^:private throw-ex-info? [expr]
-  `(is (~'thrown? clojure.lang.ExceptionInfo (test-prepare ~expr))))
-
-
 (defmacro ^:private throw-ex-parsing? [expr]
   `(is (~'thrown? ParsingException (test-prepare ~expr))))
 
@@ -54,12 +50,13 @@
 
 (deftest test-not-closed
   (testing "Expressions are not closed properly"
-    (throw-ex-info? "<a>{%=</a>")
-    (throw-ex-info? "<a>{%=x</a>")
-    (throw-ex-info? "<a>{%=x%</a>")
-    (throw-ex-info? "<a>{%=x}</a>"))
+    (throw-ex-parsing? "<a>{%=</a>")
+    (throw-ex-parsing? "<a>{%=x</a>")
+    (throw-ex-parsing? "<a>{%=x%</a>")
+    (throw-ex-parsing? "<a>{%=x}</a>"))
   (testing "Middle expr is not closed"
     (throw-ex-parsing? "<a><b>{%=1%}</b>{%=3<c>{%=4%}</c></a>")))
+
 
 (deftest test-unexpected-cmd
   (throw-ex-parsing? "<a>{% echo 3 %}</a>"))
