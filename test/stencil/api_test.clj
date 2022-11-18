@@ -94,6 +94,11 @@
      (test-fail "test-resources/failures/test-syntax-unexpected-else.docx" nil
       (is (instance? ParsingException *e))
       (is (= "Unexpected {%else%} tag, it must come right after a condition!" (.getMessage *e)))
+      (is (= nil (.getCause *e)))))
+  (testing "Unexpected {%else if%} tag"
+     (test-fail "test-resources/failures/test-syntax-unexpected-elif.docx" nil
+      (is (instance? ParsingException *e))
+      (is (= "Unexpected {%else if%} tag, it must come right after a condition!" (.getMessage *e)))
       (is (= nil (.getCause *e))))))
 
 (deftest test-evaluation-errors
