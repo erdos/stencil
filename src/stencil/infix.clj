@@ -153,10 +153,10 @@
 ;; throws ExceptionInfo when token sequence has invalid elems
 (defn- validate-tokens [tokens]
   (cond
-    (some true? (map #(and (or (symbol? %1) (number? %1) (#{:close} %1))
-                           (or (symbol? %2) (number? %2) (#{:open} %2)))
+    (some true? (map #(and (or (symbol? %1) (number? %1) (= :close %1))
+                           (or (symbol? %2) (number? %2) (= :open %2)))
                      tokens (next tokens)))
-    (throw (ex-info "Could not parse!" {}))
+    (throw (ex-info "Invalid stencil expression!" {}))
 
     :else
     tokens))

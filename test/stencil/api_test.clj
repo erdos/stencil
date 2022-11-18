@@ -67,65 +67,56 @@
       (testing "Rendering fails on cleaned template"
         (is (thrown? IllegalStateException (render! template data)))))))
 
-(defmacro ^:private test-fail [path payload & bodies]
-  `(try (render! (prepare ~path) ~payload
-                 :overwrite? true
-                 :output (java.io.File/createTempFile "stencil" ".docx"))
-           (assert false)
-           (catch Exception ~'*e ~@bodies)))
+(defn- test-fails [template payload & bodies]
+  (try (render! (prepare template) payload
+                :overwrite? true
+                :output (java.io.File/createTempFile "stencil" ".docx"))
+       (assert false)
+       (catch RuntimeException e
+         (let [e (reduce (fn [e [t reason]]
+                           (is (instance? t e))
+                           (is (= reason (.getMessage e)))
+                           (.getCause e))
+                         e (partition 2 bodies))]
+           (is (= nil e))))))
 
 (deftest test-parsing-errors
   (testing "Closing tag is missing"
-    (test-fail "test-resources/failures/test-syntax-nonclosed.docx" nil
-      (is (instance? ParsingException *e))
-      (is (= "Missing {%end%} tag from document!" (.getMessage *e)))
-      (is (= nil (.getCause *e)))))
+    (test-fails "test-resources/failures/test-syntax-nonclosed.docx" nil
+                ParsingException "Missing {%end%} tag from document!"))
   (testing "Extra closing tag is present"
-    (test-fail "test-resources/failures/test-syntax-closed.docx" nil
-      (is (instance? ParsingException *e))
-      (is (= "Too many {%end%} tags!" (.getMessage *e)))
-      (is (= nil (.getCause *e)))))
+    (test-fails "test-resources/failures/test-syntax-closed.docx" nil
+                ParsingException "Too many {%end%} tags!"))
   (testing "A tag not closed until the end of document"
-    (test-fail "test-resources/failures/test-syntax-incomplete.docx" nil
-      (is (instance? ParsingException *e))
-      (is (= "Stencil tag is not closed. Reading {% if x + y" (.getMessage *e)))
-      (is (= nil (.getCause *e)))))
+    (test-fails "test-resources/failures/test-syntax-incomplete.docx" nil
+                ParsingException "Stencil tag is not closed. Reading {% if x + y"))
   (testing "Unexpected {%else%} tag"
-     (test-fail "test-resources/failures/test-syntax-unexpected-else.docx" nil
-      (is (instance? ParsingException *e))
-      (is (= "Unexpected {%else%} tag, it must come right after a condition!" (.getMessage *e)))
-      (is (= nil (.getCause *e)))))
+    (test-fails "test-resources/failures/test-syntax-unexpected-else.docx" nil
+                ParsingException "Unexpected {%else%} tag, it must come right after a condition!"))
   (testing "Unexpected {%else if%} tag"
-     (test-fail "test-resources/failures/test-syntax-unexpected-elif.docx" nil
-      (is (instance? ParsingException *e))
-      (is (= "Unexpected {%else if%} tag, it must come right after a condition!" (.getMessage *e)))
-      (is (= nil (.getCause *e))))))
+    (test-fails "test-resources/failures/test-syntax-unexpected-elif.docx" nil
+                ParsingException "Unexpected {%else if%} tag, it must come right after a condition!"))
+  (testing "Cannot parse infix expression"
+    (test-fails "test-resources/failures/test-syntax-fails.docx" nil
+                ParsingException "Invalid stencil expression!")))
 
 (deftest test-evaluation-errors
   (testing "Division by zero"
-    (test-fail "test-resources/failures/test-eval-division.docx"
-               {:x 1 :y 0}
-      (is (instance? EvalException *e))
-      (is (= "Error evaluating expression: {%=x/y%}" (.getMessage *e)))
-      (is (instance? java.lang.ArithmeticException (.getCause *e)))))
+    (test-fails "test-resources/failures/test-eval-division.docx" {:x 1 :y 0}
+                EvalException "Error evaluating expression: {%=x/y%}"
+                java.lang.ArithmeticException "Divide by zero"))
   (testing "NPE"
-    (test-fail "test-resources/failures/test-eval-division.docx"
-               {:x nil :y nil}
-      (is (instance? EvalException *e))
-      (is (= "Error evaluating expression: {%=x/y%}" (.getMessage *e)))
-      (is (instance? java.lang.NullPointerException (.getCause *e)))))
+    (test-fails "test-resources/failures/test-eval-division.docx" {:x nil :y nil}
+                EvalException "Error evaluating expression: {%=x/y%}"
+                java.lang.NullPointerException "Cannot invoke \"Object.getClass()\" because \"x\" is null"))
   (testing "function does not exist"
-    (test-fail "test-resources/failures/test-no-such-fn.docx" {}
-      (is (instance? EvalException *e))
-      (is (= "Error evaluating expression: {%=nofun()%}" (.getMessage *e)))
-      (is (instance? java.lang.IllegalArgumentException (.getCause *e)))
-      (is (= "Did not find function for name nofun" (.getMessage (.getCause *e))))))
+    (test-fails "test-resources/failures/test-no-such-fn.docx" {}
+                EvalException "Error evaluating expression: {%=nofun()%}"
+                java.lang.IllegalArgumentException "Did not find function for name nofun"))
   (testing "function invoked with wrong arity"
-    (test-fail "test-resources/failures/test-syntax-arity.docx" {}
-      (is (instance? EvalException *e))
-      (is (=  "Error evaluating expression: {%=decimal(1,2,3)%}" (.getMessage *e)))
-      ; (is (instance? EvalException (.getCause *e)))
-      (is (= "Function 'decimal' was called with a wrong number of arguments (3)" (.getMessage (.getCause *e))))))
+    (test-fails "test-resources/failures/test-syntax-arity.docx" {}
+                EvalException "Error evaluating expression: {%=decimal(1,2,3)%}"
+                clojure.lang.ExceptionInfo "Function 'decimal' was called with a wrong number of arguments (3)"))
   (testing "function invocation error"
     ;; TODO: invoke fn with wrong types
   ))
