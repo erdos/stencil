@@ -280,8 +280,8 @@
       (log/trace "Result was {}" result)
       (conj new-stack result))
     (catch clojure.lang.ArityException e
-      (throw (ex-info (str "Wrong arity: " (.getMessage e))
-                      {:fn fn :expected args :got (count ops) :ops (vec ops)})))))
+      (throw (ex-info (format "Function '%s' was called with a wrong number of arguments (%d)" fn args)
+                      {:fn fn :got args})))))
 
 (defmacro def-reduce-step [cmd args body]
   (assert (keyword? cmd))

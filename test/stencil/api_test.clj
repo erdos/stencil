@@ -120,6 +120,12 @@
       (is (= "Error evaluating expression: {%=nofun()%}" (.getMessage *e)))
       (is (instance? java.lang.IllegalArgumentException (.getCause *e)))
       (is (= "Did not find function for name nofun" (.getMessage (.getCause *e))))))
+  (testing "function invoked with wrong arity"
+    (test-fail "test-resources/failures/test-syntax-arity.docx" {}
+      (is (instance? EvalException *e))
+      (is (=  "Error evaluating expression: {%=decimal(1,2,3)%}" (.getMessage *e)))
+      ; (is (instance? EvalException (.getCause *e)))
+      (is (= "Function 'decimal' was called with a wrong number of arguments (3)" (.getMessage (.getCause *e))))))
   (testing "function invocation error"
     ;; TODO: invoke fn with wrong types
   ))
