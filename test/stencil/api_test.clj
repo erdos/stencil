@@ -89,6 +89,11 @@
     (test-fail "test-resources/failures/test-syntax-incomplete.docx" nil
       (is (instance? ParsingException *e))
       (is (= "Stencil tag is not closed. Reading {% if x + y" (.getMessage *e)))
+      (is (= nil (.getCause *e)))))
+  (testing "Unexpected {%else%} tag"
+     (test-fail "test-resources/failures/test-syntax-unexpected-else.docx" nil
+      (is (instance? ParsingException *e))
+      (is (= "Unexpected {%else%} tag, it must come right after a condition!" (.getMessage *e)))
       (is (= nil (.getCause *e))))))
 
 (deftest test-evaluation-errors
