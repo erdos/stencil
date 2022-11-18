@@ -71,7 +71,7 @@
   (try (render! (prepare template) payload
                 :overwrite? true
                 :output (java.io.File/createTempFile "stencil" ".docx"))
-       (assert false)
+       (assert false (str "Should have thrown exception of type " (first bodies)))
        (catch RuntimeException e
          (let [e (reduce (fn [e [t reason]]
                            (is (instance? t e))
