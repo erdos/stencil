@@ -98,7 +98,10 @@
                 ParsingException "Unexpected {%else if%} tag, it must come right after a condition!"))
   (testing "Cannot parse infix expression"
     (test-fails "test-resources/failures/test-syntax-fails.docx" nil
-                ParsingException "Invalid stencil expression!")))
+                ParsingException "Invalid stencil expression!"))
+  (testing "Test unexpected command"
+    (test-fails "test-resources/failures/test-syntax-unexpected-command.docx" nil
+                ParsingException "Unexpected command: unexpected")))
 
 (deftest test-evaluation-errors
   (testing "Division by zero"

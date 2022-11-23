@@ -47,7 +47,7 @@
         {:cmd :else-if
          :condition (infix/parse (.substring text prefix-len))})
 
-      :else (throw (ex-info "Unexpected command" {:command text})))))
+      :else (throw (ex-info (str "Unexpected command: " text) {})))))
 
 (defn text->cmd [text]
   (try (with-meta (text->cmd-impl text)
