@@ -117,6 +117,9 @@
     (test-fails "test-resources/failures/test-syntax-arity.docx" {}
                 EvalException "Error evaluating expression: {%=decimal(1,2,3)%}"
                 clojure.lang.ExceptionInfo "Function 'decimal' was called with a wrong number of arguments (3)"))
+  (testing "Missing fragment"
+    (test-fails "test-resources/multipart/main.docx" {}
+                EvalException "No fragment for name: body"))
   (testing "function invocation error"
     ;; TODO: invoke fn with wrong types
   ))
