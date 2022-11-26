@@ -108,7 +108,7 @@
   (testing "NPE"
     (test-fails "test-resources/failures/test-eval-division.docx" {:x nil :y nil}
                 EvalException "Error evaluating expression: {%=x/y%}"
-                java.lang.NullPointerException "Cannot invoke \"Object.getClass()\" because \"x\" is null"))
+                java.lang.NullPointerException nil #_"Cannot invoke \"Object.getClass()\" because \"x\" is null"))
   (testing "function does not exist"
     (test-fails "test-resources/failures/test-no-such-fn.docx" {}
                 EvalException "Error evaluating expression: {%=nofun()%}"
