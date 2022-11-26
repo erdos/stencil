@@ -71,9 +71,9 @@
          (f-child token))))))
 
 (defn annotate-environments
-  "Vegigmegy minden tokenen es a parancs blokkok :before es :after kulcsaiba
-   beleteszi az adott token kornyezetet."
+  "Puts the context of each element into its :before and :after keys."
   [control-ast]
+  (assert (sequential? control-ast))
   (let [stack (volatile! ())]
     (nested-tokens-fmap-postwalk
      (fn before-cmd-block [_ block]
@@ -120,19 +120,19 @@
 (defmethod control-ast-normalize-step :if [control-ast]
   (case (count (:blocks control-ast))
     2 (let [[then else] (:blocks control-ast)
-            then2 (concat (keep control-ast-normalize (:children then))
+            then2 (concat (map control-ast-normalize (:children then))
                           (stack-revert-close (:before else))
                           (:after else))
             else2 (concat (stack-revert-close (:before then))
                           (:after then)
-                          (keep control-ast-normalize (:children else)))]
+                          (map control-ast-normalize (:children else)))]
         (-> (dissoc control-ast :blocks)
             (assoc :then (vec then2) :else (vec else2))))
 
     1 (let [[then] (:blocks control-ast)
             else   (:after then)]
         (-> (dissoc control-ast :blocks)
-            (assoc :then (vec (keep control-ast-normalize (:children then))) :else (vec else))))
+            (assoc :then (mapv control-ast-normalize (:children then)) :else (vec else))))
     ;; default
     (throw (parsing-exception (str open-tag "else" close-tag)
                               "Too many {%else%} tags in one condition!"))))
@@ -147,7 +147,7 @@
     (throw (parsing-exception (str open-tag "else" close-tag)
                               "Unexpected {%else%} in a loop!")))
   (let [[{:keys [children before after]}] (:blocks control-ast)
-        children (keep control-ast-normalize children)]
+        children (mapv control-ast-normalize children)]
     (-> control-ast
         (dissoc :blocks)
         (assoc :body-run-none (vec (concat (stack-revert-close before) after))
@@ -157,8 +157,8 @@
 (defn control-ast-normalize
   "Mélységi bejárással rekurzívan normalizálja az XML fát."
   [control-ast]
+  (assert (map? control-ast))
   (cond
-    (vector? control-ast) (vec (flatten (keep control-ast-normalize control-ast)))
     (:text control-ast)   control-ast
     (:open control-ast)   control-ast
     (:close control-ast)  control-ast
@@ -214,7 +214,7 @@
 
 (defn process [raw-token-seq]
   (let [ast (tokens->ast raw-token-seq)
-        executable (control-ast-normalize (annotate-environments ast))]
+        executable (mapv control-ast-normalize (annotate-environments ast))]
     {:variables  (find-variables ast)
      :fragments  (find-fragments ast)
      :dynamic?   (boolean (some :cmd executable))

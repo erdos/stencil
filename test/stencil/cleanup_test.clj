@@ -42,7 +42,7 @@
         :blocks [{:children [{:text "Then"}]} {:children [{:text "Else"}]}]}])))
 
 (deftest normal-ast-test-1
-  (is (= (control-ast-normalize
+  (is (= (map control-ast-normalize
           (annotate-environments
            [(->OpenTag "html")
             (->OpenTag "a")
@@ -91,7 +91,7 @@
 
 (deftest normal-ast-test-0
   (testing "Amikor a formazas a THEN blokk kozepeig tart, akkor az ELSE blokk-ba is be kell tenni a lezaro taget."
-    (is (= (control-ast-normalize
+    (is (= (map control-ast-normalize
             (annotate-environments
              [{:cmd :if
                :blocks [{:children [(->text "bela") <b> (->text "Hello")]}
@@ -105,7 +105,7 @@
 
 (deftest normal-ast-test-0-deep
   (testing "Amikor a formazas a THEN blokk kozepeig tart, akkor az ELSE blokk-ba is be kell tenni a lezaro taget."
-    (is (= (control-ast-normalize
+    (is (= (map control-ast-normalize
             (annotate-environments
              [{:cmd :if
                :blocks [{:children [(->text "bela") <b> <i> (->text "Hello") <／i>]}
@@ -119,7 +119,7 @@
 
 (deftest normal-ast-test-condition-only-then
   (testing "Az elagazasban eredeetileg csak THEN ag volt de beszurjuk az else agat is."
-    (is (= (control-ast-normalize
+    (is (= (map control-ast-normalize
             (annotate-environments
              [<a>
               {:cmd :if
@@ -137,7 +137,7 @@
 
 (deftest test-normal-ast-for-loop-1
   (testing "ismetleses ciklusban"
-    (is (= (control-ast-normalize
+    (is (= (map control-ast-normalize
             (annotate-environments
              [<a>
               (->text "before")
