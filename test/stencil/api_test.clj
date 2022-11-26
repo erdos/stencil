@@ -123,6 +123,11 @@
   (testing "Missing fragment"
     (test-fails "test-resources/multipart/main.docx" {}
                 EvalException "No fragment for name: body"))
+  (testing "date() function has custom message"
+    (test-fails "test-resources/test-function-date.docx" {"date" "2022-01-04XXX11:22:33"}
+                EvalException "Error evaluating expression: {%=date(\"yyyy-MM-dd\", date)%}"
+                IllegalArgumentException "Could not parse date object 2022-01-04XXX11:22:33"))
+
   (testing "function invocation error"
     ;; TODO: invoke fn with wrong types
   ))
