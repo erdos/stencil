@@ -50,10 +50,10 @@
       :else (throw (ex-info (str "Unexpected command: " text) {})))))
 
 (defn text->cmd [text]
-  (try (with-meta (text->cmd-impl text)
-                  {:raw (str open-tag text close-tag)})
+  (try (assoc (text->cmd-impl text)
+              :raw (str open-tag text close-tag))
        (catch clojure.lang.ExceptionInfo e
-       (throw (parsing-exception (str open-tag text close-tag) (.getMessage e))))))
+         (throw (parsing-exception (str open-tag text close-tag) (.getMessage e))))))
 
 (defn structure->seq [parsed]
   (cond
