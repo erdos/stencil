@@ -1,5 +1,5 @@
 (ns stencil.util-test
-  (:require [clojure.test :refer [deftest testing is]]
+  (:require [clojure.test :refer [deftest testing is are]]
             [clojure.zip :as zip]
             [stencil.util :refer :all]))
 
@@ -110,3 +110,10 @@
   (is (= true (whitespace? \tab)))
   (is (= false (whitespace? " ")))
   (is (= false (whitespace? \A))))
+
+(deftest trim-test
+  (are [input] (= "" (trim input))
+    "", " ", "\t\t\n") 
+  (are [input] (= "abc" (trim input))
+    "abc", "    abc", "abc   ", " \t  \n abc \t")
+  (is (= "a b c" (trim "  a b c  \t"))))
