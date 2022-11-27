@@ -132,6 +132,9 @@
     (is (= 7 (run "a[a[1]+4]" {"a" {"1" 2 "6" 7}})))
     (is (= 8 (run "a[1][2]" {"a" {"1" {"2" 8}}}))))
 
+  (testing "negation"
+    (is (= 6 (run "a[1]-2" {"a" {"1" 8}}))))
+
   (testing "syntax error"
     (is (thrown? ExceptionInfo (run "[3]" {})))
     (is (thrown? ExceptionInfo (run "a[[3]]" {})))
