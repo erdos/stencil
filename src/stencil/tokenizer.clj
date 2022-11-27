@@ -3,7 +3,6 @@
   (:require [clojure.data.xml :as xml]
             [clojure.string :refer [includes? split trim]]
             [stencil.infix :as infix]
-            [stencil.types :refer [open-tag close-tag]]
             [stencil.util :refer [assoc-if-val mod-stack-top-conj mod-stack-top-last parsing-exception]]))
 
 (set! *warn-on-reflection* true)
@@ -50,10 +49,9 @@
       :else (throw (ex-info (str "Unexpected command: " text) {})))))
 
 (defn text->cmd [text]
-  (try (assoc (text->cmd-impl text)
-              :raw (str open-tag text close-tag))
+  (try (text->cmd-impl text)
        (catch clojure.lang.ExceptionInfo e
-         (throw (parsing-exception (str open-tag text close-tag) (.getMessage e))))))
+         (throw (parsing-exception text (.getMessage e))))))
 
 (defn structure->seq [parsed]
   (cond

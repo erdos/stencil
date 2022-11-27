@@ -75,7 +75,8 @@
 
 (defn map-action-token [token]
   (if-let [action (:action token)]
-    (let [parsed (tokenizer/text->cmd action)]
+    (let [parsed (tokenizer/text->cmd action)
+          parsed (assoc parsed :raw (str open-tag action close-tag))]
       (if (and *only-includes*
                (not= :cmd/include (:cmd parsed)))
         {:text (str open-tag action close-tag)}
