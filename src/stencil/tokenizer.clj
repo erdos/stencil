@@ -66,8 +66,7 @@
      [{:close (:tag parsed)}])
 
     :else
-    [(cond-> {:open+close (:tag parsed)}
-       (seq (:attrs parsed)) (assoc :attrs (:attrs parsed)))]))
+    [(assoc-if-val {:open+close (:tag parsed)} :attrs (not-empty (:attrs parsed)))]))
 
 (defn- tokens-seq-reducer [stack token]
   (cond
