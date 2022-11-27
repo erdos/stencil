@@ -2,6 +2,7 @@
   (:import [io.github.erdos.stencil.exceptions ParsingException EvalException])
   (:require [stencil.types :refer :all]
             [stencil.api :refer [prepare render!]]  
+            [stencil.integration :refer [test-fails]]
             [clojure.test :refer [deftest is are testing]]
             [stencil.model :as model]))
 
@@ -61,19 +62,6 @@
 
 (deftest test-unexpected-cmd
   (throw-ex-parsing? "<a>{% echo 3 %}</a>"))
-
-(defn- test-fails [template payload & bodies]
-  (try (render! (prepare template) payload
-                :overwrite? true
-                :output (java.io.File/createTempFile "stencil" ".docx"))
-       (assert false (str "Should have thrown exception of type " (first bodies)))
-       (catch RuntimeException e
-         (let [e (reduce (fn [e [t reason]]
-                           (is (instance? t e))
-                           (is (= reason (.getMessage e)))
-                           (.getCause e))
-                         e (partition 2 bodies))]
-           (is (= nil e))))))
 
 ;; integration tests
 
