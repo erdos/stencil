@@ -55,46 +55,49 @@
                                 "Missing {%end%} tag from document!"))
       (first result))))
 
-(defn nested-tokens-fmap-postwalk
+(defn- nested-tokens-fmap-postwalk
   "Depth-first traversal of the tree."
-  [f-cmd-block-before f-cmd-block-after f-child nested-tokens]
-  (let [update-child-fn (partial nested-tokens-fmap-postwalk f-cmd-block-before f-cmd-block-after f-child)
-        update-children #(update % :children update-child-fn)]
-    (vec
-     (for [token nested-tokens]
-       (if (:cmd token)
-         (update token :blocks
-                 (partial mapv
-                          (comp (partial f-cmd-block-after token)
-                                update-children
-                                (partial f-cmd-block-before token))))
-         (f-child token))))))
+  [f-cmd-block-before f-cmd-block-after f-child node]
+  (assert (map? node))  
+  (letfn [(children-mapper [children]
+            (mapv update-blocks children))
+          (update-children [node]
+            (update node :children children-mapper))
+          (visit-block [block]
+            (-> block f-cmd-block-before update-children f-cmd-block-after))
+          (blocks-mapper [blocks]
+            (mapv visit-block blocks))
+          (update-blocks [node]
+            (if (:cmd node)
+              (update node :blocks blocks-mapper)
+              (f-child node)))]
+    (update-blocks node)))
 
 (defn annotate-environments
   "Puts the context of each element into its :before and :after keys."
   [control-ast]
   (assert (sequential? control-ast))
   (let [stack (volatile! ())]
-    (nested-tokens-fmap-postwalk
-     (fn before-cmd-block [_ block]
-       (assoc block :before @stack))
+    (mapv (partial nested-tokens-fmap-postwalk
+            (fn before-cmd-block [block]
+              (assoc block :before @stack))
 
-     (fn after-cmd-block [_ block]
-       (let [stack-before (:before block)
-             [a b]        (stacks-difference-key :open stack-before @stack)]
-         (assoc block :before a :after b)))
+            (fn after-cmd-block [block]
+              (let [stack-before (:before block)
+                    [a b]        (stacks-difference-key :open stack-before @stack)]
+                (assoc block :before a :after b)))
 
-     (fn child [item]
-       (cond
-         (:open item)
-         (vswap! stack conj item)
+            (fn child [item]
+              (cond
+                (:open item)
+                (vswap! stack conj item)
 
-         (:close item)
-         (if (= (:close item) (:open (first @stack)))
-           (vswap! stack next)
-           (throw (ex-info "Unexpected stack state" {:stack @stack, :item item}))))
-       item)
-     control-ast)))
+                (:close item)
+                (if (= (:close item) (:open (first @stack)))
+                  (vswap! stack next)
+                  (throw (ex-info "Unexpected stack state" {:stack @stack, :item item}))))
+              item))
+          control-ast)))
 
 (defn stack-revert-close
   "Creates a seq of :close tags for each :open tag in the list in reverse order."
