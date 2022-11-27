@@ -4,13 +4,17 @@
              [cleanup :refer :all]
              [types :refer :all]]))
 
+(defn- ->text [t] {:text t})
+(defn- ->close [t] {:close t})
+(defn- ->open [t] {:open t})
+
 (deftest stack-revert-close-test
   (testing "Egyszeru es ures esetek"
     (is (= [] (stack-revert-close [])))
     (is (= [] (stack-revert-close nil)))
     (is (= [] (stack-revert-close [{:whatever 1} {:else 2}]))))
   (testing "A kinyito elemeket be kell csukni"
-    (is (= [(->CloseTag "a") (->CloseTag "b")]
+    (is (= [(->close "a") (->close "b")]
            (stack-revert-close [{:open "b"} {:open "a"}])))))
 
 (deftest tokens->ast-test
@@ -44,47 +48,47 @@
 (deftest normal-ast-test-1
   (is (= (map control-ast-normalize
           (annotate-environments
-           [(->OpenTag "html")
-            (->OpenTag "a")
-            (->TextTag "Inka")
+           [(->open "html")
+            (->open "a")
+            (->text "Inka")
             {:cmd :if
              :stencil.cleanup/blocks [{:stencil.cleanup/children [
-                                  (->TextTag "ikarusz")
-                                  (->CloseTag "a")
-                                  (->TextTag "bela")
-                                  (->OpenTag "b")
-                                  (->TextTag "Hello")]}
+                                  (->text "ikarusz")
+                                  (->close "a")
+                                  (->text "bela")
+                                  (->open "b")
+                                  (->text "Hello")]}
                       {:stencil.cleanup/children [
-                                  (->TextTag "Virag")
-                                  (->CloseTag "b")
-                                  (->TextTag "Hajdiho!")
-                                  (->OpenTag "c")
-                                  (->TextTag "Bogar")]}]}
-            (->TextTag "Kaktusz")
-            (->CloseTag "c")
-            (->CloseTag "html")]))
+                                  (->text "Virag")
+                                  (->close "b")
+                                  (->text "Hajdiho!")
+                                  (->open "c")
+                                  (->text "Bogar")]}]}
+            (->text "Kaktusz")
+            (->close "c")
+            (->close "html")]))
 
-         [(->OpenTag "html")
-          (->OpenTag "a")
-          (->TextTag "Inka")
+         [(->open "html")
+          (->open "a")
+          (->text "Inka")
           {:cmd :if
-           :then [(->TextTag "ikarusz")
-                  (->CloseTag "a")
-                  (->TextTag "bela")
-                  (->OpenTag "b")
-                  (->TextTag "Hello")
-                  (->CloseTag "b")
-                  (->OpenTag "c")]
-           :else [(->CloseTag "a")
-                  (->OpenTag "b")
-                  (->TextTag "Virag")
-                  (->CloseTag "b")
-                  (->TextTag "Hajdiho!")
-                  (->OpenTag "c")
-                  (->TextTag "Bogar")]}
-          (->TextTag "Kaktusz")
-          (->CloseTag "c")
-          (->CloseTag "html")])))
+           :then [(->text "ikarusz")
+                  (->close "a")
+                  (->text "bela")
+                  (->open "b")
+                  (->text "Hello")
+                  (->close "b")
+                  (->open "c")]
+           :else [(->close "a")
+                  (->open "b")
+                  (->text "Virag")
+                  (->close "b")
+                  (->text "Hajdiho!")
+                  (->open "c")
+                  (->text "Bogar")]}
+          (->text "Kaktusz")
+          (->close "c")
+          (->close "html")])))
 
 (def <i> (->open "i")) (def <／i> (->close "i"))
 (def <b> (->open "b")) (def <／b> (->close "b"))
