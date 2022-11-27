@@ -20,14 +20,14 @@
     (if (empty? ss0)
       (throw (parsing-exception (str open-tag "else" close-tag)
                                 "Unexpected {%else%} tag, it must come right after a condition!"))
-      (conj (mod-stack-top-last ss0 update :blocks (fnil conj []) {::children queue}) []))
+      (conj (mod-stack-top-last ss0 update ::blocks (fnil conj []) {::children queue}) []))
 
     :else-if
     (if (empty? ss0)
       (throw (parsing-exception (str open-tag "else" close-tag)
                                 "Unexpected {%else%} tag, it must come right after a condition!"))
       (-> ss0
-          (mod-stack-top-last update :blocks (fnil conj []) {::children queue})
+          (mod-stack-top-last update ::blocks (fnil conj []) {::children queue})
           (conj [(assoc token :cmd :if :r true)])
           (conj [])))
 
@@ -36,7 +36,7 @@
       (throw (parsing-exception (str open-tag "end" close-tag)
                                 "Too many {%end%} tags!"))
       (loop [[queue & ss0] stack]
-        (let [new-stack (mod-stack-top-last ss0 update :blocks conj {::children queue})]
+        (let [new-stack (mod-stack-top-last ss0 update ::blocks conj {::children queue})]
           (if (:r (peek (first new-stack)))
             (recur (mod-stack-top-last new-stack dissoc :r))
             new-stack))))
@@ -67,7 +67,7 @@
             (mapv visit-block blocks))
           (update-blocks [node]
             (if (:cmd node)
-              (update node :blocks blocks-mapper)
+              (update node ::blocks blocks-mapper)
               (f-child node)))]
     (update-blocks node)))
 
@@ -119,20 +119,20 @@
 
 ;; A feltételes elágazásoknál mindig generálunk egy javított THEN ágat
 (defmethod control-ast-normalize :if [control-ast]
-  (case (count (:blocks control-ast))
-    2 (let [[then else] (:blocks control-ast)
+  (case (count (::blocks control-ast))
+    2 (let [[then else] (::blocks control-ast)
             then2 (concat (map control-ast-normalize (::children then))
                           (stack-revert-close (::before else))
                           (::after else))
             else2 (concat (stack-revert-close (::before then))
                           (::after then)
                           (map control-ast-normalize (::children else)))]
-        (-> (dissoc control-ast :blocks)
+        (-> (dissoc control-ast ::blocks)
             (assoc :then (vec then2) :else (vec else2))))
 
-    1 (let [[then] (:blocks control-ast)
+    1 (let [[then] (::blocks control-ast)
             else   (::after then)]
-        (-> (dissoc control-ast :blocks)
+        (-> (dissoc control-ast ::blocks)
             (assoc :then (mapv control-ast-normalize (::children then)) :else (vec else))))
     ;; default
     (throw (parsing-exception (str open-tag "else" close-tag)
@@ -144,19 +144,19 @@
 ;; - body-run-next: a body resz masodik, harmadik, stb. beillesztese, haa lista legalabb 2 elemu.
 ;; Ezekbol az esetekbol kell futtataskor a megfelelo(ket) kivalasztani es behelyettesiteni.
 (defmethod control-ast-normalize :for [control-ast]
-  (when-not (= 1 (count (:blocks control-ast)))
+  (when-not (= 1 (count (::blocks control-ast)))
     (throw (parsing-exception (str open-tag "else" close-tag)
                               "Unexpected {%else%} in a loop!")))
-  (let [[{::keys [children before after]}] (:blocks control-ast)
+  (let [[{::keys [children before after]}] (::blocks control-ast)
         children (mapv control-ast-normalize children)]
     (-> control-ast
-        (dissoc :blocks)
+        (dissoc ::blocks)
         (assoc :body-run-none (vec (concat (stack-revert-close before) after))
                :body-run-once (vec children)
                :body-run-next (vec (concat (stack-revert-close after) before children))))))
 
 (defmethod control-ast-normalize :default [control-ast]
-  (assert (not (:blocks control-ast)))
+  (assert (not (::blocks control-ast)))
   control-ast)
 
 (defn find-variables [control-ast]
@@ -187,20 +187,20 @@
                        :echo (expr mapping (:expression x))
 
                        :if   (concat (expr mapping (:condition x))
-                                     (collect mapping (apply concat (:blocks x))))
+                                     (collect mapping (apply concat (::blocks x))))
 
                        :for  (let [variable (maybe-variable mapping (:expression x))
                                    exprs    (expr mapping (:expression x))
                                    mapping  (if variable
                                               (assoc mapping (:variable x) (str variable "[]"))
                                               mapping)]
-                               (concat exprs (collect mapping (apply concat (:blocks x)))))
+                               (concat exprs (collect mapping (apply concat (::blocks x)))))
                        []))]
     (distinct (collect {} control-ast))))
 
 (defn- find-fragments [control-ast]
   ;; returns a set of fragment names use in this document
-  (set (for [item (tree-seq map? (comp flatten :blocks) {:blocks [control-ast]})
+  (set (for [item (tree-seq map? (comp flatten ::blocks) {::blocks [control-ast]})
              :when (map? item)
              :when (= :cmd/include (:cmd item))]
          (:name item))))
