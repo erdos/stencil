@@ -30,7 +30,7 @@
        {:text      "Then"}
        {:cmd       :end}]
       [{:cmd :if :condition 1
-        :blocks [{:children [{:text "Then"}]}]}]
+        :blocks [{:stencil.cleanup/children [{:text "Then"}]}]}]
 
       ;; if-then-else-fi
       [{:cmd :if :condition 1}
@@ -39,7 +39,7 @@
        {:text "Else"}
        {:cmd :end}]
       [{:cmd :if, :condition 1
-        :blocks [{:children [{:text "Then"}]} {:children [{:text "Else"}]}]}])))
+        :blocks [{:stencil.cleanup/children [{:text "Then"}]} {:stencil.cleanup/children [{:text "Else"}]}]}])))
 
 (deftest normal-ast-test-1
   (is (= (map control-ast-normalize
@@ -48,12 +48,14 @@
             (->OpenTag "a")
             (->TextTag "Inka")
             {:cmd :if
-             :blocks [{:children [(->TextTag "ikarusz")
+             :blocks [{:stencil.cleanup/children [
+                                  (->TextTag "ikarusz")
                                   (->CloseTag "a")
                                   (->TextTag "bela")
                                   (->OpenTag "b")
                                   (->TextTag "Hello")]}
-                      {:children [(->TextTag "Virag")
+                      {:stencil.cleanup/children [
+                                  (->TextTag "Virag")
                                   (->CloseTag "b")
                                   (->TextTag "Hajdiho!")
                                   (->OpenTag "c")
@@ -94,8 +96,8 @@
     (is (= (map control-ast-normalize
             (annotate-environments
              [{:cmd :if
-               :blocks [{:children [(->text "bela") <b> (->text "Hello")]}
-                        {:children [(->text "Virag")]}]}
+               :blocks [{:stencil.cleanup/children [(->text "bela") <b> (->text "Hello")]}
+                        {:stencil.cleanup/children [(->text "Virag")]}]}
               (->close "b")]))
 
            [{:cmd :if
@@ -108,8 +110,8 @@
     (is (= (map control-ast-normalize
             (annotate-environments
              [{:cmd :if
-               :blocks [{:children [(->text "bela") <b> <i> (->text "Hello") <／i>]}
-                        {:children [<j> (->text "Virag") <／j>]}]}
+               :blocks [{:stencil.cleanup/children [(->text "bela") <b> <i> (->text "Hello") <／i>]}
+                        {:stencil.cleanup/children [<j> (->text "Virag") <／j>]}]}
               <／b>]))
 
            [{:cmd :if
@@ -123,7 +125,7 @@
             (annotate-environments
              [<a>
               {:cmd :if
-               :blocks [{:children [(->text "bela") <b> <i> (->text "Hello") <／i>]}]}
+               :blocks [{:stencil.cleanup/children [(->text "bela") <b> <i> (->text "Hello") <／i>]}]}
               <／b>
               <／a>]))
 
@@ -133,7 +135,7 @@
             <／b>
             <／a>]))))
 
-(defn >>for-loop [& children] {:cmd :for :blocks [{:children (vec children)}]})
+(defn >>for-loop [& children] {:cmd :for :blocks [{:stencil.cleanup/children (vec children)}]})
 
 (deftest test-normal-ast-for-loop-1
   (testing "ismetleses ciklusban"

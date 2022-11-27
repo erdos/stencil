@@ -12,8 +12,6 @@
 
 (set! *warn-on-reflection* true)
 
-(declare control-ast-normalize)
-
 (defn- tokens->ast-step [[queue & ss0 :as stack] token]
   (case (:cmd token)
     (:if :for) (conj (mod-stack-top-conj stack token) [])
@@ -22,14 +20,14 @@
     (if (empty? ss0)
       (throw (parsing-exception (str open-tag "else" close-tag)
                                 "Unexpected {%else%} tag, it must come right after a condition!"))
-      (conj (mod-stack-top-last ss0 update :blocks (fnil conj []) {:children queue}) []))
+      (conj (mod-stack-top-last ss0 update :blocks (fnil conj []) {::children queue}) []))
 
     :else-if
     (if (empty? ss0)
       (throw (parsing-exception (str open-tag "else" close-tag)
                                 "Unexpected {%else%} tag, it must come right after a condition!"))
       (-> ss0
-          (mod-stack-top-last update :blocks (fnil conj []) {:children queue})
+          (mod-stack-top-last update :blocks (fnil conj []) {::children queue})
           (conj [(assoc token :cmd :if :r true)])
           (conj [])))
 
@@ -38,7 +36,7 @@
       (throw (parsing-exception (str open-tag "end" close-tag)
                                 "Too many {%end%} tags!"))
       (loop [[queue & ss0] stack]
-        (let [new-stack (mod-stack-top-last ss0 update :blocks conj {:children queue})]
+        (let [new-stack (mod-stack-top-last ss0 update :blocks conj {::children queue})]
           (if (:r (peek (first new-stack)))
             (recur (mod-stack-top-last new-stack dissoc :r))
             new-stack))))
@@ -55,46 +53,49 @@
                                 "Missing {%end%} tag from document!"))
       (first result))))
 
-(defn nested-tokens-fmap-postwalk
+(defn- nested-tokens-fmap-postwalk
   "Depth-first traversal of the tree."
-  [f-cmd-block-before f-cmd-block-after f-child nested-tokens]
-  (let [update-child-fn (partial nested-tokens-fmap-postwalk f-cmd-block-before f-cmd-block-after f-child)
-        update-children #(update % :children update-child-fn)]
-    (vec
-     (for [token nested-tokens]
-       (if (:cmd token)
-         (update token :blocks
-                 (partial mapv
-                          (comp (partial f-cmd-block-after token)
-                                update-children
-                                (partial f-cmd-block-before token))))
-         (f-child token))))))
+  [f-cmd-block-before f-cmd-block-after f-child node]
+  (assert (map? node))  
+  (letfn [(children-mapper [children]
+            (mapv update-blocks children))
+          (update-children [node]
+            (update node ::children children-mapper))
+          (visit-block [block]
+            (-> block f-cmd-block-before update-children f-cmd-block-after))
+          (blocks-mapper [blocks]
+            (mapv visit-block blocks))
+          (update-blocks [node]
+            (if (:cmd node)
+              (update node :blocks blocks-mapper)
+              (f-child node)))]
+    (update-blocks node)))
 
 (defn annotate-environments
   "Puts the context of each element into its :before and :after keys."
   [control-ast]
   (assert (sequential? control-ast))
   (let [stack (volatile! ())]
-    (nested-tokens-fmap-postwalk
-     (fn before-cmd-block [_ block]
-       (assoc block :before @stack))
+    (mapv (partial nested-tokens-fmap-postwalk
+            (fn before-cmd-block [block]
+              (assoc block ::before @stack))
 
-     (fn after-cmd-block [_ block]
-       (let [stack-before (:before block)
-             [a b]        (stacks-difference-key :open stack-before @stack)]
-         (assoc block :before a :after b)))
+            (fn after-cmd-block [block]
+              (let [stack-before (::before block)
+                    [a b]        (stacks-difference-key :open stack-before @stack)]
+                (assoc block ::before a ::after b)))
 
-     (fn child [item]
-       (cond
-         (:open item)
-         (vswap! stack conj item)
+            (fn child [item]
+              (cond
+                (:open item)
+                (vswap! stack conj item)
 
-         (:close item)
-         (if (= (:close item) (:open (first @stack)))
-           (vswap! stack next)
-           (throw (ex-info "Unexpected stack state" {:stack @stack, :item item}))))
-       item)
-     control-ast)))
+                (:close item)
+                (if (= (:close item) (:open (first @stack)))
+                  (vswap! stack next)
+                  (throw (ex-info "Unexpected stack state" {:stack @stack, :item item}))))
+              item))
+          control-ast)))
 
 (defn stack-revert-close
   "Creates a seq of :close tags for each :open tag in the list in reverse order."
@@ -105,34 +106,34 @@
 ;; a :blocks kulcs alatt levo elemeket normalizalja es specialis kulcsok alatt elhelyezi
 ;; igy amikor vegrehajtjuk a parancs objektumot, akkor az eredmeny is
 ;; valid fa lesz, tehat a nyito-bezaro tagek helyesen fognak elhelyezkedni.
-(defmulti control-ast-normalize-step :cmd)
+(defmulti control-ast-normalize :cmd)
 
 ;; Itt nincsen blokk, amit normalizálni kellene
-(defmethod control-ast-normalize-step :echo [echo-command] echo-command)
+(defmethod control-ast-normalize :echo [echo-command] echo-command)
 
-(defmethod control-ast-normalize-step :cmd/include [include-command]
+(defmethod control-ast-normalize :cmd/include [include-command]
   (if-not (string? (:name include-command))
     (throw (parsing-exception (pr-str (:name include-command))
                               "Parameter of include call must be a single string literal!"))
     include-command))
 
 ;; A feltételes elágazásoknál mindig generálunk egy javított THEN ágat
-(defmethod control-ast-normalize-step :if [control-ast]
+(defmethod control-ast-normalize :if [control-ast]
   (case (count (:blocks control-ast))
     2 (let [[then else] (:blocks control-ast)
-            then2 (concat (map control-ast-normalize (:children then))
-                          (stack-revert-close (:before else))
-                          (:after else))
-            else2 (concat (stack-revert-close (:before then))
-                          (:after then)
-                          (map control-ast-normalize (:children else)))]
+            then2 (concat (map control-ast-normalize (::children then))
+                          (stack-revert-close (::before else))
+                          (::after else))
+            else2 (concat (stack-revert-close (::before then))
+                          (::after then)
+                          (map control-ast-normalize (::children else)))]
         (-> (dissoc control-ast :blocks)
             (assoc :then (vec then2) :else (vec else2))))
 
     1 (let [[then] (:blocks control-ast)
-            else   (:after then)]
+            else   (::after then)]
         (-> (dissoc control-ast :blocks)
-            (assoc :then (mapv control-ast-normalize (:children then)) :else (vec else))))
+            (assoc :then (mapv control-ast-normalize (::children then)) :else (vec else))))
     ;; default
     (throw (parsing-exception (str open-tag "else" close-tag)
                               "Too many {%else%} tags in one condition!"))))
@@ -142,11 +143,11 @@
 ;; - body-run-once: a body resz eloszor fut le, ha a lista legalabb egy elemu
 ;; - body-run-next: a body resz masodik, harmadik, stb. beillesztese, haa lista legalabb 2 elemu.
 ;; Ezekbol az esetekbol kell futtataskor a megfelelo(ket) kivalasztani es behelyettesiteni.
-(defmethod control-ast-normalize-step :for [control-ast]
+(defmethod control-ast-normalize :for [control-ast]
   (when-not (= 1 (count (:blocks control-ast)))
     (throw (parsing-exception (str open-tag "else" close-tag)
                               "Unexpected {%else%} in a loop!")))
-  (let [[{:keys [children before after]}] (:blocks control-ast)
+  (let [[{::keys [children before after]}] (:blocks control-ast)
         children (mapv control-ast-normalize children)]
     (-> control-ast
         (dissoc :blocks)
@@ -154,17 +155,9 @@
                :body-run-once (vec children)
                :body-run-next (vec (concat (stack-revert-close after) before children))))))
 
-(defn control-ast-normalize
-  "Mélységi bejárással rekurzívan normalizálja az XML fát."
-  [control-ast]
-  (assert (map? control-ast))
-  (cond
-    (:text control-ast)   control-ast
-    (:open control-ast)   control-ast
-    (:close control-ast)  control-ast
-    (:cmd control-ast)    (control-ast-normalize-step control-ast)
-    (:open+close control-ast) control-ast
-    :else                 (throw (ex-info (str "Unexpected object: " (type control-ast)) {:ast control-ast}))))
+(defmethod control-ast-normalize :default [control-ast]
+  (assert (not (:blocks control-ast)))
+  control-ast)
 
 (defn find-variables [control-ast]
   ;; meg a normalizalas lepes elott
