@@ -28,7 +28,9 @@
    \< :lt
    \> :gt
    \& :and
-   \| :or})
+   \| :or
+   \, :comma \; :comma
+   })
 
 (def ops2 {[\> \=] :gte
            [\< \=] :lte
@@ -109,10 +111,6 @@
                     (Long/parseLong     content))]
       [number (drop (count content) characters)])))
 
-(defn- read-comma [chars]
-  (when (contains? #{\, \;} (first chars))
-    [:comma (next chars)]))
-
 (defn- read-ops2 [chars]
   (when-let [op (get ops2 [(first chars) (second chars)] )]
     [op (nnext chars)]))
@@ -129,8 +127,7 @@
         [(symbol content) tail]))))
 
 (def token-readers
-  (some-fn read-comma
-           read-number
+  (some-fn read-number
            read-string-literal
            read-iden           
            read-ops2
