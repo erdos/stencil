@@ -147,7 +147,7 @@
 (defn tokenize [text]
   ;; replace :minus by :neg where it is negation instead of subtraction based on context
   (->> (tokenize' text)
-       (reductions (fn [previous current] (if (and (= :minus current) (not= previous :close) (keyword? previous)) :neg current)) ::SENTINEL)
+       (reductions (fn [previous current] (if (and (= :minus current) (not= previous :close) (not= previous :close-bracket) (keyword? previous)) :neg current)) ::SENTINEL)
        (next)))
 
 ;; throws ExceptionInfo when token sequence has invalid elems
