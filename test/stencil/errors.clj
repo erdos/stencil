@@ -1,7 +1,6 @@
 (ns stencil.errors
   (:import [io.github.erdos.stencil.exceptions ParsingException EvalException])
   (:require [stencil.types :refer :all]
-            [stencil.api :refer [prepare render!]]  
             [stencil.integration :refer [test-fails]]
             [clojure.test :refer [deftest is are testing]]
             [stencil.model :as model]))
