@@ -132,7 +132,7 @@
                             true false))} 
   whitespace? [c] (whitespace? c))
 
-;; like clojure.string/trim but supports more whitespace characters
+;; like clojure.string/trim but supports a wider range of whitespace characters
 (defn ^String trim [^CharSequence s]
   (loop [right-idx (.length s)]
     (if (zero? right-idx)
