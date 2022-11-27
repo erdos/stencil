@@ -104,3 +104,9 @@
 (deftest suffixes-test
   (is (= [] (suffixes []) (suffixes nil)))
   (is (= [[1 2 3] [2 3] [3]] (suffixes [1 2 3]))))
+
+(deftest whitespace?-test
+  (is (= true (whitespace? \space)))
+  (is (= true (whitespace? \tab)))
+  (is (= false (whitespace? " ")))
+  (is (= false (whitespace? \A))))

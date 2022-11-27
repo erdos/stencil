@@ -1,16 +1,16 @@
 (ns stencil.tokenizer
   "Fog egy XML dokumentumot es tokenekre bontja"
   (:require [clojure.data.xml :as xml]
-            [clojure.string :refer [includes? split trim]]
+            [clojure.string :refer [includes? split]]
             [stencil.infix :as infix]
             [stencil.types :refer [open-tag close-tag]]
-            [stencil.util :refer [assoc-if-val mod-stack-top-conj mod-stack-top-last parsing-exception]]))
+            [stencil.util :refer [assoc-if-val mod-stack-top-conj mod-stack-top-last parsing-exception trim]]))
 
 (set! *warn-on-reflection* true)
 
 (defn- text->cmd-impl [^String text]
   (assert (string? text))
-  (let [text (.trim text)
+  (let [text (trim text)
         pattern-elseif #"^(else\s*if|elif|elsif)(\(|\s+)"]
     (cond
       (#{"end" "endfor" "endif"} text) {:cmd :end}
