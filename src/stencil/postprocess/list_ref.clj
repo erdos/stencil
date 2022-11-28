@@ -3,6 +3,7 @@
             [stencil.ooxml :as ooxml]
             [stencil.model.numbering :as numbering]
             [stencil.log :as log]
+            [clojure.string]
             [clojure.zip :as zip]))
 
 (set! *warn-on-reflection* true)
@@ -175,7 +176,7 @@
 
 (defn parse-instr-text [^String s]
   (assert (string? s))
-  (let [[type id & flags] (vec (.split (.trim s) "\\s\\\\?+"))]
+  (let [[type id & flags] (vec (.split (trim s) "\\s\\\\?+"))]
     (when (= "REF" type)
       {:id id
        :flags (set (map keyword flags))})))
