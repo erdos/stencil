@@ -10,7 +10,7 @@
             [stencil.model.numbering :as numbering]
             [stencil.types :refer [->FragmentInvoke ->ReplaceImage]]
             [stencil.postprocess.images :refer [img-data->extrafile]]
-            [stencil.util :refer [unlazy-tree assoc-if-val]]
+            [stencil.util :refer [unlazy-tree assoc-if-val eval-exception]]
             [stencil.model.relations :as relations]
             [stencil.model.common :refer [unix-path ->xml-writer resource-copier]]
             [stencil.functions :refer [call-fn]]
@@ -254,9 +254,7 @@
        (swap! *inserted-fragments* conj frag-name)
        (run! add-extra-file! relation-ids-rename)
        [{:text (->FragmentInvoke {:frag-evaled-parts evaled-parts})}])
-     (throw (ex-info "Did not find fragment for name!"
-                     {:fragment-name frag-name
-                      :all-fragment-names (set (keys *all-fragments*))})))))
+     (throw (eval-exception (str "No fragment for name: " frag-name) nil)))))
 
 
 ;; replaces the nearest image with the content

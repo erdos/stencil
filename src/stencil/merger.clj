@@ -6,7 +6,7 @@
             [stencil
              [types :refer [open-tag close-tag]]
              [tokenizer :as tokenizer]
-             [util :refer [prefixes suffixes subs-last string]]]))
+             [util :refer [prefixes suffixes subs-last string parsing-exception]]]))
 
 (set! *warn-on-reflection* true)
 
@@ -75,7 +75,8 @@
 
 (defn map-action-token [token]
   (if-let [action (:action token)]
-    (let [parsed (tokenizer/text->cmd action)]
+    (let [parsed (tokenizer/text->cmd action)
+          parsed (assoc parsed :raw (str open-tag action close-tag))]
       (if (and *only-includes*
                (not= :cmd/include (:cmd parsed)))
         {:text (str open-tag action close-tag)}
@@ -95,7 +96,9 @@
                                            (take (count close-tag) (map :char %)))
                                     (suffixes (peek-next-text next-token-list)))
             that        (if (empty? that)
-                          (throw (ex-info "Tag is not closed? " {:read (first this)}))
+                          (throw (parsing-exception "" (str "Stencil tag is not closed. Reading " open-tag
+                                                             (string (comp (take 20) (map first) (map :char)) this))))
+                          ;; (throw (ex-info "Tag is not closed? " {:read (first this)}))
                           (first (nth that (dec (count close-tag)))))
             ; action-content (apply str (map (comp :char first) this))
             ]

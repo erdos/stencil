@@ -47,12 +47,12 @@
         {:cmd :else-if
          :condition (infix/parse (.substring text prefix-len))})
 
-      :else (throw (ex-info "Unexpected command" {:command text})))))
+      :else (throw (ex-info (str "Unexpected command: " text) {})))))
 
 (defn text->cmd [text]
   (try (text->cmd-impl text)
-    (catch clojure.lang.ExceptionInfo e
-      (throw (parsing-exception (str open-tag text close-tag) (.getMessage e))))))
+       (catch clojure.lang.ExceptionInfo e
+         (throw (parsing-exception text (.getMessage e))))))
 
 (defn structure->seq [parsed]
   (cond
