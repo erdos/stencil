@@ -2,7 +2,7 @@
   "Parsing and evaluating infix algebraic expressions.
 
   https://en.wikipedia.org/wiki/Shunting-yard_algorithm"
-  (:require [stencil.util :refer [fail update-peek ->int string]]
+  (:require [stencil.util :refer [fail update-peek ->int string whitespace?]]
             [stencil.log :as log]
             [stencil.functions :refer [call-fn]]))
 
@@ -117,7 +117,7 @@
       (empty? characters)
       tokens
 
-      (contains? #{\space \tab \newline} first-char)
+      (whitespace? first-char)
       (recur next-chars tokens)
 
       (contains? #{\, \;} first-char)
@@ -126,7 +126,7 @@
       (contains? ops2 [first-char (first next-chars)])
       (recur (next next-chars) (conj tokens (ops2 [first-char (first next-chars)])))
 
-      (and (= \- first-char) (or (nil? (peek tokens)) (and (not= (peek tokens) :close) (keyword? (peek tokens)))))
+      (and (= \- first-char) (or (nil? (peek tokens)) (and (not= (peek tokens) :close) (not= (peek tokens) :close-bracket) (keyword? (peek tokens)))))
       (recur next-chars (conj tokens :neg))
 
       (contains? ops first-char)

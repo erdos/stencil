@@ -5,14 +5,6 @@
 (def open-tag "{%")
 (def close-tag "%}")
 
-(defrecord OpenTag [open])
-(defrecord CloseTag [close])
-(defrecord TextTag [text])
-
-(defn ->text [t] (->TextTag t))
-(defn ->close [t] (->CloseTag t))
-(def ->open ->OpenTag)
-
 (defprotocol ControlMarker)
 
 ;; Invocation of a fragment by name

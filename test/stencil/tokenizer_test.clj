@@ -36,7 +36,7 @@
 
 (deftest read-tokens-if-then
   (testing "Simple conditional with THEN branch only"
-    (is (= (run "<a>elotte {% if x%} akkor {% end %} utana</a>")
+    (is (= (run "<a>elotte {% if x%} akkor {% end %} utana</a>")
            [{:open :a}
             {:text "elotte "}
             {:cmd :if :condition '(x)}

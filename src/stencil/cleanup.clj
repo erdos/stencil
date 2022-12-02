@@ -8,7 +8,7 @@
   valid XML String -> tokens -> Annotated Control AST -> Normalized Control AST -> Evaled AST -> Hiccup or valid XML String
   "
   (:require [stencil.util :refer [mod-stack-top-conj mod-stack-top-last parsing-exception stacks-difference-key]]
-            [stencil.types :refer [open-tag close-tag ->CloseTag]]))
+            [stencil.types :refer [open-tag close-tag]]))
 
 (set! *warn-on-reflection* true)
 
@@ -100,7 +100,7 @@
 (defn stack-revert-close
   "Creates a seq of :close tags for each :open tag in the list in reverse order."
   [stack]
-  (into () (comp (keep :open) (map ->CloseTag)) stack))
+  (into () (comp (keep :open) (map #(do {:close %}))) stack))
 
 ;; egy {:cmd ...} parancs objektumot kibont:
 ;; a :blocks kulcs alatt levo elemeket normalizalja es specialis kulcsok alatt elhelyezi
