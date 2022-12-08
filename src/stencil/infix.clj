@@ -136,7 +136,7 @@
 (defn- tokenize'
   "Returns a sequence of tokens for an input string"
   [text]
-  (when-let [text (seq (drop-while #(Character/isWhitespace (char %)) text))]
+  (when-let [text (seq (drop-while (comp whitespace? char) text))]
     (if-let [[token tail] (token-readers text)]
       (cons token (lazy-seq (tokenize' tail)))
       (throw (ex-info "Unexpected endof string" {:text text})))))
