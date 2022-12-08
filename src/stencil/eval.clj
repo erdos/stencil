@@ -4,6 +4,7 @@
             [stencil.infix :refer [eval-rpn]]
             [stencil.types :refer [control?]]
             [stencil.tokenizer :as tokenizer]
+            [stencil.util :refer [eval-exception]]
             [stencil.tree-postprocess :as tree-postprocess]))
 
 (set! *warn-on-reflection* true)
@@ -18,19 +19,24 @@
   (assert (or (nil? items) (sequential? items)))
   (eduction (mapcat (partial eval-step function data)) items))
 
+(defn- eval-rpn* [data function expr raw-expr]
+  (try (eval-rpn data function expr)
+       (catch Exception e
+              (throw (eval-exception (str "Error evaluating expression: " raw-expr) e)))))
+
 (defmethod eval-step :if [function data item]
-  (let [condition (eval-rpn data function (:condition item))]
+  (let [condition (eval-rpn* data function (:condition item) (:raw item))]
     (log/trace "Condition {} evaluated to {}" (:condition item) condition)
     (->> (if condition (:then item) (:else item))
          (normal-control-ast->evaled-seq data function))))
 
 (defmethod eval-step :echo [function data item]
-  (let [value (eval-rpn data function (:expression item))]
+  (let [value (eval-rpn* data function (:expression item) (:raw item))]
     (log/trace "Echoing {} as {}" (:expression item) value)
     [{:text (if (control? value) value (str value))}]))
 
 (defmethod eval-step :for [function data item]
-  (let [items (eval-rpn data function (:expression item))]
+  (let [items (eval-rpn* data function (:expression item) (:raw item))]
     (log/trace "Loop on {} will repeat {} times" (:expression item) (count items))
     (if (not-empty items)
       (let [index-var-name (name (:index-var item))

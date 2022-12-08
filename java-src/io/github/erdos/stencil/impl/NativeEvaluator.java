@@ -55,8 +55,10 @@ public final class NativeEvaluator {
         final Map result;
         try {
             result = (Map) fn.invoke(argsMap);
+        } catch (EvalException e) {
+            throw e;
         } catch (Exception e) {
-            throw EvalException.wrapping(e);
+            throw new EvalException("Unexpected error", e);
         }
 
         final Consumer<OutputStream> stream = resultWriter(result);

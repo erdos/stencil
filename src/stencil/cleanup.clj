@@ -24,8 +24,8 @@
 
     :else-if
     (if (empty? ss0)
-      (throw (parsing-exception (str open-tag "else" close-tag)
-                                "Unexpected {%else%} tag, it must come right after a condition!"))
+      (throw (parsing-exception (str open-tag "else if" close-tag)
+                                "Unexpected {%else if%} tag, it must come right after a condition!"))
       (-> ss0
           (mod-stack-top-last update ::blocks (fnil conj []) {::children queue})
           (conj [(assoc token :cmd :if :r true)])

@@ -3,7 +3,9 @@
             [clojure.test :refer [deftest testing is]]))
 
 (defn- run [s]
-  (m/parse-to-tokens-seq (java.io.ByteArrayInputStream. (.getBytes (str s)))))
+  (->> (java.io.ByteArrayInputStream. (.getBytes (str s)))
+       (m/parse-to-tokens-seq)
+       (map #(dissoc % :raw))))
 
 (deftest read-tokens-nested
   (testing "Read a list of nested tokens"
@@ -34,7 +36,7 @@
 
 (deftest read-tokens-if-then
   (testing "Simple conditional with THEN branch only"
-    (is (= (run "<a>elotte {% if x%} akkor {% end %} utana</a>")
+    (is (= (run "<a>elotte {% if x%} akkor {% end %} utana</a>")
            [{:open :a}
             {:text "elotte "}
             {:cmd :if :condition '(x)}
