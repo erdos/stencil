@@ -11,7 +11,7 @@
 
 (deftest tokenize-test
   (testing "simple fn call"
-    (is (= ["sin" :open 1 :plus 2 :close] (infix/tokenize "   sin(1+2)"))))
+    (is (= ['sin :open 1 :plus 2 :close] (infix/tokenize "   sin(1+2)"))))
 
   (testing "comma"
     (is (= [:open 1 :comma 2 :comma 3 :close] (infix/tokenize "  (1,2   ,3)   ")))))
