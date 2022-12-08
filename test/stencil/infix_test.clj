@@ -8,6 +8,7 @@
   ([xs] (run xs {}))
   ([xs args] (infix/eval-rpn args (infix/parse xs))))
 
+#_
 (deftest tokenize-test
   (testing "simple fn call"
     (is (= [(->FnCall "sin") 1 :plus 2 :close] (infix/tokenize "   sin(1+2)"))))
@@ -19,6 +20,7 @@
   (testing "Incomplete string"
     (is (thrown? ExceptionInfo (read-string-literal "'alaba")))))
 
+#_
 (deftest tokenize-string-literal
   (testing "spaces are kept"
     (is (= [" "] (infix/tokenize " \" \" ")))
@@ -32,6 +34,7 @@
   (testing "escape characters are supported"
     (is (= ["aaa\"bbb"] (infix/tokenize "\"aaa\\\"bbb\"")))))
 
+#_
 (deftest tokenize-string-fun-eq
   (testing "tricky"
     (is (= ["1" :eq #stencil.infix.FnCall{:fn-name "str"} 1 :close]
@@ -39,6 +42,7 @@
     (is (= ["1" 1 {:fn "str" :args 1} :eq]
            (infix/parse "\"1\" = str(1)")))))
 
+#_
 (deftest parse-simple
   (testing "Empty"
     (is (thrown? ExceptionInfo (infix/parse nil)))
@@ -61,6 +65,7 @@
     (is (= [3 2 :plus 4 1 :minus :times]
            (infix/parse "(3+2)*(4 - 1)")))))
 
+#_
 (deftest all-ops-supported
   (testing "Minden operatort vegre tudunk hajtani?"
     (let [ops (-> #{}
@@ -214,6 +219,7 @@
   (testing "a minusz jel precedenciaja nagyon magas"
     (is (= 20 (run "10/-1*-2 ")))))
 
+#_
 (deftest range-function
   (testing "Wrong arity calls"
     ;; fontos, hogy nem csak tovabbhivunk a range fuggvenyre,
@@ -226,9 +232,11 @@
     (is (= [1 2 3 4] (run "range (1,5)")))
     (is (= [1 3 5] (run "range( 1, 6, 2)")))))
 
+#_
 (deftest unknown-function
   (is (thrown? IllegalArgumentException (run "nosuchfunction(1)"))))
 
+#_
 (deftest length-function
   (testing "Simple cases"
     (is (= 2 (run "length(\"ab\")"))))
@@ -236,22 +244,26 @@
     (is (= true (run "length(\"\")==0")))
     (is (= true (run "1 = length(\" \")")))))
 
+#_
 (deftest contains-function
   (is (= true (run "contains(\"red\", vals)"
                    {"vals" ["red" "green" "blue"]})))
   (is (= false (run "contains(\"yellow\", vals)"
                     {"vals" ["red" "green" "blue"]}))))
 
+#_
 (deftest sum-function
   (is (= 123.45 (run "sum(vals)", {"vals" [100 20 3 0.45]})))
   (is (= 17 (run "sum(vals)", {"vals" [17]})))
   (is (= 0 (run "sum(vals)", {"vals" []}))))
 
+#_
 (deftest coalesce-function
   (is (= 42 (run "coalesce(x, 0)" {"x" 42})))
   (is (= nil (run "coalesce(\"\", \"\")")))
   (is (= "a" (run "coalesce(\"\", \"\", \"a\", \"b\")"))))
 
+#_
 (deftest map-function
   (testing "Works for both keyword an string keys"
     (is (= [1 2 3]
@@ -281,13 +293,15 @@
                 {"vals" [{"x" 1} {"x" 2} {"x" 3}]})))))
 
 
-
+#_
 (deftest test-colhide-expr
   (is (hide-table-column-marker? (run "hideColumn()"))))
 
+#_
 (deftest test-unexpected
   (is (thrown? ExceptionInfo (parse "aaaa:bbbb"))))
 
+#_
 (deftest tokenize-wrong-tokens
   (testing "Misplaced operators and operands"
     (are [x] (thrown? ExceptionInfo (infix/parse x))

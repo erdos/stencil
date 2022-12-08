@@ -4,13 +4,12 @@
   https://en.wikipedia.org/wiki/Shunting-yard_algorithm"
   (:require [stencil.util :refer [fail update-peek ->int string whitespace?]]
             [stencil.log :as log]
-            [stencil.functions :refer [call-fn]]))
+            [stencil.functions :refer [call-fn]]
+            [stencil.grammar :as grammar]))
 
 (set! *warn-on-reflection* true)
 
 (def ^:dynamic ^:private *calc-vars* {})
-
-(defrecord FnCall [fn-name])
 
 (def ops
   {\+ :plus
@@ -44,35 +43,6 @@
 (def identifier
   "Characters found in an identifier"
   (set "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM_.1234567890"))
-
-(def operation-tokens
-  "Operator precedences.
-
-   source: http://en.cppreference.com/w/cpp/language/operator_precedence
-  "
-  {:open  -999
-   ;;;:close -998
-   :comma -998
-   :open-bracket -999
-
-   :or -21
-   :and -20
-
-   :eq -10 :neq -10,
-
-   :lt -9 :gt -9 :lte -9 :gte -9
-
-   :plus 2 :minus 2
-   :times 3 :divide 4
-   :power 5
-   :not 6
-   :neg 7})
-
-(defn- precedence [token]
-  (get operation-tokens token))
-
-(defn- associativity [token]
-  (if (#{:power :not :neg} token) :right :left))
 
 (def ^:private quotation-marks
   {\" \"   ;; programmer quotes
@@ -126,8 +96,8 @@
       (contains? ops2 [first-char (first next-chars)])
       (recur (next next-chars) (conj tokens (ops2 [first-char (first next-chars)])))
 
-      (and (= \- first-char) (or (nil? (peek tokens)) (and (not= (peek tokens) :close) (not= (peek tokens) :close-bracket) (keyword? (peek tokens)))))
-      (recur next-chars (conj tokens :neg))
+      (= \- first-char)
+      (recur next-chars (conj tokens :minus))
 
       (contains? ops first-char)
       (recur next-chars (conj tokens (ops first-char)))
@@ -142,192 +112,79 @@
 
       :else
       (let [content (string (take-while identifier) characters)]
-        (if (seq content)
-          (let [tail (drop-while #{\space \tab} (drop (count content) characters))]
-            (if (= \( (first tail))
-              (recur (next tail) (conj tokens (->FnCall content)))
-              (recur tail (conj tokens (symbol content)))))
-          (throw (ex-info (str "Unexpected character: " first-char)
-                          {:character first-char})))))))
+        (assert (not-empty content))
+        (recur (drop (count content) characters)
+               (conj tokens (symbol content)))))))
 
-;; throws ExceptionInfo when token sequence has invalid elems
-(defn- validate-tokens [tokens]
-  (cond
-    (some true? (map #(and (or (symbol? %1) (number? %1) (#{:close} %1))
-                           (or (symbol? %2) (number? %2) (#{:open} %2)))
-                     tokens (next tokens)))
-    (throw (ex-info "Could not parse!" {}))
+(defmulti eval-tree (fn [tree] (if (sequential? tree) (first tree) (type tree))))
 
-    :else
-    tokens))
+(defmethod eval-tree java.lang.Number [tree] tree)
+(defmethod eval-tree String [s] s)
+(defmethod eval-tree clojure.lang.Symbol [s] (get-in *calc-vars* (vec (.split (name s) "\\."))))
 
-(defn tokens->rpn
-  "Classic Shunting-Yard Algorithm extension to handle vararg fn calls."
-  [tokens]
-  (loop [[e0 & next-expr :as expr]      tokens ;; bemeneti token lista
-         opstack   ()     ;; stack of Shunting-Yard Algorithm
-         result    []     ;; Vector of output tokens
+(defmethod eval-tree :eq [[_ a b]] (= (eval-tree a) (eval-tree b)))
+(defmethod eval-tree :neq [[_ a b]] (not= (eval-tree a) (eval-tree b)))
+(defmethod eval-tree :plus [[_ a b]]
+  (let [a (eval-tree a) b (eval-tree b)]
+    (if (or (string? a) (string? b))
+      (str a b)
+      (+ a b))))
+(defmethod eval-tree :minus [[_ a b :as expr]]
+  (if (= 2 (count expr))
+    (- (eval-tree a))
+    (- (eval-tree a) (eval-tree b))))
+(defmethod eval-tree :times [[_ a b]] (* (eval-tree a) (eval-tree b)))
+(defmethod eval-tree :divide [[_ a b]] (with-precision 8 (/ (eval-tree a) (eval-tree b))))
 
+(defmethod eval-tree :or [[_ a b]] (or (eval-tree a) (eval-tree b)))
+(defmethod eval-tree :and [[_ a b]] (and (eval-tree a) (eval-tree b)))
+(defmethod eval-tree :mod [[_ a b]] (mod (eval-tree a) (eval-tree b)))
+(defmethod eval-tree :not [[_ a]] (not (eval-tree a)))
 
-         parentheses 0 ;; count of open parentheses
-         ;; on a function call we save function name here
-         functions ()]
-    (cond
-      (neg? parentheses)
-      (throw (ex-info "Parentheses are not balanced!" {}))
+(defmethod eval-tree :gte [[_ a b]] (>= (eval-tree a) (eval-tree b)))
+(defmethod eval-tree :lte [[_ a b]] (<= (eval-tree a) (eval-tree b)))
+(defmethod eval-tree :gt [[_ a b]] (> (eval-tree a) (eval-tree b)))
+(defmethod eval-tree :lt [[_ a b]] (< (eval-tree a) (eval-tree b)))
 
-      (empty? expr)
-      (if (zero? parentheses)
-        (into result (remove #{:open}) opstack)
-        (throw (ex-info "Too many open parentheses!" {})))
+(defmethod eval-tree :get [[_ m & path]]
+  (reduce (fn [b a]
+            (cond (sequential? b) (when (number? a) (get b (->int a)))
+                  (string? b)     (when (number? a) (get b (->int a)))
+                  (instance? java.util.List b) (when (number? a) (.get ^java.util.List b (->int a)))
+                  :else           (get b (str a)))) 
+          (eval-tree m) (map eval-tree path)))
 
-      (number? e0)
-      (recur next-expr opstack (conj result e0) parentheses functions)
-
-      (symbol? e0)
-      (recur next-expr opstack (conj result e0) parentheses functions)
-
-      (string? e0)
-      (recur next-expr opstack (conj result e0) parentheses functions)
-
-      (= :open e0)
-      (recur next-expr (conj opstack :open) result (inc parentheses) (conj functions nil))
-
-      (= :open-bracket e0)
-      (recur next-expr (conj opstack :open-bracket) result (inc parentheses) functions)
-
-      (instance? FnCall e0)
-      (recur next-expr (conj opstack :open) result
-             (inc parentheses)
-             (conj functions {:fn (:fn-name  e0)
-                              :args (if (= :close (first next-expr)) 0 1)}))
-      ;; (recur next-expr (conj opstack :fncall) result (conj functions {:fn e0}))
-
-      (= :close-bracket e0)
-      (let [[popped-ops [_ & keep-ops]]
-            (split-with (partial not= :open-bracket) opstack)]
-        (recur next-expr
-               keep-ops
-               (into result (concat popped-ops [:get]))
-               (dec parentheses)
-               functions))
-
-      (= :close e0)
-      (let [[popped-ops [_ & keep-ops]]
-            (split-with (partial not= :open) opstack)]
-        (recur next-expr
-               keep-ops
-               (into result
-                     (concat
-                      (remove #{:comma} popped-ops)
-                      (some-> functions first vector)))
-               (dec parentheses)
-               (next functions)))
-
-      (empty? next-expr) ;; current is operator but without an operand
-      (throw (ex-info "Missing operand!" {}))
-
-      :else ;; operator
-      (let [[popped-ops keep-ops]
-            (split-with #(if (= :left (associativity e0))
-                           (<= (precedence e0) (precedence %))
-                           (< (precedence e0) (precedence %))) opstack)]
-        (recur next-expr
-               (conj keep-ops e0)
-               (into result (remove #{:open :comma}) popped-ops)
-               parentheses
-               (if (= :comma e0)
-                 (if (first functions)
-                   (update-peek functions update :args inc)
-                   (throw (ex-info "Unexpected ',' character!" {})))
-                 functions))))))
-
-(defn- reduce-step-dispatch [_ cmd]
-  (cond (string? cmd)  :string
-        (number? cmd)  :number
-        (symbol? cmd)  :symbol
-        (keyword? cmd) cmd
-        (map? cmd)     FnCall
-        :else          (fail "Unexpected opcode!" {:opcode cmd})))
-
-(defmulti ^:private reduce-step reduce-step-dispatch)
-(defmulti ^:private action-arity (partial reduce-step-dispatch []))
-
-;; throws exception if there are operators out of place, returns input otherwise
-(defn- validate-rpn [rpn]
-  (let [steps (map #(- 1 (action-arity %)) rpn)]
-    (if (or (not-every? pos? (reductions + steps)) (not (= 1 (reduce + steps))))
-      (throw (ex-info (str "Wrong tokens, unsupported arities: " rpn) {:rpn rpn}))
-      rpn)))
-
-(defmethod call-fn :default [fn-name & args-seq]
-  (if-let [default-fn (::functions *calc-vars*)]
-    (default-fn fn-name args-seq)
-    (throw (new IllegalArgumentException (str "Unknown function: " fn-name)))))
-
-;; Gives access to whole input payload. Useful when top level keys contain strange characters.
-;; Example: you can write data()['key1']['key2'] instead of key1.key2.
-(defmethod call-fn "data" [_] *calc-vars*)
-
-(defmethod action-arity FnCall [{:keys [args]}] args)
-
-(defmethod reduce-step FnCall [stack {:keys [fn args]}]
-  (try
-    (log/trace "Calling function {} with arguments {}" fn args)
-    (let [[ops new-stack] (split-at args stack)
-          ops (reverse ops)
-          result (apply call-fn fn ops)]
-      (log/trace "Result was {}" result)
-      (conj new-stack result))
-    (catch clojure.lang.ArityException e
-      (throw (ex-info (str "Wrong arity: " (.getMessage e))
-                      {:fn fn :expected args :got (count ops) :ops (vec ops)})))))
-
-(defmacro def-reduce-step [cmd args body]
-  (assert (keyword? cmd))
-  (assert (every? symbol? args))
-  `(do (defmethod action-arity ~cmd [_#] ~(count args))
-       (defmethod reduce-step ~cmd [[~@args ~'& stack#] action#]
-         (let [~'+action+ action#] (conj stack# ~body)))))
-
-(def-reduce-step :string [] +action+)
-(def-reduce-step :number [] +action+)
-(def-reduce-step :symbol [] (get-in *calc-vars* (vec (.split (name +action+) "\\."))))
-
-(def-reduce-step :neg [s0] (- s0))
-(def-reduce-step :times [s0 s1] (* s0 s1))
-(def-reduce-step :divide [s0 s1] (with-precision 8 (/ s1 s0)))
-(def-reduce-step :plus [s0 s1] (if (or (string? s0) (string? s1)) (str s1 s0) (+ s1 s0)))
-(def-reduce-step :minus [s0 s1] (- s1 s0))
-(def-reduce-step :eq [a b] (= a b))
-(def-reduce-step :or [a b] (or b a))
-(def-reduce-step :not [b] (not b))
-(def-reduce-step :and [a b] (and b a))
-(def-reduce-step :neq [a b] (not= a b))
-(def-reduce-step :mod [s0 s1] (mod s1 s0))
-(def-reduce-step :lt [s0 s1] (< s1 s0))
-(def-reduce-step :lte [s0 s1] (<= s1 s0))
-(def-reduce-step :gt [s0 s1] (> s1 s0))
-(def-reduce-step :gte [s0 s1] (>= s1 s0))
-(def-reduce-step :power [s0 s1] (Math/pow s1 s0))
-(def-reduce-step :get [a b]
-  (cond (sequential? b) (when (number? a) (get b (->int a)))
-        (string? b)     (when (number? a) (get b (->int a)))
-        (instance? java.util.List b) (when (number? a) (.get ^java.util.List b (->int a)))
-        :else           (get b (str a))))
+(defmethod eval-tree :fncall [[_ f & args]]
+;  (println :!!! (::functions *calc-vars*))
+  (if-let [f (get (::functions *calc-vars*) (name f))]
+    (apply f args)
+    (throw (ex-info "No such fn" {}))))
 
 (defn eval-rpn
-  ([bindings default-function tokens]
+  ([bindings default-function tree]
    (assert (ifn? default-function))
-   (eval-rpn (assoc bindings ::functions default-function) tokens))
-  ([bindings tokens]
+   (eval-rpn (assoc bindings ::functions default-function) tree))
+  ([bindings tree]
    (assert (map? bindings))
-   (assert (seq tokens))
    (binding [*calc-vars* bindings]
-     (let [result (reduce reduce-step () tokens)]
-       (assert (= 1 (count result)))
-       (first result)))))
+     (eval-tree tree))))
 
-(def parse (comp validate-rpn tokens->rpn validate-tokens tokenize))
+(def parse (comp (partial grammar/runlang grammar/testlang) tokenize))
 
 :OK
+
+;(println :>>> (tokenize "24 + 434"))
+;(println :>>> (parse "24 + 434"))
+
+;(println (tokenize "2*(-3)"))
+(println :!!!!)
+;(println :> (parse "2"))
+; (println :> (parse "2 + 3"))
+;(println :> (parse "2 * 3"))
+; (println :! (parse "2*3"))
+; (println (parse "2*(-3)"))
+
+;(println :!! (tokenize "2*-(3)"))
+(println :!! (parse "!!a"))
+;(System/exit -1)
+;(assert false)

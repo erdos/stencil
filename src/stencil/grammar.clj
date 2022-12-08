@@ -89,14 +89,14 @@
 
             ;; TODO: fn call and commas
 
-            neg (either (all (expecting '#{-}) val) val) ;; TODO; map
-            not (either (all (expecting #{:not}) neg) neg) ;; TODO: map
+            neg (either (all (expecting #{:minus}) neg) val) ;; TODO; map
+            not (either (all (expecting #{:not}) not) neg) ;; TODO: map
 
             pow (chained not (expecting #{:pow}) unchain) ;; TODO: right-associative
-            mul (chained pow (expecting '#{* / %}) unchain)
-            add (chained mul (expecting '#{+ -}) unchain)
-            cmp  (chained add (expecting '#{< > <= >=}) unchain)
-            cmpe (chained cmp (expecting '#{= <>}) unchain) ;; eq/neq
+            mul (chained pow (expecting #{:times :divide :mod}) unchain)
+            add (chained mul (expecting #{:plus :minus}) unchain)
+            cmp  (chained add (expecting #{:lt :gt :lte :gte}) unchain)
+            cmpe (chained cmp (expecting #{:eq :neq}) unchain) ;; eq/neq
             and (chained cmpe (expecting #{:and}) unchain)
             or  (chained and (expecting #{:or}) unchain)
             expression or]
@@ -110,10 +110,8 @@
     (throw (ex-info "Could not parse" {}))))
 
 
-(println (runlang testlang '[ 1 + 2 + 3]))
-
-(println (runlang testlang '[ hello :open-bracket idx + 1 :close-bracket :open-bracket 4 :close-bracket * 2]))
-(println (runlang testlang '[ :open 1 + 2 :close * 3]))
-(println (runlang testlang '[123 + 344 + aaa * 34 + 1 = 34 :or a < b]))
-
-(println (runlang testlang '[hello :open 1 :comma 2 :close]))
+;(println (runlang testlang '[ 1 + 2 + 3]))
+;(println (runlang testlang '[ hello :open-bracket idx + 1 :close-bracket :open-bracket 4 :close-bracket * 2]))
+;(println (runlang testlang '[ :open 1 + 2 :close * 3]))
+;(println (runlang testlang '[123 + 344 + aaa * 34 + 1 = 34 :or a < b]))
+;(println (runlang testlang '[hello :open 1 :comma 2 :close]))
