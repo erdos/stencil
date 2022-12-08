@@ -28,7 +28,9 @@
    \< :lt
    \> :gt
    \& :and
-   \| :or})
+   \| :or
+   \, :comma \; :comma
+   })
 
 (def ops2 {[\> \=] :gte
            [\< \=] :lte
@@ -88,67 +90,62 @@
    - First elem is read string literal.
    - Second elem is seq of remaining characters."
   [characters]
-  (let [until (quotation-marks (first characters))
-        sb    (new StringBuilder)]
-    (loop [[c & cs] (next characters)]
-      (cond (nil? c) (throw (ex-info "String parse error"
-                                     {:reason "Unexpected end of stream"}))
-            (= c until)        [(.toString sb) cs]
-            (= c (first "\\")) (do (.append sb (first cs)) (recur (next cs)))
-            :else              (do (.append sb c) (recur cs))))))
+  (when-let [until (quotation-marks (first characters))]
+    (let [sb    (new StringBuilder)]
+      (loop [[c & cs] (next characters)]
+        (cond (nil? c) (throw (ex-info "String parse error"
+                                      {:reason "Unexpected end of stream"}))
+              (= c until)        [(.toString sb) cs]
+              (= c (first "\\")) (do (.append sb (first cs)) (recur (next cs)))
+              :else              (do (.append sb c) (recur cs)))))))
 
 (defn read-number
   "Reads a number literal from a sequence. Returns a tuple of read
    number (Double or Long) and the sequence of remaining characters."
   [characters]
-  (let [content (string (take-while (set "1234567890._")) characters)
-        content (.replaceAll content "_" "")
-        number  (if (some #{\.} content)
-                  (Double/parseDouble content)
-                  (Long/parseLong     content))]
-    [number (drop (count content) characters)]))
+  (when (contains? digits (first characters))
+    (let [content (string (take-while (set "1234567890._")) characters)
+          content (.replaceAll content "_" "")
+          number  (if (some #{\.} content)
+                    (Double/parseDouble content)
+                    (Long/parseLong     content))]
+      [number (drop (count content) characters)])))
 
-(defn tokenize
+(defn- read-ops2 [chars]
+  (when-let [op (get ops2 [(first chars) (second chars)] )]
+    [op (nnext chars)]))
+
+(defn- read-ops1 [chars]
+  (when-let [op (get ops (first chars))]
+    [op (next chars)]))
+
+(defn- read-iden [characters]
+  (when-let [content (not-empty (string (take-while identifier) characters))]
+    (let [tail (drop-while #{\space \tab} (drop (count content) characters))]
+      (if (= \( (first tail))
+        [(->FnCall content) (next tail)]
+        [(symbol content) tail]))))
+
+(def token-readers
+  (some-fn read-number
+           read-string-literal
+           read-iden           
+           read-ops2
+           read-ops1))
+
+(defn- tokenize'
   "Returns a sequence of tokens for an input string"
-  [original-string]
-  (loop [[first-char & next-chars :as characters] (str original-string)
-         tokens []]
-    (cond
-      (empty? characters)
-      tokens
+  [text]
+  (when-let [text (seq (drop-while (comp whitespace? char) text))]
+    (if-let [[token tail] (token-readers text)]
+      (cons token (lazy-seq (tokenize' tail)))
+      (throw (ex-info "Unexpected endof string" {:text text})))))
 
-      (whitespace? first-char)
-      (recur next-chars tokens)
-
-      (contains? #{\, \;} first-char)
-      (recur next-chars (conj tokens :comma))
-
-      (contains? ops2 [first-char (first next-chars)])
-      (recur (next next-chars) (conj tokens (ops2 [first-char (first next-chars)])))
-
-      (and (= \- first-char) (or (nil? (peek tokens)) (and (not= (peek tokens) :close) (not= (peek tokens) :close-bracket) (keyword? (peek tokens)))))
-      (recur next-chars (conj tokens :neg))
-
-      (contains? ops first-char)
-      (recur next-chars (conj tokens (ops first-char)))
-
-      (contains? digits first-char)
-      (let [[n tail] (read-number characters)]
-        (recur tail (conj tokens n)))
-
-      (quotation-marks first-char)
-      (let [[s tail] (read-string-literal characters)]
-        (recur tail (conj tokens s)))
-
-      :else
-      (let [content (string (take-while identifier) characters)]
-        (if (seq content)
-          (let [tail (drop-while #{\space \tab} (drop (count content) characters))]
-            (if (= \( (first tail))
-              (recur (next tail) (conj tokens (->FnCall content)))
-              (recur tail (conj tokens (symbol content)))))
-          (throw (ex-info (str "Unexpected character: " first-char)
-                          {:character first-char})))))))
+(defn tokenize [text]
+  ;; replace :minus by :neg where it is negation instead of subtraction based on context
+  (->> (tokenize' text)
+       (reductions (fn [previous current] (if (and (= :minus current) (not= previous :close) (not= previous :close-bracket) (keyword? previous)) :neg current)) ::SENTINEL)
+       (next)))
 
 ;; throws ExceptionInfo when token sequence has invalid elems
 (defn- validate-tokens [tokens]
