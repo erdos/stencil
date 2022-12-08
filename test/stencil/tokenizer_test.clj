@@ -3,7 +3,9 @@
             [clojure.test :refer [deftest testing is]]))
 
 (defn- run [s]
-  (m/parse-to-tokens-seq (java.io.ByteArrayInputStream. (.getBytes (str s)))))
+  (->> (java.io.ByteArrayInputStream. (.getBytes (str s)))
+       (m/parse-to-tokens-seq)
+       (map #(dissoc % :raw))))
 
 (deftest read-tokens-nested
   (testing "Read a list of nested tokens"

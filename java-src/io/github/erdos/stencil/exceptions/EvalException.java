@@ -5,15 +5,15 @@ package io.github.erdos.stencil.exceptions;
  */
 public final class EvalException extends RuntimeException {
 
+    public EvalException(String message, Exception cause) {
+        super(message, cause);
+    }
+
     private EvalException(Exception cause) {
         super(cause);
     }
 
     private EvalException(String message) {
         super(message);
-    }
-
-    public static EvalException wrapping(Exception cause) {
-        return new EvalException(cause);
     }
 }

@@ -1,6 +1,7 @@
 (ns stencil.integration
   "Integration test helpers"
   (:require [clojure.zip :as zip]
+            [clojure.test :refer [do-report is]]
             [stencil.api :as api]))
 
 
@@ -23,3 +24,25 @@
              :when (= stencil.ooxml/t (:tag (zip/node node)))
              c (:content (zip/node node))]
          c)))))
+
+
+(defn test-fails
+  "Tests that rendering the template with the payload results in the given exception chain."
+  [template payload & bodies]
+  (assert (string? template))
+  (assert (not-empty bodies))
+  (try (with-open [template (api/prepare template)]
+         (api/render! template payload
+                      :overwrite? true
+                      :output (java.io.File/createTempFile "stencil" ".docx")))
+       (do-report {:type :error
+                   :message "Should have thrown exception"
+                   :expected (first bodies)
+                   :actual nil})
+       (catch RuntimeException e
+         (let [e (reduce (fn [e [t reason]]
+                           (is (instance? t e))
+                           (or (= t NullPointerException) (is (= reason (.getMessage e))))
+                           (.getCause e))
+                         e (partition 2 bodies))]
+           (is (= nil e) "Cause must be null.")))))
