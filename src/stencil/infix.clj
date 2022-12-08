@@ -27,7 +27,9 @@
    \< :lt
    \> :gt
    \& :and
-   \| :or})
+   \| :or
+   \, :comma \; :comma
+   })
 
 (def ops2 {[\> \=] :gte
            [\< \=] :lte
@@ -58,63 +60,53 @@
    - First elem is read string literal.
    - Second elem is seq of remaining characters."
   [characters]
-  (let [until (quotation-marks (first characters))
-        sb    (new StringBuilder)]
-    (loop [[c & cs] (next characters)]
-      (cond (nil? c) (throw (ex-info "String parse error"
-                                     {:reason "Unexpected end of stream"}))
-            (= c until)        [(.toString sb) cs]
-            (= c (first "\\")) (do (.append sb (first cs)) (recur (next cs)))
-            :else              (do (.append sb c) (recur cs))))))
+  (when-let [until (quotation-marks (first characters))]
+    (let [sb    (new StringBuilder)]
+      (loop [[c & cs] (next characters)]
+        (cond (nil? c) (throw (ex-info "String parse error"
+                                      {:reason "Unexpected end of stream"}))
+              (= c until)        [(.toString sb) cs]
+              (= c (first "\\")) (do (.append sb (first cs)) (recur (next cs)))
+              :else              (do (.append sb c) (recur cs)))))))
 
 (defn read-number
   "Reads a number literal from a sequence. Returns a tuple of read
    number (Double or Long) and the sequence of remaining characters."
   [characters]
-  (let [content (string (take-while (set "1234567890._")) characters)
-        content (.replaceAll content "_" "")
-        number  (if (some #{\.} content)
-                  (Double/parseDouble content)
-                  (Long/parseLong     content))]
-    [number (drop (count content) characters)]))
+  (when (contains? digits (first characters))
+    (let [content (string (take-while (set "1234567890._")) characters)
+          content (.replaceAll content "_" "")
+          number  (if (some #{\.} content)
+                    (Double/parseDouble content)
+                    (Long/parseLong     content))]
+      [number (drop (count content) characters)])))
 
-(defn tokenize
+(defn- read-ops2 [chars]
+  (when-let [op (get ops2 [(first chars) (second chars)] )]
+    [op (nnext chars)]))
+
+(defn- read-ops1 [chars]
+  (when-let [op (get ops (first chars))]
+    [op (next chars)]))
+
+(defn- read-iden [characters]
+  (when-let [content (not-empty (string (take-while identifier) characters))]
+    [content (drop (count content) characters)]))
+
+(def token-readers
+  (some-fn read-number
+           read-string-literal
+           read-iden           
+           read-ops2
+           read-ops1))
+
+(defn- tokenize
   "Returns a sequence of tokens for an input string"
-  [original-string]
-  (loop [[first-char & next-chars :as characters] (str original-string)
-         tokens []]
-    (cond
-      (empty? characters)
-      tokens
-
-      (whitespace? first-char)
-      (recur next-chars tokens)
-
-      (contains? #{\, \;} first-char)
-      (recur next-chars (conj tokens :comma))
-
-      (contains? ops2 [first-char (first next-chars)])
-      (recur (next next-chars) (conj tokens (ops2 [first-char (first next-chars)])))
-
-      (= \- first-char)
-      (recur next-chars (conj tokens :minus))
-
-      (contains? ops first-char)
-      (recur next-chars (conj tokens (ops first-char)))
-
-      (contains? digits first-char)
-      (let [[n tail] (read-number characters)]
-        (recur tail (conj tokens n)))
-
-      (quotation-marks first-char)
-      (let [[s tail] (read-string-literal characters)]
-        (recur tail (conj tokens s)))
-
-      :else
-      (let [content (string (take-while identifier) characters)]
-        (assert (not-empty content))
-        (recur (drop (count content) characters)
-               (conj tokens (symbol content)))))))
+  [text]
+  (when-let [text (seq (drop-while (comp whitespace? char) text))]
+    (if-let [[token tail] (token-readers text)]
+      (cons token (lazy-seq (tokenize tail)))
+      (throw (ex-info "Unexpected endof string" {:text text})))))
 
 (defmulti eval-tree (fn [tree] (if (sequential? tree) (first tree) (type tree))))
 
