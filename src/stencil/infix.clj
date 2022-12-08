@@ -82,7 +82,7 @@
       [number (drop (count content) characters)])))
 
 (defn- read-ops2 [chars]
-  (when-let [op (get ops2 [(first chars) (second chars)] )]
+  (when-let [op (get ops2 [(first chars) (second chars)])]
     [op (nnext chars)]))
 
 (defn- read-ops1 [chars]
@@ -91,16 +91,11 @@
 
 (defn- read-iden [characters]
   (when-let [content (not-empty (string (take-while identifier) characters))]
-    [content (drop (count content) characters)]))
+    [(symbol content) (drop (count content) characters)]))
 
-(def token-readers
-  (some-fn read-number
-           read-string-literal
-           read-iden           
-           read-ops2
-           read-ops1))
+(def token-readers (some-fn read-number read-string-literal read-iden read-ops2 read-ops1))
 
-(defn- tokenize
+(defn tokenize
   "Returns a sequence of tokens for an input string"
   [text]
   (when-let [text (seq (drop-while (comp whitespace? char) text))]
@@ -169,7 +164,7 @@
 ;(println :>>> (parse "24 + 434"))
 
 ;(println (tokenize "2*(-3)"))
-(println :!!!!)
+;(println :!!!!)
 ;(println :> (parse "2"))
 ; (println :> (parse "2 + 3"))
 ;(println :> (parse "2 * 3"))
@@ -177,6 +172,7 @@
 ; (println (parse "2*(-3)"))
 
 ;(println :!! (tokenize "2*-(3)"))
-(println :!! (parse "!!a"))
+;(println :!! (parse "!!a"))
+;(println :!! (parse "a | b"))
 ;(System/exit -1)
 ;(assert false)

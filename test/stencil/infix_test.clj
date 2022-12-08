@@ -8,10 +8,10 @@
   ([xs] (run xs {}))
   ([xs args] (infix/eval-rpn args (infix/parse xs))))
 
-#_
+
 (deftest tokenize-test
   (testing "simple fn call"
-    (is (= [(->FnCall "sin") 1 :plus 2 :close] (infix/tokenize "   sin(1+2)"))))
+    (is (= ["sin" :open 1 :plus 2 :close] (infix/tokenize "   sin(1+2)"))))
 
   (testing "comma"
     (is (= [:open 1 :comma 2 :comma 3 :close] (infix/tokenize "  (1,2   ,3)   ")))))
@@ -20,7 +20,6 @@
   (testing "Incomplete string"
     (is (thrown? ExceptionInfo (read-string-literal "'alaba")))))
 
-#_
 (deftest tokenize-string-literal
   (testing "spaces are kept"
     (is (= [" "] (infix/tokenize " \" \" ")))
@@ -193,6 +192,8 @@
       (is (= 1 (run "a || b" {"a" 1 "b" nil})))
       (is (= 2 (run "a || b" {"b" 2})))
       (is (nil? (run "a || b" {"a" false}))))))
+
+
 
 (deftest operator-precedeces
   (testing "Operator precedencia"
