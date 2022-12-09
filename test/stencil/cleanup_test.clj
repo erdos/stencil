@@ -186,7 +186,7 @@
     (is (= ["xs" "xs[].z.k"]
            (find-variables
             '[{:cmd :for :variable y :expression xs
-               :stencil.cleanup/blocks [[{:cmd :echo :expression [:plus y.z.k 1]}]]}]))))
+               :stencil.cleanup/blocks [[{:cmd :echo :expression [:plus [:get y "z" "k"] 1]}]]}]))))
 
   (testing "Variables from loop bindings and bodies"
     ;; TODO: impls this test
@@ -199,8 +199,8 @@
     (is (= ["xs" "xs[].t" "xs[].t[].n"]
            (find-variables
             '[{:cmd :for :variable a :expression xs
-               :stencil.cleanup/blocks [[{:cmd :for :variable b :expression a.t
-                          :stencil.cleanup/blocks [[{:cmd :echo :expression [:plus b.n 1]}]]}]]}])))
+               :stencil.cleanup/blocks [[{:cmd :for :variable b :expression [:get a "t"]
+                          :stencil.cleanup/blocks [[{:cmd :echo :expression [:plus [:get b "n"] 1]}]]}]]}])))
     ))
 
 (deftest test-process-if-then-else
@@ -232,9 +232,9 @@
 (deftest test-process-if-nested
   (is (=
        [<a>
-        {:cmd :if, :condition 'x.a,
+        {:cmd :if, :condition '[:get x "a"],
          :then [<／a>
-                {:cmd :if, :condition 'x.b,
+                {:cmd :if, :condition '[:get x "b"],
                  :then [<a> {:text "THEN"}]
                  :else [<a>]}
                 <／a>]
@@ -242,9 +242,9 @@
        (:executable
         (process
          [<a>
-          ,,{:cmd :if, :condition 'x.a}
+          ,,{:cmd :if, :condition '[:get x "a"]}
           <／a>
-          {:cmd :if, :condition 'x.b}
+          {:cmd :if, :condition '[:get x "b"]}
           <a>
           ,,{:text "THEN"}
           ,,{:cmd :end}

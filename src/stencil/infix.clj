@@ -29,6 +29,7 @@
    \& :and
    \| :or
    \, :comma \; :comma
+   \. :dot
    })
 
 (def ops2 {[\> \=] :gte
@@ -44,7 +45,7 @@
 
 (def identifier
   "Characters found in an identifier"
-  (set "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM_.1234567890"))
+  (set "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM_1234567890"))
 
 (def ^:private quotation-marks
   {\" \"   ;; programmer quotes

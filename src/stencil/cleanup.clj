@@ -56,7 +56,7 @@
 (defn- nested-tokens-fmap-postwalk
   "Depth-first traversal of the tree."
   [f-cmd-block-before f-cmd-block-after f-child node]
-  (assert (map? node))  
+  (assert (map? node))
   (letfn [(children-mapper [children]
             (mapv update-blocks children))
           (update-children [node]
@@ -164,23 +164,27 @@
   ;; amikor van benne blocks
   ;; mapping: {Sym -> Str}
   (letfn [(resolve-sym [mapping s]
-            (assert (map? mapping))
-            (assert (symbol? s))
-            ;; megprobal egy adott szimbolumot a mapping alapjan rezolvalni.
-            ;; visszaad egy stringet
-            (if (.contains (name s) ".")
-              (let [[p1 p2] (vec (.split (name s) "\\." 2))]
-                (if-let [pt (mapping (symbol p1))]
-                  (str pt "." p2)
-                  (name s)))
-              (mapping s (name s))))
+                       (assert (map? mapping))
+                       (assert (symbol? s))
+                       (assert (not (.contains (name s) ".")))
+                       (mapping s (name s)))
           (expr [mapping e]
                 (cond (symbol? e)           [(resolve-sym mapping e)]
                       (not (sequential? e)) nil
                       (= :fncall (first e)) (mapcat (partial expr mapping) (nnext e))
+                      (= :get (first e))    (let [[ss rest] (split-with string? (nnext e))]
+                                              (println :parse-get (hash control-ast) (pr-str e) mapping ss rest)
+                                              (cons
+                                               (reduce (fn [root item] (str root "." item))
+                                                       (resolve-sym mapping (second e))
+                                                       ss)
+                                               (mapcat (partial expr mapping) rest)))
                       :else                 (mapcat (partial expr mapping) (next e))))
           (maybe-variable [mapping e]
-            (when (symbol? e) (resolve-sym mapping e)))
+                          (cond (symbol? e)
+                                (resolve-sym mapping e) 
+                                (and (sequential? e) (= :get (first e)) (symbol? (second e)) (every? string? (nnext e)))
+                                (reduce (fn [a b] (str a "." b)) (resolve-sym mapping (second e)) (nnext e))))
           (collect [m xs] (mapcat (partial collect-1 m) xs))
           (collect-1 [mapping x]
                      (case (:cmd x)
@@ -194,6 +198,7 @@
                                    mapping  (if variable
                                               (assoc mapping (:variable x) (str variable "[]"))
                                               mapping)]
+                                 (println :---parsed-for-loop :var= variable :exprs= exprs :mapping= mapping)
                                (concat exprs (collect mapping (apply concat (::blocks x)))))
                        []))]
     (distinct (collect {} control-ast))))

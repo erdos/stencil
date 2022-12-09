@@ -54,7 +54,7 @@
 
   (testing "Simple values"
     (is (= 12 (infix/parse "  12 ") (infix/parse "12")))
-    (is (= 'ax.y (infix/parse "   ax.y  "))))
+    (is (= '[:get ax "y"] (infix/parse "   ax.y  "))))
 
   (testing "Simple operations"
     (is (= [:plus 1 2]
@@ -74,7 +74,7 @@
     (let [ops (-> #{}
                   (into (vals infix/ops))
                   (into (vals infix/ops2))
-                  (disj :open :close :comma :open-bracket :close-bracket))
+                  (disj :open :close :comma :open-bracket :close-bracket :dot))
           known-ops (set (filter keyword? (keys (methods @#'infix/eval-tree))))]
       (is (every? known-ops ops)))))
 
@@ -142,7 +142,6 @@
   (testing "negation"
     (is (= 6 (run "a[1]-2" {"a" {"1" 8}}))))
 
-  #_
   (testing "mixed lookup"
     (is (= 7 (run "a['x'].y" {"a" {"x" {"y" 7}}})))
     (is (= 8 (run "a.x['y']" {"a" {"x" {"y" 8}}}))))
@@ -150,8 +149,8 @@
   (testing "syntax error"
     (is (thrown? ExceptionInfo (run "[3]" {})))
     (is (thrown? ExceptionInfo (run "a[[3]]" {})))
-    #_(is (thrown? ExceptionInfo (run "a.[1]b" {}))) 
-    #_(is (thrown? ExceptionInfo (run "a..b" {})))
+    (is (thrown? ExceptionInfo (run "a.[1]b" {}))) 
+    (is (thrown? ExceptionInfo (run "a..b" {})))
     (is (thrown? ExceptionInfo (run "a[1,2]" {}))))
 
   (testing "key is missing from input"
