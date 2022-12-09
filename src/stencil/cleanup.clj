@@ -196,7 +196,6 @@
                                    mapping  (if variable
                                               (assoc mapping (:variable x) (str variable "[]"))
                                               mapping)]
-                                 (println :---parsed-for-loop :var= variable :exprs= exprs :mapping= mapping)
                                (concat exprs (collect mapping (apply concat (::blocks x)))))
                        []))]
     (distinct (collect {} control-ast))))
