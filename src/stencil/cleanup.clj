@@ -172,7 +172,6 @@
                       (not (sequential? e)) nil
                       (= :fncall (first e)) (mapcat (partial expr mapping) (nnext e))
                       (= :get (first e))    (let [[ss rest] (split-with string? (nnext e))]
-                                              (println :parse-get (hash control-ast) (pr-str e) mapping ss rest)
                                               (cons
                                                (reduce (fn [root item] (str root "." item))
                                                        (resolve-sym mapping (second e))
