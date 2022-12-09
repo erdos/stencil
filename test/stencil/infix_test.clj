@@ -62,15 +62,13 @@
     (is (= [:times [:plus 3 2] [:minus 4 1]]
            (infix/parse "(3+2)*(4 - 1)")))))
 
-#_
 (deftest all-ops-supported
   (testing "Minden operatort vegre tudunk hajtani?"
     (let [ops (-> #{}
                   (into (vals infix/ops))
                   (into (vals infix/ops2))
-                  (into (keys infix/operation-tokens))
                   (disj :open :close :comma :open-bracket :close-bracket))
-          known-ops (set (filter keyword? (keys (methods @#'infix/reduce-step))))]
+          known-ops (set (filter keyword? (keys (methods @#'infix/eval-tree))))]
       (is (every? known-ops ops)))))
 
 (deftest basic-arithmetic
@@ -230,7 +228,6 @@
     (is (= [1 2 3 4] (run "range (1,5)")))
     (is (= [1 3 5] (run "range( 1, 6, 2)")))))
 
-#_
 (deftest unknown-function
   (is (thrown? IllegalArgumentException (run "nosuchfunction(1)"))))
 
@@ -288,11 +285,9 @@
 (deftest test-colhide-expr
   (is (hide-table-column-marker? (run "hideColumn()"))))
 
-#_
 (deftest test-unexpected
   (is (thrown? ExceptionInfo (parse "aaaa:bbbb"))))
 
-#_
 (deftest tokenize-wrong-tokens
   (testing "Misplaced operators and operands"
     (are [x] (thrown? ExceptionInfo (infix/parse x))

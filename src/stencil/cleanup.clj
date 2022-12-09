@@ -159,7 +159,6 @@
   (assert (not (::blocks control-ast)))
   control-ast)
 
-;; TODO: make it work without rpn too!
 (defn find-variables [control-ast]
   ;; meg a normalizalas lepes elott
   ;; amikor van benne blocks
