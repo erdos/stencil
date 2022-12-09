@@ -101,7 +101,7 @@
   (when-let [text (seq (drop-while (comp whitespace? char) text))]
     (if-let [[token tail] (token-readers text)]
       (cons token (lazy-seq (tokenize tail)))
-      (throw (ex-info "Unexpected endof string" {:text text})))))
+      (throw (ex-info "Unexpected end of string" {:index (.index ^clojure.lang.IndexedSeq text)})))))
 
 (defmulti eval-tree (fn [tree] (if (sequential? tree) (first tree) (type tree))))
 

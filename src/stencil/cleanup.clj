@@ -175,7 +175,6 @@
                   (name s)))
               (mapping s (name s))))
           (expr [mapping e]
-                ; (assert (sequential? rpn)) ;; RPN kifejezes kell legyen
                 (cond (symbol? e)           [(resolve-sym mapping e)]
                       (not (sequential? e)) nil
                       (= :fncall (first e)) (mapcat (partial expr mapping) (nnext e))

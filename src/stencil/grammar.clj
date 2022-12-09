@@ -26,8 +26,6 @@
                   (throw (ex-info "Could not read!" {:reader reader :prefix tokens}))))
               [[result] tokens] readers))))
 
-(def either some-fn)
-
 (defmacro ^:private grammar [bindings body]
   `(letfn* [~@(for [[k v] (partition 2 bindings), x [k (list 'fn '[%] (list v '%))]] x)] ~body))
 
@@ -58,10 +56,10 @@
   (fn [t] (or (reader t) [nil t])))
 
 (def testlang
-  (grammar [val (either iden-or-fncall
-                        (parenthesed expression)
-                        (guarded number?)
-                        (guarded string?))
+  (grammar [val  (some-fn iden-or-fncall
+                          (parenthesed expression)
+                          (guarded number?)
+                          (guarded string?))
             iden (guarded symbol?)
             bracketed   (mapping (all (guarded #{:open-bracket}) expression (guarded #{:close-bracket})) second)
             args        (mapping (optional (chained (all expression) (all (guarded #{:comma}) expression) into))
@@ -71,15 +69,15 @@
                                       (fn [[id xs]] (if xs (list* :fncall id xs) id)))
             accesses         (mapping (all val (optional (at-least-one bracketed)))
                                       (fn [[id chain]] (if chain (list* :get id chain) id)))
-            neg (either (all (guarded #{:minus}) neg) accesses)
-            not (either (all (guarded #{:not}) not) neg)
-            pow (op-chain-r not (guarded #{:power}))
-            mul (op-chain pow (guarded #{:times :divide :mod}))
-            add (op-chain mul (guarded #{:plus :minus}))
+            neg  (some-fn (all (guarded #{:minus}) neg) accesses)
+            not  (some-fn (all (guarded #{:not}) not) neg)
+            pow  (op-chain-r not (guarded #{:power}))
+            mul  (op-chain pow (guarded #{:times :divide :mod}))
+            add  (op-chain mul (guarded #{:plus :minus}))
             cmp  (op-chain add (guarded #{:lt :gt :lte :gte}))
             cmpe (op-chain cmp (guarded #{:eq :neq}))
-            and (op-chain cmpe (guarded #{:and}))
-            or  (op-chain and (guarded #{:or}))
+            and  (op-chain cmpe (guarded #{:and}))
+            or   (op-chain and (guarded #{:or}))
             expression or]
            expression))
 

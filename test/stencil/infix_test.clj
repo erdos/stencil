@@ -14,7 +14,14 @@
     (is (= ['sin :open 1 :plus 2 :close] (infix/tokenize "   sin(1+2)"))))
 
   (testing "comma"
-    (is (= [:open 1 :comma 2 :comma 3 :close] (infix/tokenize "  (1,2   ,3)   ")))))
+    (is (= [:open 1 :comma 2 :comma 3 :close] (infix/tokenize "  (1,2   ,3)   "))))
+
+  (testing "Unexpected end of string"
+    (try (dorun (infix/tokenize "1 + 2 ##"))
+         (assert false "should have thrown")
+         (catch ExceptionInfo e
+           (is (= "Unexpected end of string" (.getMessage e)))
+           (is (= {:index 6} (ex-data e)))))))
 
 (deftest test-read-string-literal
   (testing "Incomplete string"
