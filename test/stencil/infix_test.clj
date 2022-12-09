@@ -33,35 +33,33 @@
   (testing "escape characters are supported"
     (is (= ["aaa\"bbb"] (infix/tokenize "\"aaa\\\"bbb\"")))))
 
-#_
 (deftest tokenize-string-fun-eq
   (testing "tricky"
-    (is (= ["1" :eq #stencil.infix.FnCall{:fn-name "str"} 1 :close]
+    (is (= ["1" :eq 'str :open 1 :close]
            (infix/tokenize "\"1\" = str(1)")))
-    (is (= ["1" 1 {:fn "str" :args 1} :eq]
+    (is (= [:eq "1" [:fncall 'str 1]]
            (infix/parse "\"1\" = str(1)")))))
 
-#_
 (deftest parse-simple
   (testing "Empty"
     (is (thrown? ExceptionInfo (infix/parse nil)))
     (is (thrown? ExceptionInfo (infix/parse ""))))
 
   (testing "Simple values"
-    (is (= [12] (infix/parse "  12 ") (infix/parse "12")))
-    (is (= '[ax.y] (infix/parse "   ax.y  "))))
+    (is (= 12 (infix/parse "  12 ") (infix/parse "12")))
+    (is (= 'ax.y (infix/parse "   ax.y  "))))
 
   (testing "Simple operations"
-    (is (= [1 2 :plus]
+    (is (= [:plus 1 2]
            (infix/parse "1 + 2")
            (infix/parse "1+2    ")
            (infix/parse "1+2")))
-    (is (= [3 2 :times] (infix/parse "3*2"))))
+    (is (= [:times 3 2] (infix/parse "3*2"))))
 
   (testing "Parentheses"
-    (is (= [3 2 :plus 4 :times]
+    (is (= [:times [:plus 3 2] 4]
            (infix/parse "(3+2)*4")))
-    (is (= [3 2 :plus 4 1 :minus :times]
+    (is (= [:times [:plus 3 2] [:minus 4 1]]
            (infix/parse "(3+2)*(4 - 1)")))))
 
 #_
@@ -220,7 +218,6 @@
   (testing "a minusz jel precedenciaja nagyon magas"
     (is (= 20 (run "10/-1*-2 ")))))
 
-#_
 (deftest range-function
   (testing "Wrong arity calls"
     ;; fontos, hogy nem csak tovabbhivunk a range fuggvenyre,
@@ -237,7 +234,6 @@
 (deftest unknown-function
   (is (thrown? IllegalArgumentException (run "nosuchfunction(1)"))))
 
-#_
 (deftest length-function
   (testing "Simple cases"
     (is (= 2 (run "length(\"ab\")"))))
@@ -245,26 +241,22 @@
     (is (= true (run "length(\"\")==0")))
     (is (= true (run "1 = length(\" \")")))))
 
-#_
 (deftest contains-function
   (is (= true (run "contains(\"red\", vals)"
                    {"vals" ["red" "green" "blue"]})))
   (is (= false (run "contains(\"yellow\", vals)"
                     {"vals" ["red" "green" "blue"]}))))
 
-#_
 (deftest sum-function
   (is (= 123.45 (run "sum(vals)", {"vals" [100 20 3 0.45]})))
   (is (= 17 (run "sum(vals)", {"vals" [17]})))
   (is (= 0 (run "sum(vals)", {"vals" []}))))
 
-#_
 (deftest coalesce-function
   (is (= 42 (run "coalesce(x, 0)" {"x" 42})))
   (is (= nil (run "coalesce(\"\", \"\")")))
   (is (= "a" (run "coalesce(\"\", \"\", \"a\", \"b\")"))))
 
-#_
 (deftest map-function
   (testing "Works for both keyword an string keys"
     (is (= [1 2 3]
@@ -293,8 +285,6 @@
            (run "sum(map(\"x\", vals))"
                 {"vals" [{"x" 1} {"x" 2} {"x" 3}]})))))
 
-
-#_
 (deftest test-colhide-expr
   (is (hide-table-column-marker? (run "hideColumn()"))))
 

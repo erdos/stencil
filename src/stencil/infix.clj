@@ -126,6 +126,7 @@
 (defmethod eval-tree :or [[_ a b]] (or (eval-tree a) (eval-tree b)))
 (defmethod eval-tree :and [[_ a b]] (and (eval-tree a) (eval-tree b)))
 (defmethod eval-tree :mod [[_ a b]] (mod (eval-tree a) (eval-tree b)))
+(defmethod eval-tree :power [[_ a b]] (Math/pow (eval-tree a) (eval-tree b)))
 (defmethod eval-tree :not [[_ a]] (not (eval-tree a)))
 
 (defmethod eval-tree :gte [[_ a b]] (>= (eval-tree a) (eval-tree b)))
@@ -141,11 +142,21 @@
                   :else           (get b (str a)))) 
           (eval-tree m) (map eval-tree path)))
 
+(defmethod call-fn :default [fn-name & args-seq]
+  (if-let [default-fn (::functions *calc-vars*)]
+    (default-fn fn-name args-seq)
+    (throw (new IllegalArgumentException (str "Unknown function: " fn-name)))))
+
+;; Gives access to whole input payload. Useful when top level keys contain strange characters.
+;; Example: you can write data()['key1']['key2'] instead of key1.key2.
+(defmethod call-fn "data" [_] *calc-vars*)
+
 (defmethod eval-tree :fncall [[_ f & args]]
-;  (println :!!! (::functions *calc-vars*))
-  (if-let [f (get (::functions *calc-vars*) (name f))]
-    (apply f args)
-    (throw (ex-info "No such fn" {}))))
+  (let [args (mapv eval-tree args)]
+    (try (apply call-fn (name f) args)
+         (catch clojure.lang.ArityException e
+                (throw (ex-info (format "Function '%s' was called with a wrong number of arguments (%d)" f (count args))
+                                {:fn f :args args}))))))
 
 (defn eval-rpn
   ([bindings default-function tree]
@@ -159,20 +170,3 @@
 (def parse (comp (partial grammar/runlang grammar/testlang) tokenize))
 
 :OK
-
-;(println :>>> (tokenize "24 + 434"))
-;(println :>>> (parse "24 + 434"))
-
-;(println (tokenize "2*(-3)"))
-;(println :!!!!)
-;(println :> (parse "2"))
-; (println :> (parse "2 + 3"))
-;(println :> (parse "2 * 3"))
-; (println :! (parse "2*3"))
-; (println (parse "2*(-3)"))
-
-;(println :!! (tokenize "2*-(3)"))
-;(println :!! (parse "!!a"))
-;(println :!! (parse "a | b"))
-;(System/exit -1)
-;(assert false)

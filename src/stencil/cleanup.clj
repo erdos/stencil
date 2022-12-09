@@ -159,6 +159,7 @@
   (assert (not (::blocks control-ast)))
   control-ast)
 
+;; TODO: make it work without rpn too!
 (defn find-variables [control-ast]
   ;; meg a normalizalas lepes elott
   ;; amikor van benne blocks
@@ -174,13 +175,14 @@
                   (str pt "." p2)
                   (name s)))
               (mapping s (name s))))
-          (expr [mapping rpn]
-                (assert (sequential? rpn)) ;; RPN kifejezes kell legyen
-                (keep (partial resolve-sym mapping) (filter symbol? rpn)))
-          ;; iff rpn expr consists of 1 variable only -> resolves that one variable.
-          (maybe-variable [mapping rpn]
-                          (when (and (= 1 (count rpn)) (symbol? (first rpn)))
-                            (resolve-sym mapping (first rpn))))
+          (expr [mapping e]
+                ; (assert (sequential? rpn)) ;; RPN kifejezes kell legyen
+                (cond (symbol? e)           [(resolve-sym mapping e)]
+                      (not (sequential? e)) nil
+                      (= :fncall (first e)) (mapcat (partial expr mapping) (nnext e))
+                      :else                 (mapcat (partial expr mapping) (next e))))
+          (maybe-variable [mapping e]
+            (when (symbol? e) (resolve-sym mapping e)))
           (collect [m xs] (mapcat (partial collect-1 m) xs))
           (collect-1 [mapping x]
                      (case (:cmd x)

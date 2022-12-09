@@ -1,33 +1,21 @@
 (ns stencil.grammar)
 
-(defn- expecting [pred]
-  (fn [t]
-    (when-some [v (pred (first t))] 
-      [v (next t)])))
-
-(assert (= [true [:a]] ((expecting keyword?) [:k :a])))
-
 (defn- guarded [pred]
   (fn [t]
     (when (pred (first t))
       [(first t) (next t)])))
 
 ;; left-associative chained infix expression
-(defn- chained [reader separator reducer]
-  (fn [tokens]
+(defn- chained [reader reader* reducer]
+  (fn [tokens] chained
     (when-let [[result tokens] (reader tokens)]
       (loop [tokens tokens
              result result]
         (if (empty? tokens)
           [result nil]
-          (if-let [[fs tokens] (separator tokens)]
-            (if-let [[op2 tokens] (reader tokens)]
-              (recur tokens (reducer result fs op2))
-              (throw (ex-info "Unexpected charater!" {:tokens tokens})))
+          (if-let [[fs tokens] (reader* tokens)]
+            (recur tokens (reducer result fs))
             [result tokens]))))))
-
-;(assert (= [[[:a :+ :b] :+ :c] [:!!]]
-;           ((chained (expecting #{:a :b :c}) (expecting #{:+}) vector) [:a :+ :b :+ :c :!!])))
 
 (defn- all [condition & readers]
   (fn [tokens]
@@ -38,12 +26,9 @@
                   (throw (ex-info "Could not read!" {:reader reader :prefix tokens}))))
               [[result] tokens] readers))))
 
-(defn- either
-  ([a b] (fn [tokens] (or (a tokens) (b tokens))))
-  ([a b c] (fn [tokens] (or (a tokens) (b tokens) (c tokens))))
-  ([a b c d] (fn [t] (or (a t) (b t) (c t) (d t)))))
+(def either some-fn)
 
-(defmacro grammar [bindings body]
+(defmacro ^:private grammar [bindings body]
   `(letfn* [~@(for [[k v] (partition 2 bindings), x [k (list 'fn '[%] (list v '%))]] x)] ~body))
 
 (defn- mapping [reader mapper]
@@ -52,10 +37,14 @@
       [(mapper result) tokens])))
 
 (defn- parenthesed [reader]
-  (mapping (all (expecting #{:open}) reader (expecting #{:close})) second))
-; (assert (= [23 nil] ((parenthesed (guarded number?)) [:open 23 :close])))
+  (mapping (all (guarded #{:open}) reader (guarded #{:close})) second))
 
-(defn unchain [p op p2] (list op p p2))
+(defn- op-chain [operand operator]
+  (chained operand (all operator operand) (fn [a [op b]] (list op a b))))
+
+(defn- op-chain-r [operand operator]
+  (mapping (chained (all operand) (all operator operand) (fn [a [op b]] (list* b op a)))
+           (fn [a] (reduce (fn [a [op c]] [op c a]) (first a) (partition 2 (next a))))))
 
 (defn at-least-one [reader]
   (fn [tokens]
@@ -65,40 +54,32 @@
           (recur tokens (conj result res))
           [result tokens])))))
 
-(defn optional [reader] ;; always matches
-  (fn [tokens] (or (reader tokens) [nil tokens])))
+(defn- optional [reader] ;; always matches
+  (fn [t] (or (reader t) [nil t])))
 
 (def testlang
-  (grammar [val (either access-or-fncall
+  (grammar [val (either iden-or-fncall
                         (parenthesed expression)
                         (guarded number?)
                         (guarded string?))
             iden (guarded symbol?)
-
-            bracketed   (mapping (all (expecting #{:open-bracket}) expression (expecting #{:close-bracket})) second)
-            args        (mapping (chained (all expression) (expecting #{:comma}) (fn [a _ c] (into a c))) (fn [x] [:b x]))
-            access      (mapping (at-least-one bracketed) (fn [a] [:a a]))
-            access-or-fncall (mapping (all iden (optional (either (parenthesed args) access)))
-                                (fn [[sym args]]
-                                  (case (first args)
-                                    nil sym
-                                    :a (list* :get sym (second args))
-                                    :b (list* :fncall sym (second args))
-                                  )))
-
-
-            ;; TODO: fn call and commas
-
-            neg (either (all (expecting #{:minus}) neg) val) ;; TODO; map
-            not (either (all (expecting #{:not}) not) neg) ;; TODO: map
-
-            pow (chained not (expecting #{:pow}) unchain) ;; TODO: right-associative
-            mul (chained pow (expecting #{:times :divide :mod}) unchain)
-            add (chained mul (expecting #{:plus :minus}) unchain)
-            cmp  (chained add (expecting #{:lt :gt :lte :gte}) unchain)
-            cmpe (chained cmp (expecting #{:eq :neq}) unchain) ;; eq/neq
-            and (chained cmpe (expecting #{:and}) unchain)
-            or  (chained and (expecting #{:or}) unchain)
+            bracketed   (mapping (all (guarded #{:open-bracket}) expression (guarded #{:close-bracket})) second)
+            args        (mapping (optional (chained (all expression) (all (guarded #{:comma}) expression) into))
+                                 (fn [x] (take-nth 2 x)))
+            args-suffix      (parenthesed args)
+            iden-or-fncall   (mapping (all iden (optional args-suffix))
+                                      (fn [[id xs]] (if xs (list* :fncall id xs) id)))
+            accesses         (mapping (all val (optional (at-least-one bracketed)))
+                                      (fn [[id chain]] (if chain (list* :get id chain) id)))
+            neg (either (all (guarded #{:minus}) neg) accesses)
+            not (either (all (guarded #{:not}) not) neg)
+            pow (op-chain-r not (guarded #{:power}))
+            mul (op-chain pow (guarded #{:times :divide :mod}))
+            add (op-chain mul (guarded #{:plus :minus}))
+            cmp  (op-chain add (guarded #{:lt :gt :lte :gte}))
+            cmpe (op-chain cmp (guarded #{:eq :neq}))
+            and (op-chain cmpe (guarded #{:and}))
+            or  (op-chain and (guarded #{:or}))
             expression or]
            expression))
 
@@ -106,12 +87,5 @@
   (if-let [[result tokens] (grammar input)]
     (if (empty? tokens)
       result
-      (throw (ex-info "Expected EOF found characters" {})))
+      (throw (ex-info "Invalid stencil expression!" {})))
     (throw (ex-info "Could not parse" {}))))
-
-
-;(println (runlang testlang '[ 1 + 2 + 3]))
-;(println (runlang testlang '[ hello :open-bracket idx + 1 :close-bracket :open-bracket 4 :close-bracket * 2]))
-;(println (runlang testlang '[ :open 1 + 2 :close * 3]))
-;(println (runlang testlang '[123 + 344 + aaa * 34 + 1 = 34 :or a < b]))
-;(println (runlang testlang '[hello :open 1 :comma 2 :close]))

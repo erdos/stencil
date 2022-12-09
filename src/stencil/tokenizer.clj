@@ -22,7 +22,7 @@
 
       (.startsWith text "unless ")
       {:cmd       :if
-       :condition (conj (vec (infix/parse (.substring text 7))) :not)}
+       :condition (list :not (infix/parse (.substring text 7)))}
 
       (.startsWith text "for ")
       (let [[v expr] (split (subs text 4) #" in " 2)
@@ -39,7 +39,7 @@
       ;; fragment inclusion
       (.startsWith text "include ")
       {:cmd :cmd/include
-       :name (first (infix/parse (.substring text 8)))}
+       :name (infix/parse (.substring text 8))}
 
       ;; `else if` expression
       (seq (re-seq pattern-elseif text))
