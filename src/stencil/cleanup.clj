@@ -166,7 +166,6 @@
   (letfn [(resolve-sym [mapping s]
                        (assert (map? mapping))
                        (assert (symbol? s))
-                       (assert (not (.contains (name s) ".")))
                        (mapping s (name s)))
           (expr [mapping e]
                 (cond (symbol? e)           [(resolve-sym mapping e)]
