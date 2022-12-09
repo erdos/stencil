@@ -17,13 +17,16 @@
             (recur tokens (reducer result fs))
             [result tokens]))))))
 
+(defn- read-or-throw [reader tokens]
+  (or (reader tokens)
+      (throw (ex-info (str "Invalid stencil expression!") {:reader reader :prefix tokens}))))
+
 (defn- all [condition & readers]
   (fn [tokens]
     (when-let [[result tokens] (condition tokens)]
       (reduce (fn [[result tokens] reader]
-                (if-let [[r tokens] (reader tokens)]
-                  [(conj result r) tokens]
-                  (throw (ex-info "Could not read!" {:reader reader :prefix tokens}))))
+                (let [[r tokens] (read-or-throw reader tokens)]
+                  [(conj result r) tokens]))
               [[result] tokens] readers))))
 
 (defmacro ^:private grammar [bindings body]
@@ -44,7 +47,7 @@
   (mapping (chained (all operand) (all operator operand) (fn [a [op b]] (list* b op a)))
            (fn [a] (reduce (fn [a [op c]] [op c a]) (first a) (partition 2 (next a))))))
 
-(defn at-least-one [reader]
+(defn- at-least-one [reader]
   (fn [tokens]
     (when-let [[result tokens] (reader tokens)]
       (loop [tokens tokens, result [result]]
@@ -82,8 +85,4 @@
            expression))
 
 (defn runlang [grammar input]
-  (if-let [[result tokens] (grammar input)]
-    (if (empty? tokens)
-      result
-      (throw (ex-info "Invalid stencil expression!" {})))
-    (throw (ex-info "Could not parse" {}))))
+  (ffirst (read-or-throw (all grammar {nil []}) input)))
