@@ -135,9 +135,16 @@
   (testing "negation"
     (is (= 6 (run "a[1]-2" {"a" {"1" 8}}))))
 
+  #_
+  (testing "mixed lookup"
+    (is (= 7 (run "a['x'].y" {"a" {"x" {"y" 7}}})))
+    (is (= 8 (run "a.x['y']" {"a" {"x" {"y" 8}}}))))
+
   (testing "syntax error"
     (is (thrown? ExceptionInfo (run "[3]" {})))
     (is (thrown? ExceptionInfo (run "a[[3]]" {})))
+    #_(is (thrown? ExceptionInfo (run "a.[1]b" {}))) 
+    #_(is (thrown? ExceptionInfo (run "a..b" {})))
     (is (thrown? ExceptionInfo (run "a[1,2]" {}))))
 
   (testing "key is missing from input"
