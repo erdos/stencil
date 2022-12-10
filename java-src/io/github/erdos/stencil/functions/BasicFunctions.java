@@ -37,7 +37,7 @@ public enum BasicFunctions implements Function {
     },
 
     /**
-     * Returns the first non-null an non-empty value.
+     * Returns the first non-null a non-empty value.
      * <p>
      * Accepts any arguments. Skips null values, empty strings and empty collections.
      */

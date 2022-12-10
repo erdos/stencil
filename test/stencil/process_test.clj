@@ -28,7 +28,7 @@
     (is (= {:dynamic? true,
             :executable [{:open :a}
                          {:open :b}
-                         {:blocks [], :cmd :cmd/include, :name "elefant"}
+                         {:stencil.cleanup/blocks [], :cmd :cmd/include, :name "elefant" :raw "{%include \"elefant\"%}"}
                          {:close :b}
                          {:close :a}],
             :fragments #{"elefant"}

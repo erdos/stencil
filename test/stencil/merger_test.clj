@@ -25,6 +25,7 @@
       "asdf{%xy%}"   {:action "xy" :before "asdf"}
       "{%xy%}"       {:action "xy"}
       "a{%xy"        {:action-part "xy" :before "a"}
+      "a{%x%"        {:action-part "x%" :before "a"}
       "{%xy"         {:action-part "xy"})))
 
 (deftest text-split-tokens-test
@@ -105,25 +106,29 @@
 
             [{:text "{%=1%}"}]
             [{:text "{%=1%}"}]
-            [{:action {:cmd :echo, :expression [1]}}]
+            [{:action {:cmd :echo, :expression 1 :raw "{%=1%}"}}]
 
             [{:text "abc{%=1%}b"}]
             [{:text "abc"} {:text "{%=1%}"} {:text "b"}]
-            [{:text "abc"} {:action {:cmd :echo, :expression [1]}} {:text "b"}]
+            [{:text "abc"} {:action {:cmd :echo, :expression 1 :raw "{%=1%}"}} {:text "b"}]
 
             [{:text "abc{%="} O1 O2 {:text "1"} O3 O4 {:text "%}b"}]
             [{:text "abc"} {:text "{%="} O1 O2 {:text "1"} O3 O4 {:text "%}b"}]
-            [{:text "abc"} {:action {:cmd :echo, :expression [1]}} O1 O2 O3 O4 {:text "b"}]
+            [{:text "abc"} {:action {:cmd :echo, :expression 1 :raw "{%=1%}"}} O1 O2 O3 O4 {:text "b"}]
 
             [{:text "abc{%="} O1 O2 {:text "1%"} O3 O4 {:text "}b"}]
             [{:text "abc"} {:text "{%="} O1 O2 {:text "1%"} O3 O4 {:text "}b"}]
-            [{:text "abc"} {:action {:cmd :echo, :expression [1]}} O1 O2 O3 O4 {:text "b"}]
+            [{:text "abc"} {:action {:cmd :echo, :expression 1 :raw "{%=1%}"}} O1 O2 O3 O4 {:text "b"}]
 
             [{:text "abcd{%="} O1 {:text "1"} O2 {:text "%"} O3 {:text "}"} O4 {:text "b"}]
             [{:text "abcd"} {:text "{%="} O1 {:text "1"} O2 {:text "%"} O3 {:text "}"} O4 {:text "b"}]
-            [{:text "abcd"} {:action {:cmd :echo, :expression [1]}} O1 O2 O3 O4{:text "b"}]
+            [{:text "abcd"} {:action {:cmd :echo, :expression 1 :raw "{%=1%}"}} O1 O2 O3 O4{:text "b"}]
 
             [{:text "abc{"} O1 {:text "%"} O2 {:text "=1"} O3 {:text "2"} O4 {:text "%"} O5 {:text "}"} {:text "b"}]
             [{:text "abc"} {:text "{"} O1 {:text "%"} O2 {:text "=1"} O3 {:text "2"} O4 {:text "%"} O5 {:text "}"} {:text "b"}]
-            [{:text "abc"} {:action {:cmd :echo, :expression [12]}} O1 O2 O3 O4 O5 {:text "b"}]
+            [{:text "abc"} {:action {:cmd :echo, :expression 12 :raw "{%=12%}"}} O1 O2 O3 O4 O5 {:text "b"}]
+
+            [O1 {:text "{%if p"} O2 O3 {:text "%}one{%end%}"} O4]
+            [O1 {:text "{%if p"} O2 O3 {:text "%}one"} {:text "{%end%}"} O4]
+            [O1 {:action {:cmd :if, :condition 'p :raw "{%if p%}"}} O2 O3 {:text "one"} {:action {:cmd :end :raw "{%end%}"}} O4]           
             ))))

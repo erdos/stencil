@@ -3,8 +3,7 @@
            [java.io File]
            [io.github.erdos.stencil.impl FileHelper])
   (:require [clojure.data.xml :as xml]
-            [clojure.java.io :as io]
-            [stencil.util :refer :all]))
+            [clojure.java.io :as io]))
 
 
 (defn ->xml-writer [tree]

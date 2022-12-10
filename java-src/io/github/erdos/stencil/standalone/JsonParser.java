@@ -15,7 +15,7 @@ public final class JsonParser {
     /**
      * Parses string and returns read object if any.
      */
-    @SuppressWarnings({"unchecked", "unused", "WeakerAccess"})
+    @SuppressWarnings({"unused", "WeakerAccess"})
     public static Object parse(String contents) throws IOException {
         return read(new StringReader(contents));
     }
@@ -89,7 +89,7 @@ public final class JsonParser {
     static String readStr(PushbackReader pb) throws IOException {
         expectWord("\"", pb);
 
-        final StringBuffer buf = new StringBuffer();
+        final StringBuilder buf = new StringBuilder();
         while (true) {
             final int read = pb.read();
 

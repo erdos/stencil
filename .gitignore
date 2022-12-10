@@ -19,3 +19,4 @@ junit.xml
 /*.docx
 .DS_Store
 .lsp/
+*.jfr

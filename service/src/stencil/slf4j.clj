@@ -22,7 +22,7 @@
 (defn- msg+args [^String msg args]
   (if (empty? args)
     msg
-    (apply str (interleave (.split msg "\\{\\}" -1) (map str args)))))
+    (apply str (interleave (.split msg "\\{\\}" -1) args))))
 
 (deftype StencilLoggerFactory []
   org.slf4j.ILoggerFactory

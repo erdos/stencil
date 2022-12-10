@@ -2,7 +2,6 @@ package io.github.erdos.stencil.functions;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.IllegalFormatException;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -58,7 +57,7 @@ public enum StringFunctions implements Function {
             StringBuilder builder = new StringBuilder();
             for (Object argument : arguments) {
                 if (argument != null)
-                    builder.append(argument.toString());
+                    builder.append(argument);
             }
             return builder.toString();
         }

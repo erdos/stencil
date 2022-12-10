@@ -54,7 +54,7 @@
               text (:content run)
               :when (map? text)
               :when (= ooxml/t (:tag text))
-              c (:content run)
+              c (:content text)
               :when (string? c)
               :when (not-empty c)] c))))
 
@@ -82,7 +82,7 @@
         rights1 (zip/rights (zip/up chunk-loc))
 
         ;; style of run that is split
-        style (some #(when (= ooxml/rPr (:tag %)) %) (:content r))
+        style (find-first #(= ooxml/rPr (:tag %)) (:content r))
 
         ->t (fn [xs] {:tag ooxml/t :content (vec xs)})
         ->run (fn [cts] (assoc r :content (vec (cons style cts))))]

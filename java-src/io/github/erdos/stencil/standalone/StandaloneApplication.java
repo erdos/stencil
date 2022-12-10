@@ -1,13 +1,11 @@
 package io.github.erdos.stencil.standalone;
 
-import clojure.lang.IFn;
 import clojure.lang.RT;
 import clojure.lang.Symbol;
 import io.github.erdos.stencil.EvaluatedDocument;
 import io.github.erdos.stencil.PrepareOptions;
 import io.github.erdos.stencil.PreparedTemplate;
 import io.github.erdos.stencil.TemplateData;
-import io.github.erdos.stencil.impl.ClojureHelper;
 import io.github.erdos.stencil.impl.FileHelper;
 
 import java.io.BufferedReader;

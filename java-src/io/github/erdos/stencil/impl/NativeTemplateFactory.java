@@ -48,18 +48,11 @@ public final class NativeTemplateFactory implements TemplateFactory {
         final Map<Keyword, Object> prepared;
 
         try {
-            //noinspection unchecked
-            prepared = (Map<Keyword, Object>) prepareFunction.invoke(fragmentFile, options);
-        } catch (ParsingException e) {
+            prepared = invokePrepareFunction(fragmentFile, options);
+        } catch (ParsingException | IOException e) {
             throw e;
         } catch (Exception e) {
-            //noinspection ConstantConditions
-            if (e instanceof IOException) {
-                // possible because of Clojure magic :-(
-                throw (IOException) e;
-            } else {
-                throw ParsingException.wrapping("Could not parse template file!", e);
-            }
+            throw ParsingException.wrapping("Could not parse template file!", e);
         }
 
         final File zipDirResource = (File) prepared.get(ClojureHelper.Keywords.SOURCE_FOLDER.kw);
@@ -70,25 +63,31 @@ public final class NativeTemplateFactory implements TemplateFactory {
         return new PreparedFragment(prepared, zipDirResource);
     }
 
+    @SuppressWarnings({"unchecked", "RedundantThrows"})
+    private static Map<Keyword, Object> invokePrepareFunction(File fragmentFile, PrepareOptions options) throws Exception {
+        final IFn prepareFunction = ClojureHelper.findFunction("prepare-fragment");
+        return (Map<Keyword, Object>) prepareFunction.invoke(fragmentFile, options);
+    }
+
     /**
      * Retrieves content of :variables keyword from map as a set.
      */
     @SuppressWarnings("unchecked")
-    private Set variableNames(Map prepared) {
+    private static Set<String> variableNames(Map prepared) {
         return prepared.containsKey(ClojureHelper.Keywords.VARIABLES.kw)
-                ? unmodifiableSet(new HashSet<Set>((Collection) prepared.get(ClojureHelper.Keywords.VARIABLES.kw)))
+                ? unmodifiableSet(new HashSet<>((Collection<String>) prepared.get(ClojureHelper.Keywords.VARIABLES.kw)))
                 : emptySet();
     }
 
     @SuppressWarnings("unchecked")
-    private Set fragmentNames(Map prepared) {
+    private static Set<String> fragmentNames(Map prepared) {
         return prepared.containsKey(ClojureHelper.Keywords.FRAGMENTS.kw)
-                ? unmodifiableSet(new HashSet<Set>((Collection) prepared.get(ClojureHelper.Keywords.FRAGMENTS.kw)))
+                ? unmodifiableSet(new HashSet<>((Collection<String>) prepared.get(ClojureHelper.Keywords.FRAGMENTS.kw)))
                 : emptySet();
     }
 
     @SuppressWarnings("unchecked")
-    private PreparedTemplate prepareTemplateImpl(TemplateDocumentFormats templateDocFormat, InputStream input, File originalFile, PrepareOptions options) {
+    private static PreparedTemplate prepareTemplateImpl(TemplateDocumentFormats templateDocFormat, InputStream input, File originalFile, PrepareOptions options) {
         final IFn prepareFunction = ClojureHelper.findFunction("prepare-template");
 
         final String format = templateDocFormat.name();

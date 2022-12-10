@@ -10,7 +10,7 @@
             [stencil.model.numbering :as numbering]
             [stencil.types :refer [->FragmentInvoke ->ReplaceImage]]
             [stencil.postprocess.images :refer [img-data->extrafile]]
-            [stencil.util :refer [unlazy-tree assoc-if-val]]
+            [stencil.util :refer [unlazy-tree assoc-if-val eval-exception]]
             [stencil.model.relations :as relations]
             [stencil.model.common :refer [unix-path ->xml-writer resource-copier]]
             [stencil.functions :refer [call-fn]]
@@ -230,7 +230,7 @@
      elem)))
 
 
-(defmethod eval/eval-step :cmd/include [_ local-data-map {frag-name :name}]
+(defmethod eval/eval-step :cmd/include [function local-data-map {frag-name :name}]
   (assert (map? local-data-map))
   (assert (string? frag-name))
   (expect-fragment-context!
@@ -239,10 +239,10 @@
            style-ids-rename (-> fragment-model :main :style :parsed (doto assert) (style/insert-styles!))
 
            relation-ids-rename (relations/ids-rename fragment-model frag-name)
-           relation-rename-map (into {} (map (juxt :old-id :new-id) relation-ids-rename))
+           relation-rename-map (into {} (map (juxt :old-id :new-id)) relation-ids-rename)
 
            ;; evaluate
-           evaled (eval-template-model fragment-model local-data-map {} {})
+           evaled (eval-template-model fragment-model local-data-map function {})
 
            ;; write back
            get-xml      (fn [x] (or (:xml x) @(:xml-delay x)))
@@ -254,9 +254,7 @@
        (swap! *inserted-fragments* conj frag-name)
        (run! add-extra-file! relation-ids-rename)
        [{:text (->FragmentInvoke {:frag-evaled-parts evaled-parts})}])
-     (throw (ex-info "Did not find fragment for name!"
-                     {:fragment-name frag-name
-                      :all-fragment-names (set (keys *all-fragments*))})))))
+     (throw (eval-exception (str "No fragment for name: " frag-name) nil)))))
 
 
 ;; replaces the nearest image with the content

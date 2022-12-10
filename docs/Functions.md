@@ -25,6 +25,7 @@ This is a short description of the functions implemented in Stencil:
 - [list](#list)
 - [lowercase](#lowercase)
 - [map](#map)
+- [pageBreak](#pagebreak)
 - `percent`
 - `range`
 - [round](#round)
@@ -164,6 +165,10 @@ The rendering throws an exception on invalid HTML input or unexpected HTML tags.
 Write the following to embed the content of `x` as HTML in the document:
 - <code>{<i>%=html(x) %</i>}</code>.
 
+### PageBreak
+
+Inserts a page break at the place of the call. Example: <code>{<i>%=pageBreak()%</i>}</code>
+
 ### XML
 
 You can embed custom xml fragments in the document with the `xml()` function. The parameter is a string containing the XML nodes to insert.
@@ -199,6 +204,10 @@ The `lowercase(x)` function turns its string argument into a lowercase string. F
 ### Str
 
 The `str(x)` functions convers its non-null arguments into a string. Returns an empty string when all arguments are null.
+
+## Replace
+
+The `replace(text, pattern, replacement)` function replaces all occurrence of `pattern` in `text` by `replacement`.
 
 ## Numeric functions
 

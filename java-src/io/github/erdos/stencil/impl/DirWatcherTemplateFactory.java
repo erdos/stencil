@@ -180,7 +180,7 @@ public final class DirWatcherTemplateFactory implements TemplateFactory {
                     .orElseThrow(() -> new IllegalArgumentException("Can not build template file: " + inputTemplateFile));
     }
 
-    private final class DelayedContainer<X> implements Delayed {
+    private static final class DelayedContainer<X> implements Delayed {
         private final long expiration;
         private final X contents;
 

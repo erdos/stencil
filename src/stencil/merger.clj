@@ -1,11 +1,12 @@
 (ns stencil.merger
   "Token listaban a text tokenekbol kiszedi a parancsokat es action tokenekbe teszi."
   (:require [clojure.data.xml :as xml]
+            [clojure.string :refer [index-of ends-with?]]
             [stencil.postprocess.ignored-tag :as ignored-tag]
             [stencil
              [types :refer [open-tag close-tag]]
              [tokenizer :as tokenizer]
-             [util :refer [prefixes suffixes subs-last]]]))
+             [util :refer [prefixes suffixes subs-last string parsing-exception]]]))
 
 (set! *warn-on-reflection* true)
 
@@ -29,17 +30,14 @@
 
 (defn find-first-code [^String s]
   (assert (string? s))
-  (let [ind        (.indexOf s (str open-tag))]
-    (when-not (neg? ind)
-      (let [after-idx  (.indexOf s (str close-tag))]
-        (if (neg? after-idx)
-          (cond-> {:action-part (.substring s (+ ind (count open-tag)))}
-            (not (zero? ind)) (assoc :before (.substring s 0 ind)))
-          (cond-> {:action (.substring s (+ ind (count open-tag))
-                                       after-idx)}
-            (not (zero? ind)) (assoc :before (.substring s 0 ind))
-            (not (= (+ (count close-tag) after-idx) (count s)))
-            (assoc :after (.substring s (+ (count close-tag) after-idx)))))))))
+  (when-let [ind (index-of s (str open-tag))]
+    (if-let [after-idx (index-of s (str close-tag) ind)]
+      (cond-> {:action (subs s (+ ind (count open-tag)) after-idx)}
+        (pos? ind) (assoc :before (subs s 0 ind))
+        (not= (+ (count close-tag) after-idx) (count s))
+        (assoc :after (subs s (+ (count close-tag) after-idx))))
+      (cond-> {:action-part (subs s (+ ind (count open-tag)))}
+        (not (zero? ind)) (assoc :before (subs s 0 ind))))))
 
 (defn text-split-tokens [^String s]
   (assert (string? s))
@@ -57,35 +55,35 @@
         {:tokens (conj output {:text s})}
         {:tokens output}))))
 
-(declare cleanup-runs)
-
 ;; returns a map of {:char :stack :text-rest :rest}
 (defn -find-open-tag [last-chars-count next-token-list]
   (assert (integer? last-chars-count))
   (assert (pos? last-chars-count))
   (assert (sequential? next-token-list))
-  (when (= (drop last-chars-count open-tag)
-           (take (- (count open-tag) last-chars-count)
-                 (map :char (peek-next-text next-token-list))))
-    (nth (peek-next-text next-token-list)
-         (dec (- (count open-tag) last-chars-count)))))
+  (let [next-text (peek-next-text next-token-list)
+        n         (- (count open-tag) last-chars-count)]
+    (when (= (drop last-chars-count open-tag)
+             (take n (map :char next-text)))
+      (nth next-text (dec n)))))
 
 (defn -last-chars-count [sts-tokens]
   (assert (sequential? sts-tokens))
-  (when (:text (last sts-tokens))
-    (some #(when (.endsWith
-                  (str (apply str (:text (last sts-tokens)))) (apply str %))
+  (when-let [last-text (some-> sts-tokens last :text string)]
+    (some #(when (ends-with? last-text (string %))
              (count %))
           (prefixes open-tag))))
 
 (defn map-action-token [token]
   (if-let [action (:action token)]
-    (let [parsed (tokenizer/text->cmd action)]
+    (let [parsed (tokenizer/text->cmd action)
+          parsed (assoc parsed :raw (str open-tag action close-tag))]
       (if (and *only-includes*
                (not= :cmd/include (:cmd parsed)))
         {:text (str open-tag action close-tag)}
         {:action parsed}))
     token))
+
+(declare cleanup-runs)
 
 (defn cleanup-runs-1 [[first-token & rest-tokens]]
   (assert (:text first-token))
@@ -98,19 +96,21 @@
                                            (take (count close-tag) (map :char %)))
                                     (suffixes (peek-next-text next-token-list)))
             that        (if (empty? that)
-                          (throw (ex-info "Tag is not closed? " {:read (first this)}))
+                          (throw (parsing-exception "" (str "Stencil tag is not closed. Reading " open-tag
+                                                             (string (comp (take 20) (map first) (map :char)) this))))
+                          ;; (throw (ex-info "Tag is not closed? " {:read (first this)}))
                           (first (nth that (dec (count close-tag)))))
             ; action-content (apply str (map (comp :char first) this))
             ]
         (concat
          (map map-action-token (:tokens sts))
-         (let [ap (map-action-token {:action (apply str (map (comp :char first) this))})]
+         (let [ap (map-action-token {:action (string (map (comp :char first)) this)})]
            (if (:action ap)
              (concat
               [ap]
               (reverse (:stack that))
               (if (seq (:text-rest that))
-                (lazy-seq (cleanup-runs-1 (cons {:text (apply str (:text-rest that))} (:rest that))))
+                (lazy-seq (cleanup-runs-1 (cons {:text (string (:text-rest that))} (:rest that))))
                 (lazy-seq (cleanup-runs (:rest that)))))
              (list* {:text (str open-tag (:action-part sts))}
                     (lazy-seq (cleanup-runs rest-tokens)))))))
@@ -124,7 +124,7 @@
              [{:text (apply str s)}])
 
            (let [tail (cleanup-runs-1
-                       (concat [{:text (str open-tag (apply str (:text-rest this)))}]
+                       (concat [{:text (apply str open-tag (:text-rest this))}]
                                (reverse (:stack this))
                                (:rest this)))]
              (if (:action (first tail))

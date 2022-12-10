@@ -8,6 +8,8 @@
             [stencil.util :refer :all]
             [stencil.ooxml :as ooxml]))
 
+(set! *warn-on-reflection* true)
+
 (defrecord HtmlChunk [content] ControlMarker)
 
 (defmethod call-fn "html" [_ content] (->HtmlChunk content))
@@ -16,19 +18,22 @@
   "Set of supported HTML tags"
   #{:b :em :i :u :s :sup :sub :span :br :strong})
 
+(defn- kw-lowercase [kw] (-> kw name .toLowerCase keyword))
+
 (defn- validate-tags
   "Throws ExceptionInfo on invalid HTML tag in tree"
   [xml-tree]
   (->>
    (fn [node]
-     (if (legal-tags (:tag node))
+     (if (legal-tags (-> node :tag kw-lowercase))
        node
        (throw (ex-info (str "Unexpected HTML tag: " (:tag node)) {:tag (:tag node)}))))
    (dfs-walk-xml xml-tree map?)))
 
 (defn- parse-html [xml]
   (-> (str xml)
-      (.replaceAll "<br>" "<br/>")
+      (.replaceAll "<br>" "<BR/>")
+      (.replaceAll "<BR>" "<BR/>")
       (xml/parse-str)
       (doto (validate-tags))
       (try (catch javax.xml.stream.XMLStreamException e
@@ -36,21 +41,22 @@
 
 (defn- walk-children [xml]
   (if (map? xml)
-    (if (= :br (:tag xml))
+    (if (#{:br :BR} (:tag xml))
       [{:text ::br}]
       (for [c (:content xml)
             x (walk-children c)]
-        (update x :path conj (:tag xml))))
+        (update x :path conj (kw-lowercase (:tag xml)))))
     [{:text xml}]))
 
-(defn- path->styles [path]
-  (cond-> []
-    (some #{:b :em :strong} path) (conj {:tag ooxml/b :attrs {ooxml/val "true"}})
-    (some #{:i} path) (conj {:tag ooxml/i :attrs {ooxml/val "true"}})
-    (some #{:s} path) (conj {:tag ooxml/strike :attrs {ooxml/val "true"}})
-    (some #{:u} path) (conj {:tag ooxml/u :attrs {ooxml/val "single"}})
-    (some #{:sup} path) (conj {:tag ooxml/vertAlign :attrs {ooxml/val "superscript"}})
-    (some #{:sub} path) (conj {:tag ooxml/vertAlign :attrs {ooxml/val "subscript"}})))
+(defn- path->style [p]
+  (case p
+    (:b :em :strong) {:tag ooxml/b :attrs {ooxml/val "true"}}
+    (:i)             {:tag ooxml/i :attrs {ooxml/val "true"}}
+    (:s)             {:tag ooxml/strike :attrs {ooxml/val "true"}}
+    (:u)             {:tag ooxml/u :attrs {ooxml/val "single"}}
+    (:sup)           {:tag ooxml/vertAlign :attrs {ooxml/val "superscript"}}
+    (:sub)           {:tag ooxml/vertAlign :attrs {ooxml/val "subscript"}}
+    nil))
 
 (defn html->ooxml-runs
   "Parses html string and returns a seq of ooxml run elements.
@@ -59,7 +65,7 @@
   (when (seq html)
     (let [ch (walk-children (parse-html (str "<span>" html "</span>")))]
       (for [parts (partition-by :path ch)
-            :let [prs (into (set base-style) (path->styles (:path (first parts))))]]
+            :let [prs (into (set base-style) (keep path->style) (:path (first parts)))]]
         {:tag ooxml/r
          :content (cons {:tag ooxml/rPr :content (vec prs)}
                         (for [{:keys [text]} parts]
@@ -69,7 +75,7 @@
 
 (defn- current-run-style [chunk-loc]
   (let [r (zip/node (zip/up (zip/up chunk-loc)))]
-    (some #(when (= ooxml/rPr (:tag %)) %) (:content r))))
+    (find-first #(= ooxml/rPr (:tag %)) (:content r))))
 
 (defn- fix-html-chunk [chunk-loc]
   (assert (instance? HtmlChunk (zip/node chunk-loc)))

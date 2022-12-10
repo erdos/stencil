@@ -3,10 +3,11 @@
   (:import [java.io File])
   (:require [org.httpkit.server :refer [run-server]]
             [stencil.api :as api]
+            [stencil.functions]
             [stencil.log :as log]
             [stencil.slf4j :as slf4j]
             [clojure.data :refer [diff]]
-            [clojure.java.io :refer [file]]
+            [clojure.java.io :as io :refer [file]]
             [ring.middleware.json :refer [wrap-json-body]]))
 
 (set! *warn-on-reflection* true)
@@ -22,6 +23,21 @@
       (throw (ex-info "Template directory does not exist!" {:status 500}))
       dir)
     (throw (ex-info "Missing STENCIL_TEMPLATE_DIR property!" {}))))
+
+(defn eval-js-file []
+  (let [f (file (get-template-dir) "stencil.js")]
+    (when (.exists f)
+      (log/info "Evaluating stencil.js file")
+      (let [manager (new javax.script.ScriptEngineManager)
+            engine (.getEngineByName manager "rhino")
+            invocable ^javax.script.Invocable engine
+            context (.getContext engine)]
+        (with-open [r (io/reader f)]
+          (.eval engine r context))
+        (doseq [[k] (.getBindings context javax.script.ScriptContext/ENGINE_SCOPE)]
+          (log/info "Defining function created in stencil.js file: {}" k)
+          (defmethod stencil.functions/call-fn k [k & args]
+            (.invokeFunction invocable k (into-array Object args))))))))
 
 (def -prepared
   "Map of {file-name {timestamp prepared}}."
@@ -47,6 +63,9 @@
       (prepared template)
       (throw (ex-info "Template file does not exist!" {:status 404})))))
 
+(defn- exception->str [e]
+  (clojure.string/join "\n" (for [e (iterate #(.getCause %) e) :while e] (.getMessage e))))
+
 (defn wrap-err [handler]
   (fn [request]
     (try (handler request)
@@ -56,7 +75,10 @@
                  {:status status
                   :body (str "ERROR: " (.getMessage e))})
              (do (log/error "Error" e)
-                 (throw e)))))))
+                 (throw e))))
+         (catch Exception e
+           {:status 400
+            :body (exception->str e)}))))
 
 (defn- wrap-log [handler]
   (fn [req]
@@ -94,6 +116,7 @@
 
 (defn -main [& args]
   (log/info "Starting Stencil Service {}" api/version)
+  (eval-js-file)
   (let [http-port    (get-http-port)
         template-dir ^File (get-template-dir)
         server (run-server app {:port http-port})]

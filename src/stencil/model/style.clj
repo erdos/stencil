@@ -89,7 +89,7 @@
 
 
 (defn main-style-item [^File dir main-document main-document-rels]
-  (when-let [main-style (some #(when (= rel-type (:stencil.model/type %)) %)
+  (when-let [main-style (find-first #(= rel-type (:stencil.model/type %))
                               (vals (:parsed main-document-rels)))]
     (let [main-style-file (io/file (.getParentFile (io/file main-document))
                                    (:stencil.model/target main-style))
