@@ -3,7 +3,6 @@
   (:require [clojure.data.xml :as xml]
             [clojure.string :refer [includes? split]]
             [stencil.infix :as infix]
-            [stencil.types :refer [open-tag close-tag]]
             [stencil.util :refer [assoc-if-val mod-stack-top-conj mod-stack-top-last parsing-exception trim]]))
 
 (set! *warn-on-reflection* true)
@@ -22,7 +21,7 @@
 
       (.startsWith text "unless ")
       {:cmd       :if
-       :condition (conj (vec (infix/parse (.substring text 7))) :not)}
+       :condition (list :not (infix/parse (.substring text 7)))}
 
       (.startsWith text "for ")
       (let [[v expr] (split (subs text 4) #" in " 2)
@@ -39,7 +38,7 @@
       ;; fragment inclusion
       (.startsWith text "include ")
       {:cmd :cmd/include
-       :name (first (infix/parse (.substring text 8)))}
+       :name (infix/parse (.substring text 8))}
 
       ;; `else if` expression
       (seq (re-seq pattern-elseif text))
