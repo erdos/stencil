@@ -3,7 +3,6 @@
   (:require [clojure.data.xml :as xml]
             [clojure.string :refer [includes? split]]
             [stencil.infix :as infix]
-            [stencil.types :refer [open-tag close-tag]]
             [stencil.util :refer [assoc-if-val mod-stack-top-conj mod-stack-top-last parsing-exception trim]]))
 
 (set! *warn-on-reflection* true)

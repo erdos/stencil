@@ -2,8 +2,7 @@
   "Parsing and evaluating infix algebraic expressions.
 
   https://en.wikipedia.org/wiki/Shunting-yard_algorithm"
-  (:require [stencil.util :refer [fail update-peek ->int string whitespace?]]
-            [stencil.log :as log]
+  (:require [stencil.util :refer [->int string whitespace?]]
             [stencil.functions :refer [call-fn]]
             [stencil.grammar :as grammar]))
 

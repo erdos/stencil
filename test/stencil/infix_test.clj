@@ -1,6 +1,6 @@
 (ns stencil.infix-test
   (:import [clojure.lang ExceptionInfo])
-  (:require [stencil.infix :as infix :refer :all]
+  (:require [stencil.infix :as infix]
             [stencil.types :refer [hide-table-column-marker?]]
             [clojure.test :refer [deftest testing is are]]))
 
@@ -25,7 +25,7 @@
 
 (deftest test-read-string-literal
   (testing "Incomplete string"
-    (is (thrown? ExceptionInfo (read-string-literal "'alaba")))))
+    (is (thrown? ExceptionInfo (infix/read-string-literal "'alaba")))))
 
 (deftest tokenize-string-literal
   (testing "spaces are kept"
@@ -299,7 +299,7 @@
   (is (hide-table-column-marker? (run "hideColumn()"))))
 
 (deftest test-unexpected
-  (is (thrown? ExceptionInfo (parse "aaaa:bbbb"))))
+  (is (thrown? ExceptionInfo (infix/parse "aaaa:bbbb"))))
 
 (deftest tokenize-wrong-tokens
   (testing "Misplaced operators and operands"
