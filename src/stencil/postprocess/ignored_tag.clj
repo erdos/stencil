@@ -2,6 +2,7 @@
   "In docx files there might be an Ignored attribute which contains an XML namespace alias list.
    The contents of this attribute must be a valid ns alias list on the output document too!"
   (:require [clojure.data.xml.pu-map :as pu-map]
+            [clojure.data.xml.name :as xml-name]
             [clojure.string :as s]
             [stencil.ooxml :as ooxml]))
 
@@ -62,6 +63,9 @@
     (with-pu
       (postwalk-xml
        (fn [form]
+         (when-let [ns (some-> form :tag xml-name/qname-uri)]
+           (when (contains? ooxml/default-aliases ns)
+             (find! ns)))
          (-> form
              (update-if-present [:attrs ignorable-tag] (partial map-str find!))
              (update-choice-requires (partial map-str find!))))
