@@ -151,9 +151,9 @@
         children (mapv control-ast-normalize children)]
     (-> control-ast
         (dissoc ::blocks)
-        (assoc :body-run-none (vec (concat (stack-revert-close before) after))
-               :body-run-once (vec children)
-               :body-run-next (vec (concat (stack-revert-close after) before children))))))
+        (assoc :branch/body-run-none (vec (concat (stack-revert-close before) after))
+               :branch/body-run-once (vec children)
+               :branch/body-run-next (vec (concat (stack-revert-close after) before children))))))
 
 (defmethod control-ast-normalize :default [control-ast]
   (assert (not (::blocks control-ast)))

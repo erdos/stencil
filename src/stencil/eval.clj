@@ -45,9 +45,9 @@
             datas          (if (or (instance? java.util.Map items) (map? items))
                              (map datamapper (keys items) (vals items))
                              (map-indexed datamapper items))
-            bodies (cons (:body-run-once item) (repeat (:body-run-next item)))]
+            bodies (cons (:branch/body-run-once item) (repeat (:branch/body-run-next item)))]
         (mapcat (fn [data body] (normal-control-ast->evaled-seq data function body)) datas bodies))
-      (:body-run-none item))))
+      (:branch/body-run-none item))))
 
 (defn eval-executable [part data functions]
   (->> (:executable part)

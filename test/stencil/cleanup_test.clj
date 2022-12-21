@@ -153,9 +153,9 @@
            [<a>
             (->text "before")
             {:cmd :for
-             :body-run-none [<／a> <b>]
-             :body-run-once [(->text "inside1") <／a> <b> (->text "inside2")]
-             :body-run-next [<／b> <a> (->text "inside1") <／a> <b> (->text "inside2")]}
+             :branch/body-run-none [<／a> <b>]
+             :branch/body-run-once [(->text "inside1") <／a> <b> (->text "inside2")]
+             :branch/body-run-next [<／b> <a> (->text "inside1") <／a> <b> (->text "inside2")]}
             (->text "after")
             <／b>]))))
 

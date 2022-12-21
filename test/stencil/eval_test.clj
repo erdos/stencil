@@ -53,9 +53,9 @@
                  :variable "index"
                  :index-var "i"
                  :expression 'list0
-                 :body-run-once [{:text "xx"}]
-                 :body-run-none [{:text "meh"}]
-                 :body-run-next [{:text "x"}]}]
+                 :branch/body-run-once [{:text "xx"}]
+                 :branch/body-run-none [{:text "meh"}]
+                 :branch/body-run-next [{:text "x"}]}]
                [{:text "meh"}]))
 
   (testing "loop with exactly 1 item"
@@ -63,9 +63,9 @@
                  :variable "index"
                  :index-var "i"
                  :expression 'list1
-                 :body-run-once [{:cmd :cmd/echo :expression 'index}]
-                 :body-run-none [{:text "meh"}]
-                 :body-run-next [{:text "x"}]}]
+                 :branch/body-run-once [{:cmd :cmd/echo :expression 'index}]
+                 :branch/body-run-none [{:text "meh"}]
+                 :branch/body-run-next [{:text "x"}]}]
                [{:text "1"}]))
 
   (testing "loop with exactly 1 item and index var used"
@@ -73,9 +73,9 @@
                  :variable "index"
                  :index-var "i"
                  :expression 'abc
-                 :body-run-once [{:cmd :cmd/echo :expression 'i} {:text "==>"} {:cmd :cmd/echo :expression 'index}]
-                 :body-run-none [{:text "should-not-run"}]
-                 :body-run-next [{:text "should-not-run"}]}]
+                 :branch/body-run-once [{:cmd :cmd/echo :expression 'i} {:text "==>"} {:cmd :cmd/echo :expression 'index}]
+                 :branch/body-run-none [{:text "should-not-run"}]
+                 :branch/body-run-next [{:text "should-not-run"}]}]
                [{:text "def"} {:text "==>"} {:text "Okay"}]))
 
   (testing "loop with exactly 3 items"
@@ -83,7 +83,7 @@
                  :variable "index"
                  :index-var "i"
                  :expression 'list3
-                 :body-run-once [{:cmd :cmd/echo :expression 'index}]
-                 :body-run-none [{:text "meh"}]
-                 :body-run-next [{:text "x"} {:cmd :cmd/echo :expression 'index}]}]
+                 :branch/body-run-once [{:cmd :cmd/echo :expression 'index}]
+                 :branch/body-run-none [{:text "meh"}]
+                 :branch/body-run-next [{:text "x"} {:cmd :cmd/echo :expression 'index}]}]
                [{:text "1"} {:text "x"} {:text "2"} {:text "x"} {:text "3"}])))
