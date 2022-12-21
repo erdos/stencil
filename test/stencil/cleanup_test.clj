@@ -166,27 +166,27 @@
     (is (= () (find-variables [{:open "a"} {:close "a"}]))))
 
   (testing "Variables from simple subsitutions"
-    (is (= ["a"] (find-variables [{:cmd :echo :expression '[:plus a 1]}]))))
+    (is (= ["a"] (find-variables [{:cmd :cmd/echo :expression '[:plus a 1]}]))))
 
   (testing "Variables from if conditions"
     (is (= ["a"] (find-variables [{:cmd :if :condition '[:eq a 1]}]))))
 
   (testing "Variables from if branches"
     (is (= ["x"] (find-variables [{:cmd :if :condition '3
-                                   :stencil.cleanup/blocks [[] [{:cmd :echo :expression 'x}]]}]))))
+                                   :stencil.cleanup/blocks [[] [{:cmd :cmd/echo :expression 'x}]]}]))))
 
   (testing "Variables from loop expressions"
     (is (= ["xs" "xs[]"]
            (find-variables '[{:cmd :for, :variable y, :expression xs,
-                              :stencil.cleanup/blocks [[{:cmd :echo, :expression [:plus y 1]}]]}])))
+                              :stencil.cleanup/blocks [[{:cmd :cmd/echo, :expression [:plus y 1]}]]}])))
     (is (= ["xs" "xs[]" "xs[][]"]
            (find-variables '[{:cmd :for, :variable y, :expression xs
                               :stencil.cleanup/blocks [[{:cmd :for :variable w :expression y
-                                         :stencil.cleanup/blocks [[{:cmd :echo :expression [:plus 1 w]}]]}]]}])))
+                                         :stencil.cleanup/blocks [[{:cmd :cmd/echo :expression [:plus 1 w]}]]}]]}])))
     (is (= ["xs" "xs[].z.k"]
            (find-variables
             '[{:cmd :for :variable y :expression xs
-               :stencil.cleanup/blocks [[{:cmd :echo :expression [:plus [:get y "z" "k"] 1]}]]}]))))
+               :stencil.cleanup/blocks [[{:cmd :cmd/echo :expression [:plus [:get y "z" "k"] 1]}]]}]))))
 
   (testing "Variables from loop bindings and bodies"
     ;; TODO: impls this test
@@ -200,7 +200,7 @@
            (find-variables
             '[{:cmd :for :variable a :expression xs
                :stencil.cleanup/blocks [[{:cmd :for :variable b :expression [:get a "t"]
-                          :stencil.cleanup/blocks [[{:cmd :echo :expression [:plus [:get b "n"] 1]}]]}]]}])))
+                          :stencil.cleanup/blocks [[{:cmd :cmd/echo :expression [:plus [:get b "n"] 1]}]]}]]}])))
     ))
 
 (deftest test-process-if-then-else

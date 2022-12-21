@@ -41,7 +41,7 @@
             (recur (mod-stack-top-last new-stack dissoc :r))
             new-stack))))
 
-    (:echo nil :cmd/include)
+    (:cmd/echo nil :cmd/include)
     (mod-stack-top-conj stack token)))
 
 (defn tokens->ast
@@ -109,7 +109,7 @@
 (defmulti control-ast-normalize :cmd)
 
 ;; Itt nincsen blokk, amit normalizálni kellene
-(defmethod control-ast-normalize :echo [echo-command] echo-command)
+(defmethod control-ast-normalize :cmd/echo [echo-command] echo-command)
 
 (defmethod control-ast-normalize :cmd/include [include-command]
   (if-not (string? (:name include-command))
@@ -186,7 +186,7 @@
           (collect [m xs] (mapcat (partial collect-1 m) xs))
           (collect-1 [mapping x]
                      (case (:cmd x)
-                       :echo (expr mapping (:expression x))
+                       :cmd/echo (expr mapping (:expression x))
 
                        :if   (concat (expr mapping (:condition x))
                                      (collect mapping (apply concat (::blocks x))))

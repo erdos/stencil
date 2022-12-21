@@ -30,7 +30,7 @@
     (is (= (run "<a>elotte {%=a%} utana</a>")
            [{:open :a}
             {:text "elotte "}
-            {:cmd :echo :expression 'a}
+            {:cmd :cmd/echo :expression 'a}
             {:text " utana"}
             {:close :a}]))))
 

@@ -30,7 +30,7 @@
     (->> (if condition (:then item) (:else item))
          (normal-control-ast->evaled-seq data function))))
 
-(defmethod eval-step :echo [function data item]
+(defmethod eval-step :cmd/echo [function data item]
   (let [value (eval-rpn* data function (:expression item) (:raw item))]
     (log/trace "Echoing {} as {}" (:expression item) value)
     [{:text (if (control? value) value (str value))}]))

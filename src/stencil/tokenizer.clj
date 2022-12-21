@@ -32,7 +32,7 @@
          :expression (infix/parse expr)})
 
       (.startsWith text "=")
-      {:cmd        :echo
+      {:cmd        :cmd/echo
        :expression (infix/parse (.substring text 1))}
 
       ;; fragment inclusion
