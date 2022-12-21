@@ -27,7 +27,7 @@
 (defmethod eval-step :if [function data item]
   (let [condition (eval-rpn* data function (:condition item) (:raw item))]
     (log/trace "Condition {} evaluated to {}" (:condition item) condition)
-    (->> (if condition (:branch/then item) (:else item))
+    (->> (if condition (:branch/then item) (:branch/else item))
          (normal-control-ast->evaled-seq data function))))
 
 (defmethod eval-step :cmd/echo [function data item]

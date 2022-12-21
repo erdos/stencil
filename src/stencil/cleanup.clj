@@ -128,12 +128,14 @@
                           (::after then)
                           (map control-ast-normalize (::children else)))]
         (-> (dissoc control-ast ::blocks)
-            (assoc :branch/then (vec then2) :else (vec else2))))
+            (assoc :branch/then (vec then2)
+                   :branch/else (vec else2))))
 
     1 (let [[then] (::blocks control-ast)
             else   (::after then)]
         (-> (dissoc control-ast ::blocks)
-            (assoc :branch/then (mapv control-ast-normalize (::children then)) :else (vec else))))
+            (assoc :branch/then (mapv control-ast-normalize (::children then))
+                   :branch/else (vec else))))
     ;; default
     (throw (parsing-exception (str open-tag "else" close-tag)
                               "Too many {%else%} tags in one condition!"))))

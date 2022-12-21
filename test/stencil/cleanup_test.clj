@@ -79,7 +79,7 @@
                   (->text "Hello")
                   (->close "b")
                   (->open "c")]
-           :else [(->close "a")
+           :branch/else [(->close "a")
                   (->open "b")
                   (->text "Virag")
                   (->close "b")
@@ -106,7 +106,7 @@
 
            [{:cmd :if
              :branch/then [(->text "bela") <b> (->text "Hello")]
-             :else [<b> (->text "Virag")]}
+             :branch/else [<b> (->text "Virag")]}
             (->close "b")]))))
 
 (deftest normal-ast-test-0-deep
@@ -120,7 +120,7 @@
 
            [{:cmd :if
              :branch/then [(->text "bela") <b> <i> (->text "Hello") <／i>]
-             :else [<b> <j> (->text "Virag") <／j>]}
+             :branch/else [<b> <j> (->text "Virag") <／j>]}
             <／b>]))))
 
 (deftest normal-ast-test-condition-only-then
@@ -135,7 +135,7 @@
 
            [<a> {:cmd :if
                  :branch/then [(->text "bela") <b> <i> (->text "Hello") <／i>]
-                 :else [<b>]}
+                 :branch/else [<b>]}
             <／b>
             <／a>]))))
 
@@ -213,7 +213,7 @@
                  {:text "THEN"}
                  {:close :a}
                  {:open :a, :attrs {:a "three"}}],
-          :else ()}
+          :branch/else ()}
          {:close :a}
          {:close :body}]
 
@@ -236,9 +236,9 @@
          :branch/then [<／a>
                 {:cmd :if, :condition '[:get x "b"],
                  :branch/then [<a> {:text "THEN"}]
-                 :else [<a>]}
+                 :branch/else [<a>]}
                 <／a>]
-         :else ()}]
+         :branch/else ()}]
        (:executable
         (process
          [<a>
