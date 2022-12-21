@@ -24,7 +24,7 @@
   (testing "THEN branch"
     (test-eval [-text1-
                 {:cmd :if :condition 'truthy
-                 :then [{:text "ok"}]
+                 :branch/then [{:text "ok"}]
                  :else [{:text "err"}]}
                 -text1-]
                [-text1-
@@ -34,7 +34,7 @@
   (testing "ELSE branch"
     (test-eval [-text1-
                 {:cmd :if :condition 'falsey
-                 :then [{:text "ok"}]
+                 :branch/then [{:text "ok"}]
                  :else [{:text "err"}]}]
                [-text1-
                 {:text "err"}])))

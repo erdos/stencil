@@ -72,7 +72,7 @@
           (->open "a")
           (->text "Inka")
           {:cmd :if
-           :then [(->text "ikarusz")
+           :branch/then [(->text "ikarusz")
                   (->close "a")
                   (->text "bela")
                   (->open "b")
@@ -105,7 +105,7 @@
               (->close "b")]))
 
            [{:cmd :if
-             :then [(->text "bela") <b> (->text "Hello")]
+             :branch/then [(->text "bela") <b> (->text "Hello")]
              :else [<b> (->text "Virag")]}
             (->close "b")]))))
 
@@ -119,7 +119,7 @@
               <／b>]))
 
            [{:cmd :if
-             :then [(->text "bela") <b> <i> (->text "Hello") <／i>]
+             :branch/then [(->text "bela") <b> <i> (->text "Hello") <／i>]
              :else [<b> <j> (->text "Virag") <／j>]}
             <／b>]))))
 
@@ -134,7 +134,7 @@
               <／a>]))
 
            [<a> {:cmd :if
-                 :then [(->text "bela") <b> <i> (->text "Hello") <／i>]
+                 :branch/then [(->text "bela") <b> <i> (->text "Hello") <／i>]
                  :else [<b>]}
             <／b>
             <／a>]))))
@@ -208,7 +208,7 @@
        '[{:open :body}
          {:open :a}
          {:cmd :if, :condition a,
-          :then [{:close :a}
+          :branch/then [{:close :a}
                  {:open :a}
                  {:text "THEN"}
                  {:close :a}
@@ -233,9 +233,9 @@
   (is (=
        [<a>
         {:cmd :if, :condition '[:get x "a"],
-         :then [<／a>
+         :branch/then [<／a>
                 {:cmd :if, :condition '[:get x "b"],
-                 :then [<a> {:text "THEN"}]
+                 :branch/then [<a> {:text "THEN"}]
                  :else [<a>]}
                 <／a>]
          :else ()}]
