@@ -41,7 +41,7 @@
             (recur (mod-stack-top-last new-stack dissoc :r))
             new-stack))))
 
-    (:echo nil :cmd/include)
+    (:cmd/echo nil :cmd/include)
     (mod-stack-top-conj stack token)))
 
 (defn tokens->ast
@@ -109,7 +109,7 @@
 (defmulti control-ast-normalize :cmd)
 
 ;; Itt nincsen blokk, amit normalizálni kellene
-(defmethod control-ast-normalize :echo [echo-command] echo-command)
+(defmethod control-ast-normalize :cmd/echo [echo-command] echo-command)
 
 (defmethod control-ast-normalize :cmd/include [include-command]
   (if-not (string? (:name include-command))
@@ -128,12 +128,14 @@
                           (::after then)
                           (map control-ast-normalize (::children else)))]
         (-> (dissoc control-ast ::blocks)
-            (assoc :then (vec then2) :else (vec else2))))
+            (assoc :branch/then (vec then2)
+                   :branch/else (vec else2))))
 
     1 (let [[then] (::blocks control-ast)
             else   (::after then)]
         (-> (dissoc control-ast ::blocks)
-            (assoc :then (mapv control-ast-normalize (::children then)) :else (vec else))))
+            (assoc :branch/then (mapv control-ast-normalize (::children then))
+                   :branch/else (vec else))))
     ;; default
     (throw (parsing-exception (str open-tag "else" close-tag)
                               "Too many {%else%} tags in one condition!"))))
@@ -151,9 +153,9 @@
         children (mapv control-ast-normalize children)]
     (-> control-ast
         (dissoc ::blocks)
-        (assoc :body-run-none (vec (concat (stack-revert-close before) after))
-               :body-run-once (vec children)
-               :body-run-next (vec (concat (stack-revert-close after) before children))))))
+        (assoc :branch/body-run-none (vec (concat (stack-revert-close before) after))
+               :branch/body-run-once (vec children)
+               :branch/body-run-next (vec (concat (stack-revert-close after) before children))))))
 
 (defmethod control-ast-normalize :default [control-ast]
   (assert (not (::blocks control-ast)))
@@ -186,7 +188,7 @@
           (collect [m xs] (mapcat (partial collect-1 m) xs))
           (collect-1 [mapping x]
                      (case (:cmd x)
-                       :echo (expr mapping (:expression x))
+                       :cmd/echo (expr mapping (:expression x))
 
                        :if   (concat (expr mapping (:condition x))
                                      (collect mapping (apply concat (::blocks x))))

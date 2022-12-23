@@ -23,17 +23,17 @@
 (deftest test-whitespaces
   (testing "xml space preserve is inserted for second <t> tag."
     (test-equals
-     "<a:a xmlns:a=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"><a:t>Sum: 1</a:t><a:t xml:space=\"preserve\"> pieces</a:t></a:a>"
+     "<w:a xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"><w:t>Sum: 1</w:t><w:t xml:space=\"preserve\"> pieces</w:t></w:a>"
      "<x:a xmlns:x=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"><x:t>Sum: {%=x </x:t><x:t>%} pieces</x:t></x:a>"
      {"x" 1}))
   (testing "newline value splits t tags"
     (test-equals
-     "<a:a xmlns:a=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"><a:t>two lines: first</a:t><a:br/><a:t>second</a:t><a:t xml:space=\"preserve\"> </a:t></a:a>"
+     "<w:a xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"><w:t>two lines: first</w:t><w:br/><w:t>second</w:t><w:t xml:space=\"preserve\"> </w:t></w:a>"
      "<x:a xmlns:x=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"><x:t>two lines: {%=x </x:t><x:t>%} </x:t></x:a>"
      {"x" "first\nsecond"}))
   (testing "existing space=preserve attributes are kept intact"
     (test-equals
-     "<a:a xmlns:a=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" xml:space=\"preserve\"> Hello </a:a>"
+     "<w:a xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" xml:space=\"preserve\"> Hello </w:a>"
      "<x:a xmlns:x=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" xml:space=\"preserve\"> Hello </x:a>"
      {})))
 

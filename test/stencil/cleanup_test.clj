@@ -72,14 +72,14 @@
           (->open "a")
           (->text "Inka")
           {:cmd :if
-           :then [(->text "ikarusz")
+           :branch/then [(->text "ikarusz")
                   (->close "a")
                   (->text "bela")
                   (->open "b")
                   (->text "Hello")
                   (->close "b")
                   (->open "c")]
-           :else [(->close "a")
+           :branch/else [(->close "a")
                   (->open "b")
                   (->text "Virag")
                   (->close "b")
@@ -105,8 +105,8 @@
               (->close "b")]))
 
            [{:cmd :if
-             :then [(->text "bela") <b> (->text "Hello")]
-             :else [<b> (->text "Virag")]}
+             :branch/then [(->text "bela") <b> (->text "Hello")]
+             :branch/else [<b> (->text "Virag")]}
             (->close "b")]))))
 
 (deftest normal-ast-test-0-deep
@@ -119,8 +119,8 @@
               <／b>]))
 
            [{:cmd :if
-             :then [(->text "bela") <b> <i> (->text "Hello") <／i>]
-             :else [<b> <j> (->text "Virag") <／j>]}
+             :branch/then [(->text "bela") <b> <i> (->text "Hello") <／i>]
+             :branch/else [<b> <j> (->text "Virag") <／j>]}
             <／b>]))))
 
 (deftest normal-ast-test-condition-only-then
@@ -134,8 +134,8 @@
               <／a>]))
 
            [<a> {:cmd :if
-                 :then [(->text "bela") <b> <i> (->text "Hello") <／i>]
-                 :else [<b>]}
+                 :branch/then [(->text "bela") <b> <i> (->text "Hello") <／i>]
+                 :branch/else [<b>]}
             <／b>
             <／a>]))))
 
@@ -153,9 +153,9 @@
            [<a>
             (->text "before")
             {:cmd :for
-             :body-run-none [<／a> <b>]
-             :body-run-once [(->text "inside1") <／a> <b> (->text "inside2")]
-             :body-run-next [<／b> <a> (->text "inside1") <／a> <b> (->text "inside2")]}
+             :branch/body-run-none [<／a> <b>]
+             :branch/body-run-once [(->text "inside1") <／a> <b> (->text "inside2")]
+             :branch/body-run-next [<／b> <a> (->text "inside1") <／a> <b> (->text "inside2")]}
             (->text "after")
             <／b>]))))
 
@@ -166,27 +166,27 @@
     (is (= () (find-variables [{:open "a"} {:close "a"}]))))
 
   (testing "Variables from simple subsitutions"
-    (is (= ["a"] (find-variables [{:cmd :echo :expression '[:plus a 1]}]))))
+    (is (= ["a"] (find-variables [{:cmd :cmd/echo :expression '[:plus a 1]}]))))
 
   (testing "Variables from if conditions"
     (is (= ["a"] (find-variables [{:cmd :if :condition '[:eq a 1]}]))))
 
   (testing "Variables from if branches"
     (is (= ["x"] (find-variables [{:cmd :if :condition '3
-                                   :stencil.cleanup/blocks [[] [{:cmd :echo :expression 'x}]]}]))))
+                                   :stencil.cleanup/blocks [[] [{:cmd :cmd/echo :expression 'x}]]}]))))
 
   (testing "Variables from loop expressions"
     (is (= ["xs" "xs[]"]
            (find-variables '[{:cmd :for, :variable y, :expression xs,
-                              :stencil.cleanup/blocks [[{:cmd :echo, :expression [:plus y 1]}]]}])))
+                              :stencil.cleanup/blocks [[{:cmd :cmd/echo, :expression [:plus y 1]}]]}])))
     (is (= ["xs" "xs[]" "xs[][]"]
            (find-variables '[{:cmd :for, :variable y, :expression xs
                               :stencil.cleanup/blocks [[{:cmd :for :variable w :expression y
-                                         :stencil.cleanup/blocks [[{:cmd :echo :expression [:plus 1 w]}]]}]]}])))
+                                         :stencil.cleanup/blocks [[{:cmd :cmd/echo :expression [:plus 1 w]}]]}]]}])))
     (is (= ["xs" "xs[].z.k"]
            (find-variables
             '[{:cmd :for :variable y :expression xs
-               :stencil.cleanup/blocks [[{:cmd :echo :expression [:plus [:get y "z" "k"] 1]}]]}]))))
+               :stencil.cleanup/blocks [[{:cmd :cmd/echo :expression [:plus [:get y "z" "k"] 1]}]]}]))))
 
   (testing "Variables from loop bindings and bodies"
     ;; TODO: impls this test
@@ -200,7 +200,7 @@
            (find-variables
             '[{:cmd :for :variable a :expression xs
                :stencil.cleanup/blocks [[{:cmd :for :variable b :expression [:get a "t"]
-                          :stencil.cleanup/blocks [[{:cmd :echo :expression [:plus [:get b "n"] 1]}]]}]]}])))
+                          :stencil.cleanup/blocks [[{:cmd :cmd/echo :expression [:plus [:get b "n"] 1]}]]}]]}])))
     ))
 
 (deftest test-process-if-then-else
@@ -208,12 +208,12 @@
        '[{:open :body}
          {:open :a}
          {:cmd :if, :condition a,
-          :then [{:close :a}
+          :branch/then [{:close :a}
                  {:open :a}
                  {:text "THEN"}
                  {:close :a}
                  {:open :a, :attrs {:a "three"}}],
-          :else ()}
+          :branch/else ()}
          {:close :a}
          {:close :body}]
 
@@ -233,12 +233,12 @@
   (is (=
        [<a>
         {:cmd :if, :condition '[:get x "a"],
-         :then [<／a>
+         :branch/then [<／a>
                 {:cmd :if, :condition '[:get x "b"],
-                 :then [<a> {:text "THEN"}]
-                 :else [<a>]}
+                 :branch/then [<a> {:text "THEN"}]
+                 :branch/else [<a>]}
                 <／a>]
-         :else ()}]
+         :branch/else ()}]
        (:executable
         (process
          [<a>

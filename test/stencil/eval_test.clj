@@ -24,8 +24,8 @@
   (testing "THEN branch"
     (test-eval [-text1-
                 {:cmd :if :condition 'truthy
-                 :then [{:text "ok"}]
-                 :else [{:text "err"}]}
+                 :branch/then [{:text "ok"}]
+                 :branch/else [{:text "err"}]}
                 -text1-]
                [-text1-
                 {:text "ok"}
@@ -34,17 +34,17 @@
   (testing "ELSE branch"
     (test-eval [-text1-
                 {:cmd :if :condition 'falsey
-                 :then [{:text "ok"}]
-                 :else [{:text "err"}]}]
+                 :branch/then [{:text "ok"}]
+                 :branch/else [{:text "err"}]}]
                [-text1-
                 {:text "err"}])))
 
 (deftest test-echo
   (testing "Simple math expression"
-    (test-eval [{:cmd :echo :expression [:plus 1 2]}]
+    (test-eval [{:cmd :cmd/echo :expression [:plus 1 2]}]
                [{:text "3"}]))
   (testing "Nested data access with path"
-    (test-eval [{:cmd :echo :expression 'abc.def}]
+    (test-eval [{:cmd :cmd/echo :expression 'abc.def}]
                [{:text "Okay"}])))
 
 (deftest test-for
@@ -53,9 +53,9 @@
                  :variable "index"
                  :index-var "i"
                  :expression 'list0
-                 :body-run-once [{:text "xx"}]
-                 :body-run-none [{:text "meh"}]
-                 :body-run-next [{:text "x"}]}]
+                 :branch/body-run-once [{:text "xx"}]
+                 :branch/body-run-none [{:text "meh"}]
+                 :branch/body-run-next [{:text "x"}]}]
                [{:text "meh"}]))
 
   (testing "loop with exactly 1 item"
@@ -63,9 +63,9 @@
                  :variable "index"
                  :index-var "i"
                  :expression 'list1
-                 :body-run-once [{:cmd :echo :expression 'index}]
-                 :body-run-none [{:text "meh"}]
-                 :body-run-next [{:text "x"}]}]
+                 :branch/body-run-once [{:cmd :cmd/echo :expression 'index}]
+                 :branch/body-run-none [{:text "meh"}]
+                 :branch/body-run-next [{:text "x"}]}]
                [{:text "1"}]))
 
   (testing "loop with exactly 1 item and index var used"
@@ -73,9 +73,9 @@
                  :variable "index"
                  :index-var "i"
                  :expression 'abc
-                 :body-run-once [{:cmd :echo :expression 'i} {:text "==>"} {:cmd :echo :expression 'index}]
-                 :body-run-none [{:text "should-not-run"}]
-                 :body-run-next [{:text "should-not-run"}]}]
+                 :branch/body-run-once [{:cmd :cmd/echo :expression 'i} {:text "==>"} {:cmd :cmd/echo :expression 'index}]
+                 :branch/body-run-none [{:text "should-not-run"}]
+                 :branch/body-run-next [{:text "should-not-run"}]}]
                [{:text "def"} {:text "==>"} {:text "Okay"}]))
 
   (testing "loop with exactly 3 items"
@@ -83,7 +83,7 @@
                  :variable "index"
                  :index-var "i"
                  :expression 'list3
-                 :body-run-once [{:cmd :echo :expression 'index}]
-                 :body-run-none [{:text "meh"}]
-                 :body-run-next [{:text "x"} {:cmd :echo :expression 'index}]}]
+                 :branch/body-run-once [{:cmd :cmd/echo :expression 'index}]
+                 :branch/body-run-none [{:text "meh"}]
+                 :branch/body-run-next [{:text "x"} {:cmd :cmd/echo :expression 'index}]}]
                [{:text "1"} {:text "x"} {:text "2"} {:text "x"} {:text "3"}])))

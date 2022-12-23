@@ -27,10 +27,10 @@
 (defmethod eval-step :if [function data item]
   (let [condition (eval-rpn* data function (:condition item) (:raw item))]
     (log/trace "Condition {} evaluated to {}" (:condition item) condition)
-    (->> (if condition (:then item) (:else item))
+    (->> (if condition (:branch/then item) (:branch/else item))
          (normal-control-ast->evaled-seq data function))))
 
-(defmethod eval-step :echo [function data item]
+(defmethod eval-step :cmd/echo [function data item]
   (let [value (eval-rpn* data function (:expression item) (:raw item))]
     (log/trace "Echoing {} as {}" (:expression item) value)
     [{:text (if (control? value) value (str value))}]))
@@ -45,9 +45,9 @@
             datas          (if (or (instance? java.util.Map items) (map? items))
                              (map datamapper (keys items) (vals items))
                              (map-indexed datamapper items))
-            bodies (cons (:body-run-once item) (repeat (:body-run-next item)))]
+            bodies (cons (:branch/body-run-once item) (repeat (:branch/body-run-next item)))]
         (mapcat (fn [data body] (normal-control-ast->evaled-seq data function body)) datas bodies))
-      (:body-run-none item))))
+      (:branch/body-run-none item))))
 
 (defn eval-executable [part data functions]
   (->> (:executable part)
