@@ -53,19 +53,9 @@
   {:source-file cts
    ::path       (.getName cts)})
 
-#_
-(defn- add-unique-index
-  "Annotates some elements with an unique id.
-   These elements need special care when rendering duplicates them.
-   For example, numberings need to be reset to start from 1 again."
-  [elem]
-  (when (= (:open+close elem) ooxml/attr-numId)
-    (update elem :attrs assoc ::unique (gensym "uniq"))))
-
 (defn ->exec [xml-streamable]
   (with-open [stream (io/input-stream xml-streamable)]
     (-> (merger/parse-to-tokens-seq stream)
-        ;(->> (map (some-fn add-unique-index identity)))
         (cleanup/process)
         (select-keys [:variables :dynamic? :executable :fragments]))))
 

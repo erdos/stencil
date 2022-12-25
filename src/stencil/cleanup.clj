@@ -211,22 +211,6 @@
              :when (= :cmd/include (:cmd item))]
          (:name item))))
 
-;; Calculate for each numbering how many for loops deep it is.
-(defn- numid->depth [ast]
-  (let [cache (volatile! {})]
-    ;; visit all nodes and set up a cache.
-    (doseq [e ast]
-      ((fn f [d node]
-         (assert (map? node))
-         (when (= ooxml/attr-numId (:open+close node))
-           (vswap! cache update (ooxml/val (:attrs node)) (fnil conj #{}) d))
-         (let [d (if (= :for (:cmd node)) (cons (gensym "x") d) d)]
-           (doseq [block (::blocks node)
-                   b (::children block)]
-             (f d b)))) () e))
-    (into {} (for [[k v] @cache]
-               [k (count (take-while true? (apply map = (map reverse v))))]))))
-
 ;; add ::depth to ooxml/numId elements
 (defn- ast-numbering-depths [ast]
   (let [numid->paths (volatile! {})
@@ -263,7 +247,6 @@
         executable (mapv control-ast-normalize (annotate-environments ast))]
     {:variables  (find-variables ast)
      :fragments  (find-fragments ast)
-     :num-depth  (numid->depth ast)
      :dynamic?   (boolean (some :cmd executable))
      :executable executable}))
 
