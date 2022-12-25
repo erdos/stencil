@@ -85,14 +85,34 @@
           (get-id-style-xml id lvl)
           (xml-lvl-parse)))
 
-;; returns new id for the numbering copied from old-id
-(defn copy-numbering! [old-id]
-  (let [old-elem (find-first (fn [e] (-> e :attrs ooxml/attr-numId (= old-id))) (:content (:parsed @*numbering*)))
+
+(defn- tag-lvl-start-override [lvl start]
+  {:tag ooxml/lvl-override
+   :attrs {ooxml/attr-ilvl lvl}
+   :content [{:tag ooxml/start-override :attrs {ooxml/val start}}]})
+
+
+(defn copy-numbering!
+  "Creates a copy of the numbering definition an returns the new id for it."
+  [old-id]
+  (let [old-elem (find-first (fn [e] (-> e :attrs ooxml/attr-numId (= old-id)))
+                             (:content (:parsed @*numbering*)))
+        abstract-num-id (some (fn [e]
+                                (when (= ooxml/xml-abstract-num-id (:tag e))
+                                  (-> e :attrs ooxml/val)))
+                              (:content old-elem))
         max-num-id (apply max (keep (comp ->int ooxml/attr-numId :attrs)
                                     (:content (:parsed @*numbering*))))
         new-id (str (inc max-num-id))
-;        new-id   #_(name (gensym "xx")) (str (int (* 1000 (Math/random))))
-        new-elem (assoc-in old-elem [:attrs ooxml/attr-numId] new-id)]
+        new-elem (assoc-in old-elem [:attrs ooxml/attr-numId] new-id)
+        new-elem (update new-elem :content concat
+                         (for [abstract (:content (:parsed @*numbering*))
+                               :when (= abstract-num-id (-> abstract :attrs ooxml/xml-abstract-num-id))
+                               lvl (:content abstract)
+                               :when (= (:tag lvl) ooxml/tag-lvl)
+                               start (:content lvl)
+                               :when (= "start" (name (:tag start)))]
+                           (tag-lvl-start-override (-> lvl :attrs ooxml/attr-ilvl) (-> start :attrs ooxml/val))))]
     (assert old-elem)
     (swap! *numbering* update :parsed update :content concat [new-elem])
     (swap! *numbering* dissoc :source-file)
