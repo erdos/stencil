@@ -53,6 +53,7 @@
   {:source-file cts
    ::path       (.getName cts)})
 
+#_
 (defn- add-unique-index
   "Annotates some elements with an unique id.
    These elements need special care when rendering duplicates them.
@@ -64,7 +65,7 @@
 (defn ->exec [xml-streamable]
   (with-open [stream (io/input-stream xml-streamable)]
     (-> (merger/parse-to-tokens-seq stream)
-        (->> (map (some-fn add-unique-index identity)))
+        ;(->> (map (some-fn add-unique-index identity)))
         (cleanup/process)
         (select-keys [:variables :dynamic? :executable :fragments]))))
 

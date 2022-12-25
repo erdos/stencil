@@ -227,8 +227,39 @@
     (into {} (for [[k v] @cache]
                [k (count (take-while true? (apply map = (map reverse v))))]))))
 
+;; add ::depth to ooxml/numId elements
+(defn- ast-numbering-depths [ast]
+  (let [numid->paths (volatile! {})
+        numid->depth (memoize (fn [id]
+                                (->> (get @numid->paths id)
+                                     (map reverse)
+                                     (apply map =)
+                                     (take-while true?)
+                                     (count))))]
+    (letfn [(visit-all [path xs] (doseq [x xs] (visit path x)))
+            (visit [path x]
+              (if (= ooxml/attr-numId (:open+close x))
+                (vswap! numid->paths update (-> x :attrs ooxml/val)
+                        (fnil conj #{}) path)
+                (when-let [blocks (::blocks x)]
+                  (let [path (if (= :for (:cmd x))
+                               (cons (gensym) path) path)]
+                    (doseq [block blocks]
+                      (visit-all path (::children block)))))))]
+      (visit-all () ast))
+    (mapv
+     (partial nested-tokens-fmap-postwalk
+              identity identity
+              (fn [e]
+                (if (= ooxml/attr-numId (:open+close e))
+                  (assoc e ::depth (numid->depth (-> e :attrs ooxml/val)))
+                  e)))
+     ast)))
+
+
 (defn process [raw-token-seq]
   (let [ast (tokens->ast raw-token-seq)
+        ast (ast-numbering-depths ast)
         executable (mapv control-ast-normalize (annotate-environments ast))]
     {:variables  (find-variables ast)
      :fragments  (find-fragments ast)
