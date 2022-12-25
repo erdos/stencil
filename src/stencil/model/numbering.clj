@@ -88,7 +88,10 @@
 ;; returns new id for the numbering copied from old-id
 (defn copy-numbering! [old-id]
   (let [old-elem (find-first (fn [e] (-> e :attrs ooxml/attr-numId (= old-id))) (:content (:parsed @*numbering*)))
-        new-id   #_(name (gensym "xx")) (str (int (* 1000 (Math/random))))
+        max-num-id (apply max (keep (comp ->int ooxml/attr-numId :attrs)
+                                    (:content (:parsed @*numbering*))))
+        new-id (str (inc max-num-id))
+;        new-id   #_(name (gensym "xx")) (str (int (* 1000 (Math/random))))
         new-elem (assoc-in old-elem [:attrs ooxml/attr-numId] new-id)]
     (assert old-elem)
     (swap! *numbering* update :parsed update :content concat [new-elem])
