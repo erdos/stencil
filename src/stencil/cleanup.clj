@@ -252,7 +252,7 @@
               identity identity
               (fn [e]
                 (if (= ooxml/attr-numId (:open+close e))
-                  (assoc e ::depth (numid->depth (-> e :attrs ooxml/val)))
+                  (assoc-in e [:attrs ::depth] (numid->depth (-> e :attrs ooxml/val)))
                   e)))
      ast)))
 

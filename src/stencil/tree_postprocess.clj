@@ -6,6 +6,7 @@
             [stencil.postprocess.images :refer :all]
             [stencil.postprocess.list-ref :refer :all]
             [stencil.postprocess.fragments :refer :all]
+            [stencil.postprocess.numberings :refer [fix-numberings]]
             [stencil.postprocess.html :refer :all]))
 
 ;; calls postprocess
@@ -26,7 +27,7 @@
 
    #'fix-list-dirty-refs
 
-   #'fix-numbering-reset
+   #'fix-numberings
 
    #'replace-images
 

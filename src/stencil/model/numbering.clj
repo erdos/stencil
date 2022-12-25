@@ -2,14 +2,14 @@
   (:require [clojure.data.xml :as xml]
             [clojure.java.io :as io]
             [stencil.ooxml :as ooxml]
-            [stencil.util :refer [unlazy-tree ->int]]
+            [stencil.util :refer [unlazy-tree ->int find-first]]
             [stencil.model.common :refer [unix-path]]))
 
 
 (def ^:private rel-type-numbering
   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering")
 
-
+;; swap an atom here!
 (def ^:dynamic *numbering* nil)
 
 
@@ -66,7 +66,7 @@
     (let [tree (xml/parse r)]
       (prepare-numbering-xml tree))))
 
-
+;; finds the 
 (defn main-numbering [dir main-document main-document-rels]
   (when-let [main-numbering-path
              (some #(when (= rel-type-numbering (:stencil.model/type %))
@@ -81,6 +81,18 @@
 (defn style-def-for [id lvl]
   (assert (string? id))
   (assert (integer? lvl))
-  (some-> (:parsed *numbering*)
+  (some-> (:parsed @*numbering*)
           (get-id-style-xml id lvl)
           (xml-lvl-parse)))
+
+;; returns new id for the numbering copied from old-id
+(defn copy-numbering! [old-id]
+  (let [old-elem (find-first (fn [e] (-> e :attrs ooxml/attr-numId (= old-id))) (:content (:parsed @*numbering*)))
+        new-id   #_(name (gensym "xx")) (str (int (* 1000 (Math/random))))
+        new-elem (assoc-in old-elem [:attrs ooxml/attr-numId] new-id)]
+    (assert old-elem)
+    (swap! *numbering* update :parsed update :content concat [new-elem])
+    (swap! *numbering* dissoc :source-file)
+    (swap! *numbering* (fn [numbering]
+                         (assoc numbering :result {:writer (stencil.model.common/->xml-writer (:parsed numbering))})))
+    new-id))

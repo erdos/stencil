@@ -52,8 +52,7 @@
       (:branch/body-run-none item))))
 
 (defmethod eval-step ooxml/attr-numId [_ _ trace item]
-  (println :!!! item)
-  [item])
+  [(assoc-in item [:attrs ::trace] trace)])
 
 (defn eval-executable [part data functions]
   (->> (:executable part)

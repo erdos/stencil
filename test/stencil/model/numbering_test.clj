@@ -10,11 +10,12 @@
     {:tag tag, :attrs attrs, :content (mapv hiccup children)}))
 
 (deftest test-style-for-def-empty
-  (binding [*numbering* {:parsed (prepare-numbering-xml {:tag :numbering :content []})}]
+  (binding [*numbering* (atom {:parsed (prepare-numbering-xml {:tag :numbering :content []})})]
     (is (= nil (style-def-for "id-1" 2)))))
 
 (deftest test-style-for-def-with-abstract
   (binding [*numbering*
+            (atom
             {:parsed
              (prepare-numbering-xml
               (hiccup
@@ -27,13 +28,14 @@
                   [:lvlText {ooxml/val ""}]
                   [:lvlJc {ooxml/val "start"}]]]
                 [ooxml/tag-num {ooxml/attr-numId "id-1"}
-                 [ooxml/xml-abstract-num-id {ooxml/val "a1"}]]]))}]
+                 [ooxml/xml-abstract-num-id {ooxml/val "a1"}]]]))})]
     (is (= {:lvl-text "", :num-fmt "none", :start 1}
            (style-def-for "id-1" 2)))))
 
 
 (deftest test-style-for-def
   (binding [*numbering*
+            (atom
             {:parsed
              (prepare-numbering-xml
               (hiccup
@@ -44,6 +46,6 @@
                   [:numFmt {ooxml/val "none"}]
                   [:suff {ooxml/val "nothing"}]
                   [:lvlText {ooxml/val ""}]
-                  [:lvlJc {ooxml/val "start"}]]]]))}]
+                  [:lvlJc {ooxml/val "start"}]]]]))})]
     (is (= {:lvl-text "", :num-fmt "none", :start 1}
            (style-def-for "id-1" 2)))))
