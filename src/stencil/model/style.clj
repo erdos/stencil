@@ -70,7 +70,7 @@
 
 
 (defn insert-styles!
-  "Returns a map of all style definitions where key is style id and value is style xml."
+  "Returns a map of all style definitions where key is style id from style-defs and value is new style id."
   [style-defs]
   (assert (map? style-defs) (str "Not map: " (pr-str style-defs) (type style-defs)))
   (assert (every? string? (keys style-defs)))
@@ -80,15 +80,17 @@
           {} style-defs))
 
 
-(defn xml-rename-style-ids [style-id-renames xml-tree]
+(defn xml-rename-style-ids
+  "Recursively renames occurrences of old style ids to new ids based on rename map."
+  [style-id-renames xml-tree]
   (if (map? xml-tree)
     (if (-> xml-tree :tag name (.endsWith "Style"))
       (update-some xml-tree [:attrs ooxml/val] style-id-renames)
-      (update xml-tree :content (partial map (partial xml-rename-style-ids style-id-renames))))
+      (update xml-tree :content (partial mapv (partial xml-rename-style-ids style-id-renames))))
     xml-tree))
 
 
-(defn main-style-item [^File dir main-document main-document-rels]
+(defn- main-style-item [^File dir main-document main-document-rels]
   (when-let [main-style (find-first #(= rel-type (:stencil.model/type %))
                               (vals (:parsed main-document-rels)))]
     (let [main-style-file (io/file (.getParentFile (io/file main-document))
@@ -97,3 +99,8 @@
       {:stencil.model/path (unix-path main-style-file)
        :source-file        main-style-abs
        :parsed             (parse main-style-abs)})))
+
+
+(defn assoc-style [model dir]
+  (->> (main-style-item dir (:stencil.model/path model) (:relations model))
+       (assoc-if-val model :style)))

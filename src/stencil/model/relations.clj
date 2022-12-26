@@ -3,8 +3,8 @@
             [clojure.data.xml.pu-map :as pu]
             [clojure.java.io :as io :refer [file]]
             [stencil.ooxml :as ooxml]
-            [stencil.util :refer :all]
-            [stencil.model.common :refer [->xml-writer]]))
+            [stencil.util :refer [update-some]]
+            [stencil.model.common :refer [->xml-writer unix-path]]))
 
 (def tag-relationships
   :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fpackage%2F2006%2Frelationships/Relationships)
@@ -20,7 +20,7 @@
   "Relationship type of image files in .rels files."
   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image")
 
-(defn parse [rel-file]
+(defn- parse [rel-file]
   (with-open [reader (io/input-stream (file rel-file))]
     (let [parsed (xml/parse reader)]
       (assert (= tag-relationships (:tag parsed))
@@ -33,6 +33,23 @@
                                  :stencil.model/target (doto (:Target (:attrs d)) assert)
                                  :stencil.model/mode   (:TargetMode (:attrs d))}])))))
 
+(defn ->rels [^java.io.File dir f]
+  (let [rels-path (if f
+                    (unix-path (file (.getParentFile (file f)) "_rels" (str (.getName (file f)) ".rels")))
+                    (unix-path (file "_rels" ".rels"))) 
+        rels-file (file dir rels-path)]
+    (when (.exists rels-file)
+      {:stencil.model/path rels-path
+       :source-file rels-file
+       :parsed (parse rels-file)})))
+
+(defn targets-by-type
+  "Returns seq of paths from relations definition where relation type matches the predicate."
+  [relations type-pred]
+  (assert (map? (:parsed relations)))
+  (for [v (vals (:parsed relations))
+        :when (type-pred (:stencil.model/type v))]
+    (:stencil.model/target v)))
 
 (defn writer [relation-map]
   (assert (map? relation-map))
