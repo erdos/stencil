@@ -33,6 +33,9 @@
 (def rel-type-slide
   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide")
 
+(def extra-relations
+  #{rel-type-footer rel-type-header rel-type-slide})
+
 ;; all insertable fragments. map of id to frag def.
 (def ^:private ^:dynamic *all-fragments* nil)
 
@@ -59,44 +62,30 @@
         (cleanup/process)
         (select-keys [:variables :dynamic? :executable :fragments]))))
 
-
 (defn load-template-model [^File dir, options-map]
   (assert (.exists dir))
   (assert (.isDirectory dir))
   (assert (map? options-map))
-  (let [package-rels (relations/parse (file dir "_rels" ".rels"))
-        main-document (some #(when (= rel-type-main (::type %)) (::target %)) (vals package-rels))
-        ->rels (fn [f]
-                 (let [rels-path (unix-path (file (.getParentFile (file f)) "_rels" (str (.getName (file f)) ".rels")))
-                       rels-file (file dir rels-path)]
-                   (when (.exists rels-file)
-                     {::path rels-path, :source-file rels-file, :parsed (relations/parse rels-file)})))
-
-        main-document-rels (->rels main-document)
-
+  (let [main-rels          (relations/->rels dir nil)
+        [main-document]    (relations/targets-by-type main-rels #{rel-type-main})
+        main-document-rels (relations/->rels dir main-document)
         ->exec (binding [merger/*only-includes* (boolean (:only-includes options-map))]
                  (bound-fn* ->exec))]
     {:content-types (parse-content-types (file dir "[Content_Types].xml"))
      :source-folder dir
-     :relations     {::path (unix-path (file "_rels" ".rels"))
-                     :source-file (file dir "_rels" ".rels")
-                     :parsed package-rels}
+     :relations     main-rels
      :main          (-> {::path       main-document
                          :source-file (file dir main-document)
                          :executable  (->exec (file dir main-document))
                          :style       (style/main-style-item dir main-document main-document-rels)
                          :relations   main-document-rels
                          :headers+footers (doall
-                                           (for [[_ m] (:parsed main-document-rels)
-                                                 :when (#{rel-type-footer
-                                                          rel-type-header
-                                                          rel-type-slide}
-                                                        (::type m))
-                                                 :let [f (file (.getParentFile (file main-document)) (::target m))]]
+                                           (for [t (relations/targets-by-type main-document-rels extra-relations) 
+                                                 :let [f (file (.getParentFile (file main-document)) t)]]
                                              {::path       (unix-path f)
                                               :source-file (file dir f)
                                               :executable  (->exec (file dir f))
-                                              :relations   (->rels f)}))}
+                                              :relations   (relations/->rels dir f)}))}
                         (assoc-if-val ::numbering (numbering/main-numbering dir main-document main-document-rels)))}))
 
 
@@ -213,6 +202,7 @@
 
 
 (defn template-model->writers-map
+  "Evaluates a prepared template and returns a {path writer-fn} map that can be used to write the zip stream."
   [template data function fragments]
   (assert (map? data))
   (-> template
