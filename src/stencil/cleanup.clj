@@ -8,8 +8,8 @@
   valid XML String -> tokens -> Annotated Control AST -> Normalized Control AST -> Evaled AST -> Hiccup or valid XML String
   "
   (:require [stencil.util :refer [mod-stack-top-conj mod-stack-top-last parsing-exception stacks-difference-key]]
-            [stencil.ooxml :as ooxml]
-            [stencil.types :refer [open-tag close-tag]]))
+            [stencil.types :refer [open-tag close-tag]]
+            [stencil.ooxml :as ooxml]))
 
 (set! *warn-on-reflection* true)
 
@@ -78,24 +78,24 @@
   (assert (sequential? control-ast))
   (let [stack (volatile! ())]
     (mapv (partial nested-tokens-fmap-postwalk
-                   (fn before-cmd-block [block]
-                     (assoc block ::before @stack))
+            (fn before-cmd-block [block]
+              (assoc block ::before @stack))
 
-                   (fn after-cmd-block [block]
-                     (let [stack-before (::before block)
-                           [a b]        (stacks-difference-key :open stack-before @stack)]
-                       (assoc block ::before a ::after b)))
+            (fn after-cmd-block [block]
+              (let [stack-before (::before block)
+                    [a b]        (stacks-difference-key :open stack-before @stack)]
+                (assoc block ::before a ::after b)))
 
-                   (fn child [item]
-                     (cond
-                       (:open item)
-                       (vswap! stack conj item)
+            (fn child [item]
+              (cond
+                (:open item)
+                (vswap! stack conj item)
 
-                       (:close item)
-                       (if (= (:close item) (:open (first @stack)))
-                         (vswap! stack next)
-                         (throw (ex-info "Unexpected stack state" {:stack @stack, :item item}))))
-                     item))
+                (:close item)
+                (if (= (:close item) (:open (first @stack)))
+                  (vswap! stack next)
+                  (throw (ex-info "Unexpected stack state" {:stack @stack, :item item}))))
+              item))
           control-ast)))
 
 (defn stack-revert-close
@@ -167,43 +167,42 @@
   ;; amikor van benne blocks
   ;; mapping: {Sym -> Str}
   (letfn [(resolve-sym [mapping s]
-            (assert (map? mapping))
-            (assert (symbol? s))
-            (mapping s (name s)))
+                       (assert (map? mapping))
+                       (assert (symbol? s))
+                       (mapping s (name s)))
           (expr [mapping e]
-            (cond (symbol? e)           [(resolve-sym mapping e)]
-                  (not (sequential? e)) nil
-                  (= :fncall (first e)) (mapcat (partial expr mapping) (nnext e))
-                  (= :get (first e))    (let [[ss rest] (split-with string? (nnext e))]
-                                          (cons
-                                           (reduce (fn [root item] (str root "." item))
-                                                   (resolve-sym mapping (second e))
-                                                   ss)
-                                           (mapcat (partial expr mapping) rest)))
-                  :else                 (mapcat (partial expr mapping) (next e))))
+                (cond (symbol? e)           [(resolve-sym mapping e)]
+                      (not (sequential? e)) nil
+                      (= :fncall (first e)) (mapcat (partial expr mapping) (nnext e))
+                      (= :get (first e))    (let [[ss rest] (split-with string? (nnext e))]
+                                              (cons
+                                               (reduce (fn [root item] (str root "." item))
+                                                       (resolve-sym mapping (second e))
+                                                       ss)
+                                               (mapcat (partial expr mapping) rest)))
+                      :else                 (mapcat (partial expr mapping) (next e))))
           (maybe-variable [mapping e]
-            (cond (symbol? e)
-                  (resolve-sym mapping e)
-                  (and (sequential? e) (= :get (first e)) (symbol? (second e)) (every? string? (nnext e)))
-                  (reduce (fn [a b] (str a "." b)) (resolve-sym mapping (second e)) (nnext e))))
+                          (cond (symbol? e)
+                                (resolve-sym mapping e) 
+                                (and (sequential? e) (= :get (first e)) (symbol? (second e)) (every? string? (nnext e)))
+                                (reduce (fn [a b] (str a "." b)) (resolve-sym mapping (second e)) (nnext e))))
           (collect [m xs] (mapcat (partial collect-1 m) xs))
           (collect-1 [mapping x]
-            (case (:cmd x)
-              :cmd/echo (expr mapping (:expression x))
+                     (case (:cmd x)
+                       :cmd/echo (expr mapping (:expression x))
 
-              :if   (concat (expr mapping (:condition x))
-                            (collect mapping (apply concat (::blocks x))))
+                       :if   (concat (expr mapping (:condition x))
+                                     (collect mapping (apply concat (::blocks x))))
 
-              :for  (let [variable (maybe-variable mapping (:expression x))
-                          exprs    (expr mapping (:expression x))
-                          mapping  (if variable
-                                     (assoc mapping (:variable x) (str variable "[]"))
-                                     mapping)]
-                      (concat exprs (collect mapping (apply concat (::blocks x)))))
-              []))]
+                       :for  (let [variable (maybe-variable mapping (:expression x))
+                                   exprs    (expr mapping (:expression x))
+                                   mapping  (if variable
+                                              (assoc mapping (:variable x) (str variable "[]"))
+                                              mapping)]
+                               (concat exprs (collect mapping (apply concat (::blocks x)))))
+                       []))]
     (distinct (collect {} control-ast))))
 
-;; TODO: does it work?
 (defn- find-fragments [control-ast]
   ;; returns a set of fragment names use in this document
   (set (for [item (tree-seq map? (comp flatten ::blocks) {::blocks [control-ast]})
@@ -249,5 +248,4 @@
      :fragments  (find-fragments ast)
      :dynamic?   (boolean (some :cmd executable))
      :executable executable}))
-
 :OK
