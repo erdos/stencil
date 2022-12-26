@@ -2,7 +2,7 @@
   (:require [clojure.data.xml :as xml]
             [clojure.java.io :as io]
             [stencil.ooxml :as ooxml]
-            [stencil.util :refer [unlazy-tree ->int]]
+            [stencil.util :refer [unlazy-tree ->int assoc-if-val]]
             [stencil.model.common :refer [unix-path]]))
 
 
@@ -67,7 +67,7 @@
       (prepare-numbering-xml tree))))
 
 
-(defn main-numbering [dir main-document main-document-rels]
+(defn- main-numbering [dir main-document main-document-rels]
   (when-let [main-numbering-path
              (some #(when (= rel-type-numbering (:stencil.model/type %))
                       (unix-path (io/file (.getParentFile (io/file main-document))
@@ -77,6 +77,9 @@
      :source-file              (io/file dir main-numbering-path)
      :parsed                   (parse (io/file dir main-numbering-path))}))
 
+(defn assoc-numbering [model dir]
+  (->> (main-numbering dir (:stencil.model/path model) (:relations model))
+       (assoc-if-val model :stencil.model/numbering)))
 
 (defn style-def-for [id lvl]
   (assert (string? id))

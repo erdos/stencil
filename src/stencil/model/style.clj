@@ -90,7 +90,7 @@
     xml-tree))
 
 
-(defn main-style-item [^File dir main-document main-document-rels]
+(defn- main-style-item [^File dir main-document main-document-rels]
   (when-let [main-style (find-first #(= rel-type (:stencil.model/type %))
                               (vals (:parsed main-document-rels)))]
     (let [main-style-file (io/file (.getParentFile (io/file main-document))
@@ -99,3 +99,8 @@
       {:stencil.model/path (unix-path main-style-file)
        :source-file        main-style-abs
        :parsed             (parse main-style-abs)})))
+
+
+(defn assoc-style [model dir]
+  (->> (main-style-item dir (:stencil.model/path model) (:relations model))
+       (assoc-if-val model :style)))

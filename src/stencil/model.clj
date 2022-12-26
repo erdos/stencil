@@ -77,16 +77,16 @@
      :main          (-> {::path       main-document
                          :source-file (file dir main-document)
                          :executable  (->exec (file dir main-document))
-                         :style       (style/main-style-item dir main-document main-document-rels)
                          :relations   main-document-rels
                          :headers+footers (doall
-                                           (for [t (relations/targets-by-type main-document-rels extra-relations) 
+                                           (for [t (relations/targets-by-type main-document-rels extra-relations)
                                                  :let [f (file (.getParentFile (file main-document)) t)]]
                                              {::path       (unix-path f)
                                               :source-file (file dir f)
                                               :executable  (->exec (file dir f))
                                               :relations   (relations/->rels dir f)}))}
-                        (assoc-if-val ::numbering (numbering/main-numbering dir main-document main-document-rels)))}))
+                        (style/assoc-style dir)
+                        (numbering/assoc-numbering dir))}))
 
 
 (defn load-fragment-model [dir options-map]
