@@ -8,7 +8,8 @@
   valid XML String -> tokens -> Annotated Control AST -> Normalized Control AST -> Evaled AST -> Hiccup or valid XML String
   "
   (:require [stencil.util :refer [mod-stack-top-conj mod-stack-top-last parsing-exception stacks-difference-key]]
-            [stencil.types :refer [open-tag close-tag]]))
+            [stencil.types :refer [open-tag close-tag]]
+            [stencil.ooxml :as ooxml]))
 
 (set! *warn-on-reflection* true)
 
@@ -209,12 +210,42 @@
              :when (= :cmd/include (:cmd item))]
          (:name item))))
 
+;; add ::depth to ooxml/numId elements
+(defn- ast-numbering-depths [ast]
+  (let [numid->paths (volatile! {})
+        numid->depth (memoize (fn [id]
+                                (->> (get @numid->paths id)
+                                     (map reverse)
+                                     (apply map =)
+                                     (take-while true?)
+                                     (count))))]
+    (letfn [(visit-all [path xs] (doseq [x xs] (visit path x)))
+            (visit [path x]
+              (if (= ooxml/attr-numId (:open+close x))
+                (vswap! numid->paths update (-> x :attrs ooxml/val)
+                        (fnil conj #{}) path)
+                (when-let [blocks (::blocks x)]
+                  (let [path (if (= :for (:cmd x))
+                               (cons (gensym) path) path)]
+                    (doseq [block blocks]
+                      (visit-all path (::children block)))))))]
+      (visit-all () ast))
+    (mapv
+     (partial nested-tokens-fmap-postwalk
+              identity identity
+              (fn [e]
+                (if (= ooxml/attr-numId (:open+close e))
+                  (assoc-in e [:attrs ::depth] (numid->depth (-> e :attrs ooxml/val)))
+                  e)))
+     ast)))
+
+
 (defn process [raw-token-seq]
   (let [ast (tokens->ast raw-token-seq)
+        ast (ast-numbering-depths ast)
         executable (mapv control-ast-normalize (annotate-environments ast))]
     {:variables  (find-variables ast)
      :fragments  (find-fragments ast)
      :dynamic?   (boolean (some :cmd executable))
      :executable executable}))
-
 :OK

@@ -6,6 +6,7 @@
   (:require [clojure.data.xml :as xml]
             [clojure.java.io :as io :refer [file]]
             [stencil.eval :as eval]
+            [stencil.ooxml :as ooxml]
             [stencil.merger :as merger]
             [stencil.model.numbering :as numbering]
             [stencil.types :refer [->FragmentInvoke ->ReplaceImage]]
@@ -54,7 +55,6 @@
   (assert (.isFile cts))
   {:source-file cts
    ::path       (.getName cts)})
-
 
 (defn ->exec [xml-streamable]
   (with-open [stream (io/input-stream xml-streamable)]
@@ -123,7 +123,7 @@
   (assert (:main template-model) "Should be a result of load-template-model call!")
   (assert (some? fragments))
   (binding [*current-styles*     (atom (:parsed (:style (:main template-model))))
-            numbering/*numbering* (::numbering (:main template-model))
+            numbering/*numbering* (atom (::numbering (:main template-model)))
             *inserted-fragments* (atom #{})
             *extra-files*        (atom #{})
             *all-fragments*      (into {} fragments)]
@@ -154,6 +154,7 @@
                          :finally (assoc :result result))))]
       (-> template-model
           (update :main evaluate)
+          (assoc-in [:main ::numbering] @numbering/*numbering*)
           (update-in [:main :headers+footers] (partial mapv evaluate))
 
           (cond-> (-> template-model :main :style)
@@ -220,7 +221,7 @@
      elem)))
 
 
-(defmethod eval/eval-step :cmd/include [function local-data-map {frag-name :name}]
+(defmethod eval/eval-step :cmd/include [function local-data-map _ {frag-name :name}]
   (assert (map? local-data-map))
   (assert (string? frag-name))
   (expect-fragment-context!

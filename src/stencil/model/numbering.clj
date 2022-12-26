@@ -2,14 +2,14 @@
   (:require [clojure.data.xml :as xml]
             [clojure.java.io :as io]
             [stencil.ooxml :as ooxml]
-            [stencil.util :refer [unlazy-tree ->int assoc-if-val]]
+            [stencil.util :refer [unlazy-tree ->int find-first assoc-if-val]]
             [stencil.model.common :refer [unix-path]]))
 
 
 (def ^:private rel-type-numbering
   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering")
 
-
+;; swap an atom here!
 (def ^:dynamic *numbering* nil)
 
 
@@ -84,6 +84,41 @@
 (defn style-def-for [id lvl]
   (assert (string? id))
   (assert (integer? lvl))
-  (some-> (:parsed *numbering*)
+  (some-> (:parsed @*numbering*)
           (get-id-style-xml id lvl)
           (xml-lvl-parse)))
+
+
+(defn- tag-lvl-start-override [lvl start]
+  {:tag ooxml/lvl-override
+   :attrs {ooxml/attr-ilvl lvl}
+   :content [{:tag ooxml/start-override :attrs {ooxml/val start}}]})
+
+
+(defn copy-numbering!
+  "Creates a copy of the numbering definition an returns the new id for it."
+  [old-id]
+  (let [old-elem (find-first (fn [e] (-> e :attrs ooxml/attr-numId (= old-id)))
+                             (:content (:parsed @*numbering*)))
+        abstract-num-id (some (fn [e]
+                                (when (= ooxml/xml-abstract-num-id (:tag e))
+                                  (-> e :attrs ooxml/val)))
+                              (:content old-elem))
+        max-num-id (apply max (keep (comp ->int ooxml/attr-numId :attrs)
+                                    (:content (:parsed @*numbering*))))
+        new-id (str (inc max-num-id))
+        new-elem (assoc-in old-elem [:attrs ooxml/attr-numId] new-id)
+        new-elem (update new-elem :content concat
+                         (for [abstract (:content (:parsed @*numbering*))
+                               :when (= abstract-num-id (-> abstract :attrs ooxml/xml-abstract-num-id))
+                               lvl (:content abstract)
+                               :when (= (:tag lvl) ooxml/tag-lvl)
+                               start (:content lvl)
+                               :when (= "start" (name (:tag start)))]
+                           (tag-lvl-start-override (-> lvl :attrs ooxml/attr-ilvl) (-> start :attrs ooxml/val))))]
+    (assert old-elem)
+    (swap! *numbering* update :parsed update :content concat [new-elem])
+    (swap! *numbering* dissoc :source-file)
+    (swap! *numbering* (fn [numbering]
+                         (assoc numbering :result {:writer (stencil.model.common/->xml-writer (:parsed numbering))})))
+    new-id))
