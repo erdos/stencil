@@ -10,13 +10,13 @@
             [stencil.model.numbering :as numbering]
             [stencil.types :refer [->FragmentInvoke ->ReplaceImage]]
             [stencil.postprocess.images :refer [img-data->extrafile]]
-            [stencil.util :refer [unlazy-tree assoc-if-val eval-exception]]
+            [stencil.util :refer [unlazy-tree eval-exception]]
             [stencil.model.relations :as relations]
             [stencil.model.common :refer [unix-path ->xml-writer resource-copier]]
             [stencil.functions :refer [call-fn]]
-            [stencil.model.style :as style
-             :refer [expect-fragment-context! *current-styles*]]
-            [stencil.cleanup :as cleanup]))
+            [stencil.model.style :as style :refer [expect-fragment-context!]]
+            [stencil.cleanup :as cleanup]
+            [stencil.postprocess.fragments :as fragments]))
 
 (set! *warn-on-reflection* true)
 
@@ -35,9 +35,6 @@
 
 (def extra-relations
   #{rel-type-footer rel-type-header rel-type-slide})
-
-;; all insertable fragments. map of id to frag def.
-(def ^:private ^:dynamic *all-fragments* nil)
 
 ;; set of already inserted fragment ids.
 (def ^:private ^:dynamic *inserted-fragments* nil)
@@ -104,7 +101,7 @@
                                @*inserted-fragments*])]
      (swap! *inserted-fragments* into fragments)
      {:xml    result
-      :fragment-names fragments
+      :fragment-names fragments ;; set of fragment names this model used
       :writer (->xml-writer result)})))
 
 
@@ -122,46 +119,44 @@
 (defn- eval-template-model [template-model data functions fragments]
   (assert (:main template-model) "Should be a result of load-template-model call!")
   (assert (some? fragments))
-  (binding [*current-styles*     (atom (:parsed (:style (:main template-model))))
-            numbering/*numbering* (::numbering (:main template-model))
-            *inserted-fragments* (atom #{})
-            *extra-files*        (atom #{})
-            *all-fragments*      (into {} fragments)]
-    (let [evaluate (fn [m]
-                     (let [result                  (eval-model-part m data functions)
-                           fragment-names          (set (:fragment-names result))]
-                       (cond-> m
+  (style/with-template-styles template-model
+    (numbering/with-template-numberings template-model
+      (fragments/with-fragments-context fragments
+        (binding [*inserted-fragments* (atom #{})
+                  *extra-files*        (atom #{})]
+          (let [evaluate (fn [m]
+                           (let [result                  (eval-model-part m data functions)
+                                 ;; names of fragments
+                                 fragment-names          (set (:fragment-names result))]
+                             (cond-> m
 
                          ;; create a rels file for the current xml
-                         (and (seq @*extra-files*) (nil? (::path (:relations m))))
-                         (assoc-in [:relations ::path]
-                                   (unix-path (file (.getParentFile (file (::path m)))
-                                              "_rels"
-                                              (str (.getName (file (::path m))) ".rels"))))
+                               (and (seq @*extra-files*) (nil? (::path (:relations m))))
+                               (assoc-in [:relations ::path]
+                                         (unix-path (file (.getParentFile (file (::path m)))
+                                                          "_rels"
+                                                          (str (.getName (file (::path m))) ".rels"))))
 
                          ;; add relations if any
-                         (seq @*extra-files*)
-                         (update-in [:relations :parsed] (fnil into {})
-                                    (for [relation @*extra-files*
-                                          :when (or (not (contains? relation :fragment-name))
-                                                    (contains? fragment-names (:fragment-name relation)))]
-                                      [(:new-id relation) relation]))
+                               (seq @*extra-files*)
+                               (update-in [:relations :parsed] (fnil into {})
+                                          (for [relation @*extra-files*
+                                                :when (or (not (contains? relation :fragment-name))
+                                                          (contains? fragment-names (:fragment-name relation)))]
+                                            [(:new-id relation) relation]))
 
                          ;; relation file will be rendered instead of copied
-                         (seq @*extra-files*)
-                         (update-in [:relations] dissoc :source-file)
+                               (seq @*extra-files*)
+                               (update-in [:relations] dissoc :source-file)
 
-                         :finally (assoc :result result))))]
-      (-> template-model
-          (update :main evaluate)
-          (update-in [:main :headers+footers] (partial mapv evaluate))
-
-          (cond-> (-> template-model :main :style)
-            (assoc-in [:main :style :result] (style/file-writer template-model)))))))
+                               :finally (assoc :result result))))]
+            (-> template-model
+                (update :main evaluate)
+                (update-in [:main :headers+footers] (partial mapv evaluate)))))))))
 
 
 (defn- model-seq [model]
-  (let [model-keys [:relations :headers+footers :main :style :content-types :fragments ::numbering :result]]
+  (let [model-keys [:relations :headers+footers :main :style :content-types :fragments :stencil.model.numbering/numbering :result]]
     (tree-seq map? (fn [node] (flatten (keep node model-keys))) model)))
 
 
@@ -190,7 +185,7 @@
           (for [m (model-seq evaled-template-model)
                 :when (:relations m)
                 :let [src-parent  (delay (file (or (:source-folder m)
-                                                  (.getParentFile (file (:source-file m))))))
+                                                   (.getParentFile (file (:source-file m))))))
                       path-parent (some-> m ::path file .getParentFile)]
                 relation (vals (:parsed (:relations m)))
                 :when (not= "External" (::mode relation))
@@ -222,29 +217,27 @@
 
 (defmethod eval/eval-step :cmd/include [function local-data-map {frag-name :name}]
   (assert (map? local-data-map))
-  (assert (string? frag-name))
-  (expect-fragment-context!
-   (if-let [fragment-model (get *all-fragments* frag-name)]
-     (let [;; merge style definitions from fragment
-           style-ids-rename (-> fragment-model :main :style :parsed (doto assert) (style/insert-styles!))
+  (let [fragment-model   (fragments/fragment-by-name frag-name)
 
-           relation-ids-rename (relations/ids-rename fragment-model frag-name)
-           relation-rename-map (into {} (map (juxt :old-id :new-id)) relation-ids-rename)
+        ;; merge style definitions from fragment
+        style-ids-rename (-> fragment-model :main :style :parsed (doto assert) (style/insert-styles!))
 
-           ;; evaluate
-           evaled (eval-template-model fragment-model local-data-map function {})
+        relation-ids-rename (relations/ids-rename fragment-model frag-name)
+        relation-rename-map (into {} (map (juxt :old-id :new-id)) relation-ids-rename)
 
-           ;; write back
-           get-xml      (fn [x] (or (:xml x) @(:xml-delay x)))
-           evaled-parts (->> evaled :main :result
-                             (get-xml)
-                             (extract-body-parts)
-                             (map (partial relations/xml-rename-relation-ids relation-rename-map))
-                             (map (partial style/xml-rename-style-ids style-ids-rename)))]
-       (swap! *inserted-fragments* conj frag-name)
-       (run! add-extra-file! relation-ids-rename)
-       [{:text (->FragmentInvoke {:frag-evaled-parts evaled-parts})}])
-     (throw (eval-exception (str "No fragment for name: " frag-name) nil)))))
+        ;; evaluate
+        evaled (eval-template-model fragment-model local-data-map function {})
+
+        ;; write back
+        get-xml      (fn [x] (or (:xml x) @(:xml-delay x)))
+        evaled-parts (->> evaled :main :result
+                          (get-xml)
+                          (extract-body-parts)
+                          (map (partial relations/xml-rename-relation-ids relation-rename-map))
+                          (map (partial style/xml-rename-style-ids style-ids-rename)))]
+    (swap! *inserted-fragments* conj frag-name)
+    (run! add-extra-file! relation-ids-rename)
+    [{:text (->FragmentInvoke {:frag-evaled-parts evaled-parts})}]))
 
 
 ;; replaces the nearest image with the content

@@ -46,7 +46,7 @@
 
 (s/def ::main (s/keys :req [:stencil.model/path]
                       :opt-un [:stencil.model/headers+footers ::result] ;; not present in fragments
-                      :opt [::numbering]
+                      :opt [:stencil.model.numbering/numbering]
                       :req-un [::source-file
                                ::executable
                                ::style
@@ -63,7 +63,7 @@
 
 (s/def ::parsed any?)
 
-(s/def :stencil.model/numbering (s/nilable (s/keys :req [:stencil.model/path]
+(s/def :stencil.model.numbering/numbering (s/nilable (s/keys :req [:stencil.model/path]
                                         :req-un [::source-file ::parsed])))
 
 (s/fdef stencil.model/load-template-model

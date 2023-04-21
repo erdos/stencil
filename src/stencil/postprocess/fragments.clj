@@ -9,6 +9,19 @@
             [stencil.util :refer :all]))
 
 
+;; all insertable fragments. map of id to frag def.
+(def ^:dynamic *all-fragments* nil)
+
+(defmacro with-fragments-context [fragments-map body]
+  `(binding [*all-fragments* (into {} ~fragments-map)] ~body))
+
+(defn fragment-by-name
+  "Get fragment model by name in current context or throw exception."
+  [frag-name]
+  (assert (string? frag-name))
+  (or (get *all-fragments* frag-name)
+      (throw (eval-exception (str "No fragment for name: " frag-name) nil))))
+
 (defn- remove+up
   "Removes current node and moves pointer to parent node."
   [loc]

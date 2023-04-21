@@ -13,6 +13,11 @@
 (def ^:dynamic *numbering* nil)
 
 
+(defmacro with-template-numberings [template-model body]
+  `(binding [numbering/*numbering* (::numbering (:main ~template-model))]
+     ~body))
+
+
 (defn- find-node [tree predicate]
   (when (map? tree)
     (if (predicate tree)
@@ -79,7 +84,7 @@
 
 (defn assoc-numbering [model dir]
   (->> (main-numbering dir (:stencil.model/path model) (:relations model))
-       (assoc-if-val model :stencil.model/numbering)))
+       (assoc-if-val model ::numbering)))
 
 (defn style-def-for [id lvl]
   (assert (string? id))

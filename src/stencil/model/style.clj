@@ -9,6 +9,7 @@
 
 (set! *warn-on-reflection* true)
 
+(declare file-writer)
 (def rel-type
   "Relationship type of style definitions in _rels/.rels file."
   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles")
@@ -20,6 +21,12 @@
 ;; throws error when not invoked from inside fragment context
 (defmacro expect-fragment-context! [& bodies] `(do (assert *current-styles*) ~@bodies))
 
+(defmacro with-template-styles [template-model body]
+  `(binding [*current-styles* (atom (:parsed (:style (:main ~template-model))))]
+     (let [modified-model# ~body]
+       (if (-> modified-model# :main :style)
+         (assoc-in modified-model# [:main :style :result] (file-writer modified-model#))
+         modified-model#))))
 
 (defn- parse
   "Returns a map where key is style id and value is style definition."
