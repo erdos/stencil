@@ -1,8 +1,10 @@
 (ns stencil.integration
   "Integration test helpers"
-  (:require [clojure.zip :as zip]
-            [clojure.test :refer [do-report is]]
-            [stencil.api :as api]))
+  (:require [clojure (zip :as zip) (test :refer [do-report is])]
+            [clojure.data.xml]
+            [clojure.java.io :as io]
+            [clojure.java.shell :as shell]
+            [stencil (api :as api) (util) (ooxml)]))
 
 
 (defn rendered-words
@@ -25,6 +27,45 @@
              c (:content (zip/node node))]
          c)))))
 
+(defn render-visual-compare!
+  "Render a file and then visually compare result to a screenshot"
+  [& {template-name :template
+      data :data
+      expected-img-file :expected
+      fragments :fragments}]
+  (let [docx-output   (java.io.File/createTempFile "stencil-test" ".docx")
+        outdir        (doto (io/file (or (System/getenv "RUNNER_TEMP") "/tmp") "stencil-testing")
+                        io/make-parents)
+        resolution    72
+        pdf-output    (io/file outdir (.replaceFirst (.getName docx-output) ".docx$" ".pdf"))
+        png-output    (io/file outdir (str (rand-int 10000) ".png"))]
+    ;; 1. render template
+    (with-open [template (api/prepare (io/resource template-name))]
+      (api/render! template data
+                   :output docx-output
+                   :overwrite? true
+                   :fragments (into {} (for [[k v] fragments] [k (api/fragment (io/resource v))])))
+      (println "Renderd file to" docx-output))
+    ;; 2. convert rendered docx to PDF
+    (let [converted (shell/sh "libreoffice" "--headless" "--convert-to" "pdf" "--outdir" (str outdir) (str docx-output))]
+      (assert (= 0 (:exit converted)) (str "PDF Error: " (pr-str converted)))
+      (assert (.exists pdf-output) (str "Output PDF file does not exist: " pdf-output)))
+
+    ;; 3. convert PDF to png
+    (let [conversion (shell/sh "convert" "-density" (str resolution) (str pdf-output) "-background" "white" "-alpha" "remove" (str png-output))]
+      (assert (= 0 (:exit conversion)) (str "Conversion error: " (pr-str conversion)))
+      (assert (.exists png-output)))
+
+    ;; 4. visually compare png to expected
+    (if-not expected-img-file
+      (do (println "Rendered file to" png-output)
+          (is false "test mode only"))
+      (let [diff-output   (io/file (str png-output ".diff.png"))
+            compared      (shell/sh "compare" "-verbose"
+                                    (str (io/file (io/resource expected-img-file)))
+                                    (str png-output)
+                                    (str diff-output))]
+        (is (= 0 (:exit compared)) (str "Error comparing" (pr-str compared)))))))
 
 (defn test-fails
   "Tests that rendering the template with the payload results in the given exception chain."

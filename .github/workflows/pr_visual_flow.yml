@@ -1,0 +1,34 @@
+name: PR Visual Flow
+
+on:
+  pull_request:
+    branches: [ master ]
+
+env:
+  STENCIL_TEST_VISUAL: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install Libreoffice for tests
+      run: sudo apt-get install -y libreoffice-core libreoffice-writer libreoffice-java-common imagemagick ghostscript --no-install-recommends
+    - name: Set PDF Policy
+      run: sudo sed -i '/disable ghostscript format types/,+6d' /etc/ImageMagick-6/policy.xml
+    - name: Install dependencies
+      run: lein deps
+    - name: Compile Java
+      run: lein javac
+    - name: Test Clojure
+      run: lein test stencil.visual
+    - name: Archive diff png
+      uses: actions/upload-artifact@v3
+      if: ${{ always() }}
+      with:
+        name: test-visual-images
+        path: |
+          /home/runner/work/_temp/**/*.png
+    - name: Publish Test Report
+      if: ${{ always() }}
+      uses: scacap/action-surefire-report@v1
