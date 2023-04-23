@@ -15,7 +15,13 @@
 (defn -initial-numbering-context [template-model]
   (let [xml-tree (-> template-model :main :stencil.model/numbering :parsed)]
     {:extra-elems (atom []) ;; elems added during evaluation in context
+     :counter     (atom (apply max 0 (for [e (:content xml-tree)]
+                                       (->int (or (-> e :attrs ooxml/xml-abstract-num-id)
+                                                  (-> e :attrs ooxml/attr-numId))))))
      :parsed      xml-tree}))
+
+(defn- gen-numbering-id []
+  (str (swap! (:counter *numbering*) inc)))
 
 ;; defines target context. changes to numberngs will be moved here.
 (defmacro with-numbering-context [template-model body]
@@ -51,14 +57,14 @@
                               (if (contains? (:abstract-num-id-rename cache) abstract-nr-id)
                                 cache
                                 (let [elem   (id->abstract-numbering abstract-nr-id)
-                                      new-id (name (gensym "snan"))]
+                                      new-id (gen-numbering-id)]
                                   (add-numbering-entry! (assoc-in elem [:attrs ooxml/xml-abstract-num-id] new-id))
                                   (assoc-in cache [:abstract-num-id-rename abstract-nr-id] new-id))))
         copy-nring (fn [cache numbering-id]
                      (if (contains? (:num-id-rename cache) numbering-id)
                        cache
                        (let [elem   (id->numbering numbering-id)
-                             new-id (name (gensym "snnn"))
+                             new-id (gen-numbering-id)
 
                              ;; if numbering definition has an abstractNumId child then we need to also map that
                              abstract-id? (->> elem :content
