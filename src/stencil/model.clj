@@ -257,9 +257,9 @@
                              (get-xml)
                              (extract-body-parts)
                              (map (partial relations/xml-rename-relation-ids relation-rename-map))
-                             ;; TODO: also rename numbering ids.
-                             (map (partial xml-map-attrs {ooxml/attr-numId
-                                                          (partial numbering/copy-numbering fragment-model (atom {}))}))
+                             (map (partial xml-map-attrs
+                                           {ooxml/attr-numId
+                                            (partial numbering/copy-numbering fragment-model (atom {}))}))
                              (map (partial style/xml-rename-style-ids style-ids-rename))
                              (doall))]
        (swap! *inserted-fragments* conj frag-name)

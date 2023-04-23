@@ -9,47 +9,62 @@
 (def ^:private rel-type-numbering
   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering")
 
-
+;; children of numbering xml definition as a vector in an atom.
 (def ^:dynamic *numbering* nil)
 
 (defn -initial-numbering-context [template-model]
   (let [xml-tree (-> template-model :main :stencil.model/numbering :parsed)]
-   {:target                 (atom []) ;; extra elems to be added when exiting context
-    :id->numbering          (into {} (for [e (:content xml-tree)
-                                           :when (= ooxml/tag-num (:tag e))]
-                                       [(get-in e [:attrs ooxml/attr-numId]) e]))
-    :id->abstract-numbering (into {} (for [e (:content xml-tree)
-                                           :when (= ooxml/tag-abstract-num (:tag e))]
-                                       [(get-in e [:attrs ooxml/xml-abstract-num-id]) e]))}))
+    {:extra-elems (atom []) ;; elems added during evaluation in context
+     :parsed      xml-tree}))
 
+;; defines target context. changes to numberngs will be moved here.
 (defmacro with-numbering-context [template-model body]
   `(binding [*numbering* (-initial-numbering-context ~template-model)]
      ;; TODO: update body by writing new entries from current numbering context
-     (-> ~body
-         (assoc-in [:main :stencil.model/numbering :parsed]
-                   updated-numbering ;; TODO
-                   ))))
+     (let [body# ~body]
+       (if-let [extra-elems# (:extra-elems (not-empty @*numbering*))]
+         (-> body#
+             (update-in [:main :stencil.model/numbering] dissoc :source-file)
+             (update-in [:main :stencil.model/numbering :parsed :content] conj extra-elems#))
+         body#))))
 
 (defn- add-numbering-entry! [xml-element]
-  (swap! (:target *numbering*) conj xml-element) nil)
+  (swap! (:extra-elems *numbering*) conj xml-element) nil)
 
 ;; cache atom is a map with {:num-id-rename {} :abstract-num-id-rename {}}
 (defn copy-numbering [source-model cache-atom numbering-id]
-  (let [numbering-root (-> source-model :main :stencil.model/numbering :parsed)
+  (let [numbering-root         (-> source-model :main :stencil.model/numbering :parsed)
+        id->numbering          (into {} (for [e (:content numbering-root)
+                                              :when (= ooxml/tag-num (:tag e))]
+                                          [(get-in e [:attrs ooxml/attr-numId]) e]))
+        id->abstract-numbering (into {} (for [e (:content numbering-root)
+                                              :when (= ooxml/tag-abstract-num (:tag e))]
+                                          [(get-in e [:attrs ooxml/xml-abstract-num-id]) e]))
         copy-abstract-nring (fn [cache abstract-nr-id]
                               (if (contains? (:abstract-num-id-rename cache) abstract-nr-id)
                                 cache
-                                (let [elem   (get-in *numbering* [:id->abstract-numbering abstract-nr-id])
+                                (let [elem   (id->abstract-numbering abstract-nr-id)
                                       new-id (gensym "abstract-numbering")]
                                   (add-numbering-entry! (assoc-in elem [:attrs ooxml/xml-abstract-num-id] new-id))
                                   (assoc-in cache [:abstract-num-id-rename abstract-nr-id] new-id))))
         copy-nring (fn [cache numbering-id]
                      (if (contains? (:num-id-rename cache) numbering-id)
                        cache
-                       (let [elem   (get-in *numbering* [:id->numbering numbering-id])
-                             new-id (gensym "numbering")]
-                         (add-numbering-entry! (assoc-in elem [:attrs ooxml/attr-numId] new-id))
-                         ;; TODO: also update abstracts when necessary!!!!
+                       (let [elem   (id->numbering numbering-id)
+                             new-id (gensym "numbering")
+
+                             ;; if numbering definition has an abstractNumId child then we need to also map that
+                             abstract-id? (-> elem :content
+                                              (find-first (fn [e] (= ooxml/xml-abstract-num-id (:tag e))))
+                                              :attrs ooxml/val)
+                             cache        (if abstract-id? (copy-abstract-nring cache abstract-id?) cache)
+                             abstract-rename? (get-in cache [:abstract-num-id-rename abstract-id?])]
+                         (-> elem
+                             (assoc-in [:attrs ooxml/attr-numId] new-id)
+                             (update :content (partial mapv (fn [c] (if (= ooxml/xml-abstract-num-id (:tag c))
+                                                                      (assoc-in c [:attrs ooxml/val] abstract-rename?)
+                                                                      c))))
+                             (add-numbering-entry!))
                          (assoc-in cache [:num-id-rename numbering-id] new-id))))]
     (assert numbering-root)
     (-> cache-atom
