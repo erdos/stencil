@@ -224,12 +224,9 @@
 (defn- xml-map-attrs [attr-mappers xml-tree]
   (if (map? xml-tree)
     ;; TODO: we could speed this up!
-    (assoc xml-tree
-           :attrs (into {} (for [[k v] (:attrs xml-tree)]
-                             (if-let [f (attr-mappers k)]
-                               [k (f v)]
-                               [k v])))
-           :content (mapv (partial xml-map-attrs attr-mappers) (:content xml-tree)))
+    (if-let [f (attr-mappers (:tag xml-tree))]
+      (update-in xml-tree [:attrs ooxml/val] f)
+      (assoc xml-tree :content (mapv (partial xml-map-attrs attr-mappers) (:content xml-tree)))) 
     xml-tree))
 
 ; And therefore:

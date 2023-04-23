@@ -3,7 +3,7 @@
             [clojure.java.io :as io]
             [stencil.ooxml :as ooxml]
             [stencil.util :refer [unlazy-tree ->int assoc-if-val find-first]]
-            [stencil.model.common :refer [unix-path]]))
+            [stencil.model.common :refer [unix-path ->xml-writer]]))
 
 
 (def ^:private rel-type-numbering
@@ -25,14 +25,18 @@
        (if-let [extra-elems# (seq @(:extra-elems *numbering*))]
          (-> body#
              (update-in [:main :stencil.model/numbering] dissoc :source-file)
-             (update-in [:main :stencil.model/numbering :parsed :content] conj extra-elems#))
+             (update-in [:main :stencil.model/numbering :parsed :content] conj extra-elems#)
+             (update-in [:main :stencil.model/numbering]
+                        (fn [nr#] (assoc nr# :result {:writer (->xml-writer (:parsed nr#))}))))
          body#))))
 
 (defn- add-numbering-entry! [xml-element]
+  ; (println :add-numbering-entry xml-element)
   (swap! (:extra-elems *numbering*) conj xml-element) nil)
 
 ;; cache atom is a map with {:num-id-rename {} :abstract-num-id-rename {}}
 (defn copy-numbering [source-model cache-atom numbering-id]
+  ;(println :XXXX numbering-id)
   (let [numbering-root         (-> source-model :main :stencil.model/numbering :parsed)
         id->numbering          (into {} (for [e (:content numbering-root)
                                               :when (= ooxml/tag-num (:tag e))]
@@ -44,19 +48,19 @@
                               (if (contains? (:abstract-num-id-rename cache) abstract-nr-id)
                                 cache
                                 (let [elem   (id->abstract-numbering abstract-nr-id)
-                                      new-id (gensym "abstract-numbering")]
+                                      new-id (name (gensym "snan"))]
                                   (add-numbering-entry! (assoc-in elem [:attrs ooxml/xml-abstract-num-id] new-id))
                                   (assoc-in cache [:abstract-num-id-rename abstract-nr-id] new-id))))
         copy-nring (fn [cache numbering-id]
                      (if (contains? (:num-id-rename cache) numbering-id)
                        cache
                        (let [elem   (id->numbering numbering-id)
-                             new-id (gensym "numbering")
+                             new-id (name (gensym "snnn"))
 
                              ;; if numbering definition has an abstractNumId child then we need to also map that
-                             abstract-id? (-> elem :content
-                                              (find-first (fn [e] (= ooxml/xml-abstract-num-id (:tag e))))
-                                              :attrs ooxml/val)
+                             abstract-id? (->> elem :content
+                                               (find-first (fn [e] (= ooxml/xml-abstract-num-id (:tag e))))
+                                               :attrs ooxml/val)
                              cache        (if abstract-id? (copy-abstract-nring cache abstract-id?) cache)
                              abstract-rename? (get-in cache [:abstract-num-id-rename abstract-id?])]
                          (-> elem
@@ -70,7 +74,9 @@
     (-> cache-atom
         (swap! copy-nring numbering-id)
         (get :num-id-rename)
-        (get numbering-id))))
+        (get numbering-id)
+        (doto (->> (println :XXX/copy-numbering numbering-id)))
+        )))
 
 (defn- find-node [tree predicate]
   (when (map? tree)
