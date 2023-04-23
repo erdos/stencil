@@ -15,9 +15,12 @@
 (defmacro with-numbering-context [template-model body]
   `(binding [*numbering* (:stencil.model/numbering (:main ~template-model))]
      ;; TODO: update body by writing new entries from current numbering context
-     ~body))
+     (-> ~body
+         (assoc-in [:main :stencil.model/numbering]
+                   updated-numbering ;; TODO
+                   ))))
 
-(defn copy-numbering [source-model numbering-id]
+(defn copy-numbering [source-model cache-atom numbering-id]
   (let [numbering (:stencil.model/numbering (:main source-model))]
     (assert numbering)
     ;; TODO: generate new id and add it to current numbering context 

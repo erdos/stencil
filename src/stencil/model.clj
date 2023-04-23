@@ -16,6 +16,7 @@
             [stencil.functions :refer [call-fn]]
             [stencil.model.style :as style
              :refer [expect-fragment-context! *current-styles*]]
+            [stencil.ooxml :as ooxml]
             [stencil.cleanup :as cleanup]))
 
 (set! *warn-on-reflection* true)
@@ -219,6 +220,23 @@
      elem)))
 
 
+;; recursively going over xml tree, rename values in attributes specified in mappers.
+(defn- xml-map-attrs [attr-mappers xml-tree]
+  (if (map? xml-tree)
+    ;; TODO: we could speed this up!
+    (assoc xml-tree
+           :attrs (into {} (for [[k v] (:attrs xml-tree)]
+                             (if-let [f (attr-mappers k)]
+                               [k (f v)]
+                               [k v])))
+           :content (mapv (partial xml-map-attrs attr-mappers) (:content xml-tree)))
+    xml-tree))
+
+; And therefore:
+; (defn- map-rename-relation-ids [item id-rename]
+;   (xml-map-attrs {ooxml/r-embed id-rename ooxml/r-id id-rename} item))
+
+
 (defmethod eval/eval-step :cmd/include [function local-data-map {frag-name :name}]
   (assert (map? local-data-map))
   (assert (string? frag-name))
@@ -240,7 +258,10 @@
                              (extract-body-parts)
                              (map (partial relations/xml-rename-relation-ids relation-rename-map))
                              ;; TODO: also rename numbering ids.
-                             (map (partial style/xml-rename-style-ids style-ids-rename)))]
+                             (map (partial xml-map-attrs {ooxml/attr-numId
+                                                          (partial numbering/copy-numbering fragment-model (atom {}))}))
+                             (map (partial style/xml-rename-style-ids style-ids-rename))
+                             (doall))]
        (swap! *inserted-fragments* conj frag-name)
        (run! add-extra-file! relation-ids-rename)
        [{:text (->FragmentInvoke {:frag-evaled-parts evaled-parts})}])
