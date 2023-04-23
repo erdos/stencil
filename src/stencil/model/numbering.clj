@@ -26,6 +26,9 @@
          (-> body#
              (update-in [:main :stencil.model/numbering] dissoc :source-file)
              (update-in [:main :stencil.model/numbering :parsed :content] conj extra-elems#)
+
+             ;; TODO: problem is the following: If Main document has no relation, then
+             ;; the generated numbering definitions will not be used in the document!!!
              (update-in [:main :stencil.model/numbering]
                         (fn [nr#] (assoc nr# :result {:writer (->xml-writer (:parsed nr#))}))))
          body#))))
