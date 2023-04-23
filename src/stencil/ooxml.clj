@@ -60,6 +60,7 @@
 
 (def tag-lvl  :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/lvl)
 
+;; matches both tag and attribute
 (def xml-abstract-num-id  :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/abstractNumId)
 
 (def tag-abstract-num  :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/abstractNum)

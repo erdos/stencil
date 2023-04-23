@@ -85,6 +85,7 @@
   [style-id-renames xml-tree]
   (if (map? xml-tree)
     ;; pStyle, rStyle, tblStyle, cnfStyle, ...
+    ;; also: numStyleLink, styleLink in dumbering definitions!!!
     (if (-> xml-tree :tag name (.endsWith "Style"))
       (update-some xml-tree [:attrs ooxml/val] style-id-renames)
       (update xml-tree :content (partial mapv (partial xml-rename-style-ids style-id-renames))))
