@@ -12,6 +12,16 @@
 
 (def ^:dynamic *numbering* nil)
 
+(defmacro with-numbering-context [template-model body]
+  `(binding [*numbering* (:stencil.model/numbering (:main ~template-model))]
+     ;; TODO: update body by writing new entries from current numbering context
+     ~body))
+
+(defn copy-numbering [source-model numbering-id]
+  (let [numbering (:stencil.model/numbering (:main source-model))]
+    (assert numbering)
+    ;; TODO: generate new id and add it to current numbering context 
+    numbering-id))
 
 (defn- find-node [tree predicate]
   (when (map? tree)
@@ -33,10 +43,10 @@
   (assert (string? id))
   (assert (map? tree) (str "Not a map: " (pr-str (type tree))))
   (let [def1 (find-node tree
-                       (fn [node]
-                         (and (map? node)
-                              (= (:tag node) ooxml/tag-num)
-                              (= id (-> node :attrs ooxml/attr-numId)))))]
+                        (fn [node]
+                          (and (map? node)
+                               (= (:tag node) ooxml/tag-num)
+                               (= id (-> node :attrs ooxml/attr-numId)))))]
     (or (find-lvl def1 level) ;; find in override
 
         ;; find abstract definition
@@ -71,7 +81,7 @@
   (when-let [main-numbering-path
              (some #(when (= rel-type-numbering (:stencil.model/type %))
                       (unix-path (io/file (.getParentFile (io/file main-document))
-                                       (:stencil.model/target %))))
+                                          (:stencil.model/target %))))
                    (vals (:parsed main-document-rels)))]
     {:stencil.model/path       main-numbering-path
      :source-file              (io/file dir main-numbering-path)
