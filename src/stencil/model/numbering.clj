@@ -22,7 +22,7 @@
   `(binding [*numbering* (-initial-numbering-context ~template-model)]
      ;; TODO: update body by writing new entries from current numbering context
      (let [body# ~body]
-       (if-let [extra-elems# (:extra-elems (not-empty @*numbering*))]
+       (if-let [extra-elems# (seq @(:extra-elems *numbering*))]
          (-> body#
              (update-in [:main :stencil.model/numbering] dissoc :source-file)
              (update-in [:main :stencil.model/numbering :parsed :content] conj extra-elems#))
