@@ -8,8 +8,7 @@
             [stencil.eval :as eval]
             [stencil.merger :as merger]
             [stencil.model.numbering :as numbering]
-            [stencil.types :refer [->FragmentInvoke ->ReplaceImage]]
-            [stencil.postprocess.images :refer [img-data->extrafile]]
+            [stencil.types :refer [->FragmentInvoke]]
             [stencil.util :refer [unlazy-tree assoc-if-val eval-exception]]
             [stencil.model.relations :as relations]
             [stencil.model.common :refer [unix-path ->xml-writer resource-copier]]
@@ -42,13 +41,6 @@
 
 ;; set of already inserted fragment ids.
 (def ^:private ^:dynamic *inserted-fragments* nil)
-
-;; set of extra relations to be added after evaluating document
-(def ^:private ^:dynamic *extra-files* nil)
-
-(defn- add-extra-file! [m]
-  (assert (:new-id m))
-  (swap! *extra-files* conj m))
 
 (defn- parse-content-types [^File cts]
   (assert (.exists cts))
@@ -125,39 +117,21 @@
   (assert (some? fragments))
   (binding [*current-styles*     (atom (:parsed (:style (:main template-model))))
             *inserted-fragments* (atom #{})
-            *extra-files*        (atom #{})
             *all-fragments*      (into {} fragments)]
-    (let [evaluate (fn [m]
-                     (let [result                  (eval-model-part m data functions)
-                           fragment-names          (set (:fragment-names result))]
-                       (cond-> m
-
-                         ;; create a rels file for the current xml
-                         (and (seq @*extra-files*) (nil? (::path (:relations m))))
-                         (assoc-in [:relations ::path]
-                                   (unix-path (file (.getParentFile (file (::path m)))
-                                                    "_rels"
-                                                    (str (.getName (file (::path m))) ".rels"))))
-
-                         ;; add relations if any
-                         (seq @*extra-files*)
-                         (update-in [:relations :parsed] (fnil into {})
-                                    (for [relation @*extra-files*
-                                          :when (or (not (contains? relation :fragment-name))
-                                                    (contains? fragment-names (:fragment-name relation)))]
-                                      [(:new-id relation) relation]))
-
-                         ;; relation file will be rendered instead of copied
-                         (seq @*extra-files*)
-                         (update-in [:relations] dissoc :source-file)
-
-                         :finally (assoc :result result))))]
+    (relations/with-extra-files-context
       (numbering/with-numbering-context template-model
-        (-> template-model
+        (let [evaluate  (fn [m]
+                          (let [result         (eval-model-part m data functions)
+                                fragment-names (set (:fragment-names result))]
+                            (-> m
+                                (relations/model-assoc-extra-files fragment-names)
+                                (assoc :result result))))]
+          (-> template-model
             (update :main evaluate)
             (update-in [:main :headers+footers] (partial mapv evaluate))
+
             (cond-> (-> template-model :main :style)
-              (assoc-in [:main :style :result] (style/file-writer template-model))))))))
+              (assoc-in [:main :style :result] (style/file-writer template-model)))))))))
 
 
 (defn- model-seq [model]
@@ -260,13 +234,6 @@
                              (map (partial style/xml-rename-style-ids style-ids-rename))
                              (doall))]
        (swap! *inserted-fragments* conj frag-name)
-       (run! add-extra-file! relation-ids-rename)
+       (run! relations/add-extra-file! relation-ids-rename)
        [{:text (->FragmentInvoke {:frag-evaled-parts evaled-parts})}])
      (throw (eval-exception (str "No fragment for name: " frag-name) nil)))))
-
-
-;; replaces the nearest image with the content
-(defmethod call-fn "replaceImage" [_ data]
-  (let [extra-file (img-data->extrafile data)]
-    (add-extra-file! extra-file)
-    (->ReplaceImage (:new-id extra-file))))
