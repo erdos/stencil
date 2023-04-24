@@ -102,3 +102,36 @@
       :old-id      old-rel-id
       :source-file (file (-> model :main :source-file file .getParentFile) (:stencil.model/target m))
       :stencil.model/path       new-path})))
+
+;; set of extra relations to be added after evaluating document
+(def ^:dynamic *extra-files* nil)
+
+(defmacro with-extra-files-context [body]
+  `(binding [*extra-files* (atom #{})] ~body))
+
+(defn add-extra-file! [m]
+  (assert (:new-id m))
+  (swap! *extra-files* conj m) m)
+
+(defn model-assoc-extra-files [m fragment-names]
+  (assert *extra-files*)
+  (assert (set? fragment-names))
+  (cond-> m
+    ;; create a rels file for the current xml
+    (and (seq @*extra-files*) (nil? (:stencil.model/path (:relations m))))
+    (assoc-in [:relations :stencil.model/path]
+              (unix-path (file (.getParentFile (file (:stencil.model/path m)))
+                          "_rels"
+                          (str (.getName (file (:stencil.model/path m))) ".rels"))))
+
+    ;; add relations if any
+    (seq @*extra-files*)
+    (update-in [:relations :parsed] (fnil into {})
+                (for [relation @*extra-files*
+                      :when (or (not (contains? relation :fragment-name))
+                                (contains? fragment-names (:fragment-name relation)))]
+                  [(:new-id relation) relation]))
+
+    ;; relation file will be rendered instead of copied
+    (seq @*extra-files*)
+    (update-in [:relations] dissoc :source-file)))

@@ -26,7 +26,4 @@
 (defn hide-table-column-marker? [x] (instance? HideTableColumnMarker x))
 (defn hide-table-row-marker? [x] (instance? HideTableRowMarker x))
 
-;; Tells if the reference of an adjacent image node should be replaced in postprocess step.
-(defrecord ReplaceImage [relation] ControlMarker)
-
 (defn control? [x] (satisfies? ControlMarker x))

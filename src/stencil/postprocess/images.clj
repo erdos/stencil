@@ -1,13 +1,17 @@
 (ns stencil.postprocess.images
   (:require [clojure.java.io :as io]
             [clojure.zip :as zip]
+            [stencil.functions :refer [call-fn]]
             [stencil.log :as log]
             [stencil.ooxml :as ooxml]
-            [stencil.model.relations :refer [rel-type-image]]
-            [stencil.util :refer [fail find-first iterations dfs-walk-xml-node]])
-  (:import [stencil.types ReplaceImage]))
+            [stencil.model.relations :as relations]
+            [stencil.types :refer [ControlMarker]]
+            [stencil.util :refer [fail find-first iterations dfs-walk-xml-node]]))
 
 (set! *warn-on-reflection* true)
+
+;; Tells if the reference of an adjacent image node should be replaced in postprocess step.
+(defrecord ReplaceImage [relation] ControlMarker)
 
 (def mime-type->extension
   {"image/png"  "png"
@@ -67,10 +71,16 @@
     (str "media/" rel-id "." extension)
     (fail "Unexpected mime-type for image!" {:mime-type mime-type})))
 
-(defn img-data->extrafile [data-uri]
+(defn- img-data->extrafile [data-uri]
   (let [new-rel                   (->relation-id)
         {:keys [mime-type bytes]} (parse-data-uri data-uri)]
     {:new-id               new-rel
-     :stencil.model/type   rel-type-image
+     :stencil.model/type   relations/rel-type-image
      :stencil.model/target (image-path new-rel mime-type)
      :writer               (bytes->writer bytes)}))
+
+;; replaces the nearest image with the content
+(defmethod call-fn "replaceImage" [_ data]
+  (let [extra-file (img-data->extrafile data)]
+    (relations/add-extra-file! extra-file)
+    (->ReplaceImage (:new-id extra-file))))
