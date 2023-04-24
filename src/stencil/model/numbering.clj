@@ -6,7 +6,7 @@
             [stencil.model.common :refer [unix-path ->xml-writer]]))
 
 
-(def ^:private rel-type-numbering
+(def rel-type-numbering
   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering")
 
 ;; children of numbering xml definition as a vector in an atom.
@@ -30,16 +30,17 @@
      (let [body# ~body]
        (if-let [extra-elems# (seq @(:extra-elems *numbering*))]
          (-> body#
-             (update-in [:main :stencil.model/numbering :parsed :content] conj extra-elems#)
+             (update-in [:main :stencil.model/numbering :parsed :content] concat extra-elems#)
              (update-in [:main :stencil.model/numbering]
-                        (fn [nr]
+                        (fn [nr#]
+                          (println :!!! nr#)
                           ;; TODO: test this!
-                          (if (:stencil.model/path nr)
-                            (dissoc nr :source-file)
-                            (assoc nr :stencil.model/path   "word/numbering.xml"
-                                      :stencil.model/type   rel-type-numbering
-                                      :stencil.model/mode   nil
-                                      :stencil.model/target "word/numbering.xml"))))
+                          (if (:stencil.model/path nr#)
+                            (dissoc nr# :source-file)
+                            (assoc nr# :stencil.model/path   "word/numbering.xml"
+                                   :stencil.model/type   rel-type-numbering
+                                       ;:stencil.model/mode   nil
+                                   :stencil.model/target "word/numbering.xml"))))
              (update-in [:main :stencil.model/numbering]
                         (fn [nr#] (assoc nr# :result {:writer (->xml-writer (:parsed nr#))}))))
          body#))))
