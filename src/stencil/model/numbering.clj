@@ -30,11 +30,16 @@
      (let [body# ~body]
        (if-let [extra-elems# (seq @(:extra-elems *numbering*))]
          (-> body#
-             (update-in [:main :stencil.model/numbering] dissoc :source-file)
              (update-in [:main :stencil.model/numbering :parsed :content] conj extra-elems#)
-
-             ;; TODO: problem is the following: If Main document has no relation, then
-             ;; the generated numbering definitions will not be used in the document!!!
+             (update-in [:main :stencil.model/numbering]
+                        (fn [nr]
+                          ;; TODO: test this!
+                          (if (:stencil.model/path nr)
+                            (dissoc nr :source-file)
+                            (assoc nr :stencil.model/path   "word/numbering.xml"
+                                      :stencil.model/type   rel-type-numbering
+                                      :stencil.model/mode   nil
+                                      :stencil.model/target "word/numbering.xml"))))
              (update-in [:main :stencil.model/numbering]
                         (fn [nr#] (assoc nr# :result {:writer (->xml-writer (:parsed nr#))}))))
          body#))))
