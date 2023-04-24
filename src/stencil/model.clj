@@ -127,8 +127,8 @@
                                 (relations/model-assoc-extra-files fragment-names)
                                 (assoc :result result))))]
           (-> template-model
-            (update :main evaluate)
             (update-in [:main :headers+footers] (partial mapv evaluate))
+            (update :main evaluate)
 
             (cond-> (-> template-model :main :style)
               (assoc-in [:main :style :result] (style/file-writer template-model)))))))))

@@ -107,7 +107,10 @@
 (def ^:dynamic *extra-files* nil)
 
 (defmacro with-extra-files-context [body]
-  `(binding [*extra-files* (atom #{})] ~body))
+  `(binding [*extra-files* (atom #{})]
+     (-> ~body
+;         (update :main )
+         )))
 
 (defn add-extra-file! [m]
   (assert (:new-id m))

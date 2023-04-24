@@ -2,6 +2,7 @@
   (:require [clojure.data.xml :as xml]
             [clojure.java.io :as io]
             [stencil.ooxml :as ooxml]
+            [stencil.model.relations :as relations]
             [stencil.util :refer [unlazy-tree ->int assoc-if-val find-first]]
             [stencil.model.common :refer [unix-path ->xml-writer]]))
 
@@ -30,19 +31,30 @@
      (let [body# ~body]
        (if-let [extra-elems# (seq @(:extra-elems *numbering*))]
          (-> body#
-             (update-in [:main :stencil.model/numbering :parsed :content] concat extra-elems#)
              (update-in [:main :stencil.model/numbering]
                         (fn [nr#]
                           (println :!!! nr#)
+                          #_(relations/add-extra-file! {;:stencil.model/path "word/numbering.xml"
+                                                        :new-id "nan" ;;; not important
+                                                        :stencil.model/type rel-type-numbering
+                                                        :stenicl.model/target "numbering.xml" ;; relative.
+                                                        })
                           ;; TODO: test this!
                           (if (:stencil.model/path nr#)
                             (dissoc nr# :source-file)
-                            (assoc nr# :stencil.model/path   "word/numbering.xml"
-                                   :stencil.model/type   rel-type-numbering
-                                       ;:stencil.model/mode   nil
-                                   :stencil.model/target "word/numbering.xml"))))
+                            (assoc nr#
+                                   :parsed {:tag ooxml/tag-numbering :content []}
+                                   ;:stencil.model/type rel-type-numbering
+                                   ;:stencil.model/target "numbering.xml"
+                                   ;:stencil.model/path  "word/numbering.xml"
+                                   ))))
+             (update-in [:main :stencil.model/numbering :parsed :content] concat extra-elems#)
              (update-in [:main :stencil.model/numbering]
-                        (fn [nr#] (assoc nr# :result {:writer (->xml-writer (:parsed nr#))}))))
+                        (fn [nr#] (assoc nr# :result {:writer (->xml-writer (:parsed nr#))})))
+             (update-in [:main :relations :parsed]
+                        assoc "genNumbering"
+                        {:stencil.model/type rel-type-numbering
+                         :stenicl.model/target "numbering.xml"}))
          body#))))
 
 (defn- add-numbering-entry! [xml-element]

@@ -58,6 +58,9 @@
 
 (def tag-num  :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/num)
 
+;; root element in dumbering definitions
+(def tag-numbering  :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/numbering)
+
 (def tag-lvl  :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/lvl)
 
 ;; matches both tag and attribute. If attribute, value must match \d+
