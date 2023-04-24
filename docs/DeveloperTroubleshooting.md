@@ -52,3 +52,28 @@ Problem: The zip entry paths mut not contain a `../` part.
 
 - LibreOffice: OK
 - Word: will not open file.
+
+
+
+## OOXML Model
+
+```
+ +-------------+
+ | _rels/.rels | < this is the entry point
+ +-------------+
+        |
+        v
+ +-------------------+   +------------------------------+
+ | word/document.xml |===| word/_rels/document.xml.rels |
+ +-------------------+   +------------------------------+
+                           |             |       |
+                           v             |       v
+                +--------------------+   |   +------------------+   +-----------------------------+
+                | word/numbering.xml |   |   | word/header1.xml |===| word/_rels/header1.xml.rels | * references images
+                +--------------------+   |   +------------------+   +-----------------------------+
+                 > shared across all     v
+                                        +-----------------+
+                                        | word/styles.xml | > shared across all
+                                        +-----------------+
+
+```
