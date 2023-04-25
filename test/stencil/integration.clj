@@ -74,7 +74,10 @@
                                   (str expected-png)
                                   (str png-output)
                                   (str diff-output))]
-      (is (= 0 (:exit compared)) (str "Error comparing" (pr-str compared))))))
+      (is (= 0 (:exit compared))
+          (format "Error comparing, result: %s \n data: %s"
+                  (str pdf-output)
+                  (pr-str compared))))))
 
 (defn test-fails
   "Tests that rendering the template with the payload results in the given exception chain."
