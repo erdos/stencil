@@ -35,13 +35,14 @@
       fragments :fragments}]
   (let [resolution    144
         basename      (str (java.util.UUID/randomUUID))
-        outdir        (doto (io/file (or (System/getenv "RUNNER_TEMP") "/tmp") "stencil-testing")
-                        io/make-parents)
+        outdir        (io/file (or (System/getenv "RUNNER_TEMP") "/tmp") "stencil-testing")
         docx-output   (io/file outdir (str basename ".docx"))
         pdf-output    (io/file outdir (str basename ".pdf"))
         png-output    (io/file outdir (str basename ".png"))
         expected-img  (io/file (io/resource expected-img-file))
         expected-png  (some-> expected-img (.getName) (.replaceFirst "\\.[a-z]{3,4}$" ".png") (->> (io/file outdir)))]
+    (io/make-parents docx-output)
+
     ;; 1. render template
     (with-open [template (api/prepare (io/resource template-name))]
       (api/render! template data
