@@ -24,46 +24,37 @@
 (defn- gen-numbering-id []
   (str (swap! (:counter *numbering*) inc)))
 
+(defn -add-extra-elems [evaluated-model extra-elems]
+  (-> evaluated-model
+      (update-in [:main :stencil.model/numbering]
+                 (fn [nr#]
+                   (if (:stencil.model/path nr#)
+                     (dissoc nr# :source-file)
+                     (assoc nr#
+                            :parsed {:tag ooxml/tag-numbering :content []}
+                            :stencil.model/path  "word/numbering.xml"))))
+      (update-in [:main :stencil.model/numbering :parsed :content] concat extra-elems)
+      (update-in [:main :stencil.model/numbering]
+                 (fn [nr#] (assoc nr# :result {:writer (->xml-writer (:parsed nr#))})))
+      (update-in [:main :relations :parsed]
+                 assoc "genStencilNumbering"
+                 {:stencil.model/type rel-type-numbering
+                  :stencil.model/target "numbering.xml"})
+      (update-in [:main :relations] dissoc :source-file)))
+
 ;; defines target context. changes to numberngs will be moved here.
 (defmacro with-numbering-context [template-model body]
   `(binding [*numbering* (-initial-numbering-context ~template-model)]
-     ;; TODO: update body by writing new entries from current numbering context
      (let [body# ~body]
        (if-let [extra-elems# (seq @(:extra-elems *numbering*))]
-         (-> body#
-             (update-in [:main :stencil.model/numbering]
-                        (fn [nr#]
-                          (println :!!! nr#)
-                          #_(relations/add-extra-file! {;:stencil.model/path "word/numbering.xml"
-                                                        :new-id "nan" ;;; not important
-                                                        :stencil.model/type rel-type-numbering
-                                                        :stenicl.model/target "numbering.xml" ;; relative.
-                                                        })
-                          ;; TODO: test this!
-                          (if (:stencil.model/path nr#)
-                            (dissoc nr# :source-file)
-                            (assoc nr#
-                                   :parsed {:tag ooxml/tag-numbering :content []}
-                                   ;:stencil.model/type rel-type-numbering
-                                   ;:stencil.model/target "numbering.xml"
-                                   ;:stencil.model/path  "word/numbering.xml"
-                                   ))))
-             (update-in [:main :stencil.model/numbering :parsed :content] concat extra-elems#)
-             (update-in [:main :stencil.model/numbering]
-                        (fn [nr#] (assoc nr# :result {:writer (->xml-writer (:parsed nr#))})))
-             (update-in [:main :relations :parsed]
-                        assoc "genNumbering"
-                        {:stencil.model/type rel-type-numbering
-                         :stenicl.model/target "numbering.xml"}))
+         (-add-extra-elems body# extra-elems#)
          body#))))
 
 (defn- add-numbering-entry! [xml-element]
-  ; (println :add-numbering-entry xml-element)
   (swap! (:extra-elems *numbering*) conj xml-element) nil)
 
 ;; cache atom is a map with {:num-id-rename {} :abstract-num-id-rename {}}
 (defn copy-numbering [source-model cache-atom numbering-id]
-  ;(println :XXXX numbering-id)
   (let [numbering-root         (-> source-model :main :stencil.model/numbering :parsed)
         id->numbering          (into {} (for [e (:content numbering-root)
                                               :when (= ooxml/tag-num (:tag e))]
@@ -101,9 +92,7 @@
     (-> cache-atom
         (swap! copy-nring numbering-id)
         (get :num-id-rename)
-        (get numbering-id)
-        (doto (->> (println :XXX/copy-numbering numbering-id)))
-        )))
+        (get numbering-id))))
 
 (defn- find-node [tree predicate]
   (when (map? tree)
