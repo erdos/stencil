@@ -2,7 +2,6 @@
   (:require [clojure.data.xml :as xml]
             [clojure.java.io :as io]
             [stencil.ooxml :as ooxml]
-            [stencil.model.relations :as relations]
             [stencil.util :refer [unlazy-tree ->int assoc-if-val find-first]]
             [stencil.model.common :refer [unix-path ->xml-writer]]))
 
