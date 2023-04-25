@@ -12,7 +12,7 @@
     (render-visual-compare!
      :template  "multipart/main.docx"
      :data      {:name "Johnie Doe"}
-     :expected  "multipart/expected.png"
+     :expected  "multipart/expected.pdf"
      :fragments {"body"   "multipart/body.docx"
                  "header" "multipart/header.docx"
                  "footer" "multipart/footer.docx"})))

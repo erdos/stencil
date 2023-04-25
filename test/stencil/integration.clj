@@ -33,39 +33,47 @@
       data :data
       expected-img-file :expected
       fragments :fragments}]
-  (let [docx-output   (java.io.File/createTempFile "stencil-test" ".docx")
+  (let [resolution    144
+        basename      (str (java.util.UUID/randomUUID))
         outdir        (doto (io/file (or (System/getenv "RUNNER_TEMP") "/tmp") "stencil-testing")
                         io/make-parents)
-        resolution    72
-        pdf-output    (io/file outdir (.replaceFirst (.getName docx-output) ".docx$" ".pdf"))
-        png-output    (io/file outdir (str (rand-int 10000) ".png"))]
+        docx-output   (io/file outdir (str basename ".docx"))
+        pdf-output    (io/file outdir (str basename ".pdf"))
+        png-output    (io/file outdir (str basename ".png"))
+        expected-img  (io/file (io/resource expected-img-file))
+        expected-png  (some-> expected-img (.getName) (.replaceFirst "\\.[a-z]{3,4}$" ".png") (->> (io/file outdir)))]
     ;; 1. render template
     (with-open [template (api/prepare (io/resource template-name))]
       (api/render! template data
                    :output docx-output
                    :overwrite? true
-                   :fragments (into {} (for [[k v] fragments] [k (api/fragment (io/resource v))])))
-      (println "Renderd file to" docx-output))
+                   :fragments (into {} (for [[k v] fragments] [k (api/fragment (io/resource v))]))))
+
     ;; 2. convert rendered docx to PDF
     (let [converted (shell/sh "libreoffice" "--headless" "--convert-to" "pdf" "--outdir" (str outdir) (str docx-output))]
-      (assert (= 0 (:exit converted)) (str "PDF Error: " (pr-str converted)))
-      (assert (.exists pdf-output) (str "Output PDF file does not exist: " pdf-output)))
+      (is (= 0 (:exit converted)) (str "PDF Error: " (pr-str converted)))
+      (is (.exists pdf-output) (str "Output PDF file does not exist: " pdf-output)))
 
-    ;; 3. convert PDF to png
+    ;; 3. convert expected PDF to png
+    (assert (some? expected-img)
+            (format "Expected file %s does not exist, cannot compare to %s" expected-img pdf-output))
+    (let [conversion (shell/sh "convert" "-density" (str resolution) (str expected-img) "-background" "white" "-alpha" "remove" (str expected-png))]
+      (is (= 0 (:exit conversion))
+          (format "Conversion error: %s" (pr-str conversion)))
+      (is (.exists expected-png)))
+
+    ;; 4. convert PDF to png
     (let [conversion (shell/sh "convert" "-density" (str resolution) (str pdf-output) "-background" "white" "-alpha" "remove" (str png-output))]
-      (assert (= 0 (:exit conversion)) (str "Conversion error: " (pr-str conversion)))
-      (assert (.exists png-output)))
+      (is (= 0 (:exit conversion)) (str "Conversion error: " (pr-str conversion)))
+      (is (.exists png-output)))
 
-    ;; 4. visually compare png to expected
-    (if-not expected-img-file
-      (do (println "Rendered file to" png-output)
-          (is false "test mode only"))
-      (let [diff-output   (io/file (str png-output ".diff.png"))
-            compared      (shell/sh "compare" "-verbose"
-                                    (str (io/file (io/resource expected-img-file)))
-                                    (str png-output)
-                                    (str diff-output))]
-        (is (= 0 (:exit compared)) (str "Error comparing" (pr-str compared)))))))
+    ;; 5. visually compare png to expected
+    (let [diff-output   (io/file outdir (str basename ".diff.png"))
+          compared      (shell/sh "compare" "-verbose" "-metric" "AE" "-fuzz" "1%"
+                                  (str expected-png)
+                                  (str png-output)
+                                  (str diff-output))]
+      (is (= 0 (:exit compared)) (str "Error comparing" (pr-str compared))))))
 
 (defn test-fails
   "Tests that rendering the template with the payload results in the given exception chain."
