@@ -7,15 +7,11 @@
             [clojure.java.io :as io :refer [file]]
             [stencil.eval :as eval]
             [stencil.merger :as merger]
-            [stencil.model.numbering :as numbering]
             [stencil.types :refer [->FragmentInvoke]]
-            [stencil.util :refer [unlazy-tree assoc-if-val eval-exception]]
-            [stencil.model.relations :as relations]
+            [stencil.util :refer [unlazy-tree eval-exception]]
             [stencil.model.common :refer [unix-path ->xml-writer resource-copier]]
-            [stencil.functions :refer [call-fn]]
-            [stencil.model.style :as style
-             :refer [expect-fragment-context! *current-styles*]]
             [stencil.ooxml :as ooxml]
+            [stencil.model [numbering :as numbering] [relations :as relations] [style :as style]]
             [stencil.cleanup :as cleanup]))
 
 (set! *warn-on-reflection* true)
@@ -91,14 +87,13 @@
 (defn- eval-model-part-exec [part data functions]
   (assert (:executable part))
   (assert (:dynamic? part))
-  (expect-fragment-context!
-   (let [[result fragments] (binding [*inserted-fragments* (atom #{})]
-                              [(eval/eval-executable part data functions)
-                               @*inserted-fragments*])]
-     (swap! *inserted-fragments* into fragments)
-     {:xml    result
-      :fragment-names fragments
-      :writer (->xml-writer result)})))
+  (let [[result fragments] (binding [*inserted-fragments* (atom #{})]
+                             [(eval/eval-executable part data functions)
+                              @*inserted-fragments*])]
+    (swap! *inserted-fragments* into fragments)
+    {:xml    result
+     :fragment-names fragments
+     :writer (->xml-writer result)}))
 
 
 (defn- eval-model-part [part data functions]
@@ -115,23 +110,21 @@
 (defn- eval-template-model [template-model data functions fragments]
   (assert (:main template-model) "Should be a result of load-template-model call!")
   (assert (some? fragments))
-  (binding [*current-styles*     (atom (:parsed (:style (:main template-model))))
-            *inserted-fragments* (atom #{})
+  (binding [*inserted-fragments* (atom #{})
             *all-fragments*      (into {} fragments)]
-    (numbering/with-numbering-context template-model
-      (let [evaluate  (fn [m]
-                        (relations/with-extra-files-context
-                          (let [result         (eval-model-part m data functions)
-                                fragment-names (set (:fragment-names result))]
-                            (-> m
-                                (relations/model-assoc-extra-files fragment-names)
-                                (assoc :result result)))))]
-        (-> template-model
-            (update-in [:main :headers+footers] (partial mapv evaluate))
-            (update :main evaluate)
+    (style/with-styles-context template-model
+      (numbering/with-numbering-context template-model
+        (let [evaluate  (fn [m]
+                          (relations/with-extra-files-context
+                            (let [result         (eval-model-part m data functions)
+                                  fragment-names (set (:fragment-names result))]
+                              (-> m
+                                  (relations/model-assoc-extra-files fragment-names)
 
-            (cond-> (-> template-model :main :style)
-              (assoc-in [:main :style :result] (style/file-writer template-model))))))))
+                                  (assoc :result result)))))]
+          (-> template-model
+              (update-in [:main :headers+footers] (partial mapv evaluate))
+              (update :main evaluate)))))))
 
 
 (defn- model-seq [model]
@@ -211,7 +204,7 @@
 (defmethod eval/eval-step :cmd/include [function local-data-map {frag-name :name}]
   (assert (map? local-data-map))
   (assert (string? frag-name))
-  (expect-fragment-context!
+  (do
    (if-let [fragment-model (get *all-fragments* frag-name)]
      (let [;; merge style definitions from fragment
            style-ids-rename (-> fragment-model :main :style :parsed (doto assert) (style/insert-styles!))
