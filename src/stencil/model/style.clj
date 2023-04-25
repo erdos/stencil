@@ -16,6 +16,14 @@
 ;; style definitions of the main document
 (def ^:dynamic *current-styles* nil)
 
+(declare file-writer)
+
+(defmacro with-styles-context [template-model body]
+  (assert (symbol? template-model))
+  `(binding [*current-styles* (atom (:parsed (:style (:main ~template-model))))]
+     (-> ~body
+         (cond-> (-> ~template-model :main :style)
+           (assoc-in [:main :style :result] (file-writer ~template-model))))))
 
 ;; throws error when not invoked from inside fragment context
 (defmacro expect-fragment-context! [& bodies] `(do (assert *current-styles*) ~@bodies))
