@@ -162,7 +162,7 @@
     ;; find all items in all relations
     (into result
           (for [m (model-seq evaled-template-model)
-                :when (:relations m) :when (::path m)
+                :when (:relations m) ;:when (::path m)
                 :let [src-parent  (delay (file (or (:source-folder m)
                                                   (.getParentFile (file (:source-file m))))))
                       path-parent (some-> m ::path file .getParentFile)]
