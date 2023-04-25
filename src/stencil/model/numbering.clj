@@ -6,7 +6,7 @@
             [stencil.model.common :refer [unix-path ->xml-writer]]))
 
 
-(def rel-type-numbering
+(def ^:private rel-type-numbering
   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/numbering")
 
 ;; children of numbering xml definition as a vector in an atom.

@@ -118,20 +118,20 @@
   (binding [*current-styles*     (atom (:parsed (:style (:main template-model))))
             *inserted-fragments* (atom #{})
             *all-fragments*      (into {} fragments)]
-    (relations/with-extra-files-context
-      (numbering/with-numbering-context template-model
-        (let [evaluate  (fn [m]
+    (numbering/with-numbering-context template-model
+      (let [evaluate  (fn [m]
+                        (relations/with-extra-files-context
                           (let [result         (eval-model-part m data functions)
                                 fragment-names (set (:fragment-names result))]
                             (-> m
                                 (relations/model-assoc-extra-files fragment-names)
-                                (assoc :result result))))]
-          (-> template-model
+                                (assoc :result result)))))]
+        (-> template-model
             (update-in [:main :headers+footers] (partial mapv evaluate))
             (update :main evaluate)
 
             (cond-> (-> template-model :main :style)
-              (assoc-in [:main :style :result] (style/file-writer template-model)))))))))
+              (assoc-in [:main :style :result] (style/file-writer template-model))))))))
 
 
 (defn- model-seq [model]
