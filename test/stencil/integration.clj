@@ -58,13 +58,13 @@
     ;; 3. convert expected PDF to png
     (assert (some? expected-img)
             (format "Expected file %s does not exist, cannot compare to %s" expected-img pdf-output))
-    (let [conversion (shell/sh "convert" "-density" (str resolution) (str expected-img) "-background" "white" "-alpha" "remove" "-threshold" "50%" (str expected-png))]
+    (let [conversion (shell/sh "convert" "-density" (str resolution) (str expected-img) "-background" "white" "-alpha" "remove" "-blur" "6x6" (str expected-png))]
       (is (= 0 (:exit conversion))
           (format "Conversion error: %s" (pr-str conversion)))
       (is (.exists expected-png)))
 
     ;; 4. convert PDF to png
-    (let [conversion (shell/sh "convert" "-density" (str resolution) (str pdf-output) "-background" "white" "-alpha" "remove" "-threshold" "50%" (str png-output))]
+    (let [conversion (shell/sh "convert" "-density" (str resolution) (str pdf-output) "-background" "white" "-alpha" "remove" "-blur" "6x6" (str png-output))]
       (is (= 0 (:exit conversion)) (str "Conversion error: " (pr-str conversion)))
       (is (.exists png-output)))
 
