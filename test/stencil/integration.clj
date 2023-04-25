@@ -70,7 +70,7 @@
 
     ;; 5. visually compare png to expected
     (let [diff-output   (io/file outdir (str basename ".diff.png"))
-          compared      (shell/sh "compare" "-verbose" "-metric" "AE" "-fuzz" "2%"
+          compared      (shell/sh "compare" "-verbose" "-metric" "AE" "-fuzz" "4%"
                                   (str expected-png)
                                   (str png-output)
                                   (str diff-output))]

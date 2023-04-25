@@ -24,7 +24,7 @@ jobs:
       run: lein test stencil.visual
     - name: Archive diff png
       uses: actions/upload-artifact@v3
-      if: ${{ always() }}
+      if: failure()
       with:
         name: test-visual-images
         path: |
