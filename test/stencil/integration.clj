@@ -71,7 +71,7 @@
       (api/render! template data
                    :output docx-output
                    :overwrite? true
-                   :fragments (into {} (for [[k v] fragments] [k (api/fragment (io/resource v))]))))
+                   :fragments (into {} (for [[k v] fragments :when v] [k (api/fragment (io/resource v))]))))
 
     ;; 2. convert rendered docx to PDF
     (let [converted (shell/sh "libreoffice" "--headless" "--convert-to" "pdf" "--outdir" (str outdir) (str docx-output))]

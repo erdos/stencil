@@ -1,5 +1,6 @@
 (ns stencil.visual
   (:require [clojure.java.shell]
+            [clojure.string :as str]
             [clojure.test :refer [deftest testing use-fixtures]]
             [stencil.integration :refer [render-visual-compare!]]))
 
@@ -19,14 +20,15 @@
 
 
 (deftest test-visual-generative
-  (doseq [main '[plain styled]
-          body  '[static static-styled]]
-    (println :! main body)
+  (doseq [main '[plain styled plain-with-header styled-with-header]
+          body  '[static static-styled]
+          header '[nil static plain styled]
+          :when (= (str/includes? (name main) "header") (some? header))]
+    (println :! main body header)
     (render-visual-compare!
      :template  (format "multipart-gen/main-%s.docx" main)
      :data      {:name "Janos"}
-     :expected  (format "multipart-gen/expected-%s-%s.pdf" main body) :fix? true
+     :expected  (format "multipart-gen/expected-%s-%s-%s.pdf" main body header) :fix? true
      :fragments {"body"   (format "multipart-gen/body-%s.docx" body)
-                 ;"header" "multipart/header.docx"
-                 ;"footer" "multipart/footer.docx"
-                 })))
+                 "header" (when header (format "multipart-gen/header-%s.docx" header))})))
+
