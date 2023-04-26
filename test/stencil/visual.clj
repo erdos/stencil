@@ -16,3 +16,17 @@
      :fragments {"body"   "multipart/body.docx"
                  "header" "multipart/header.docx"
                  "footer" "multipart/footer.docx"})))
+
+
+(deftest test-visual-generative
+  (doseq [main '[plain styled]
+          body  '[static static-styled]]
+    (println :! main body)
+    (render-visual-compare!
+     :template  (format "multipart-gen/main-%s.docx" main)
+     :data      {:name "Janos"}
+     :expected  (format "multipart-gen/expected-%s-%s.pdf" main body) :fix? true
+     :fragments {"body"   (format "multipart-gen/body-%s.docx" body)
+                 ;"header" "multipart/header.docx"
+                 ;"footer" "multipart/footer.docx"
+                 })))

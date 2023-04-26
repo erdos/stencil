@@ -32,7 +32,8 @@
   [& {template-name :template
       data :data
       expected-img-file :expected
-      fragments :fragments}]
+      fragments :fragments
+      fix? :fix?}]
   (let [resolution    144
         basename      (str (java.util.UUID/randomUUID))
         outdir        (io/file (or (System/getenv "RUNNER_TEMP") "/tmp") "stencil-testing")
@@ -55,29 +56,32 @@
       (is (= 0 (:exit converted)) (str "PDF Error: " (pr-str converted)))
       (is (.exists pdf-output) (str "Output PDF file does not exist: " pdf-output)))
 
+    (if-not expected-img
+      (do (assert fix?)
+          (println "Expected file did not exist, creating: " pdf-output)
+          (io/copy pdf-output (io/file "test-resources" expected-img-file)))
+      (do
     ;; 3. convert expected PDF to png
-    (assert (some? expected-img)
-            (format "Expected file %s does not exist, cannot compare to %s" expected-img pdf-output))
-    (let [conversion (shell/sh "convert" "-density" (str resolution) (str expected-img) "-background" "white" "-alpha" "remove" "-blur" "6x6" (str expected-png))]
-      (is (= 0 (:exit conversion))
-          (format "Conversion error: %s" (pr-str conversion)))
-      (is (.exists expected-png)))
+        (let [conversion (shell/sh "convert" "-density" (str resolution) (str expected-img) "-background" "white" "-alpha" "remove" "-blur" "6x6" (str expected-png))]
+          (is (= 0 (:exit conversion))
+              (format "Conversion error: %s" (pr-str conversion)))
+          (is (.exists expected-png)))
 
     ;; 4. convert PDF to png
-    (let [conversion (shell/sh "convert" "-density" (str resolution) (str pdf-output) "-background" "white" "-alpha" "remove" "-blur" "6x6" (str png-output))]
-      (is (= 0 (:exit conversion)) (str "Conversion error: " (pr-str conversion)))
-      (is (.exists png-output)))
+        (let [conversion (shell/sh "convert" "-density" (str resolution) (str pdf-output) "-background" "white" "-alpha" "remove" "-blur" "6x6" (str png-output))]
+          (is (= 0 (:exit conversion)) (str "Conversion error: " (pr-str conversion)))
+          (is (.exists png-output)))
 
     ;; 5. visually compare png to expected
-    (let [diff-output   (io/file outdir (str basename ".diff.png"))
-          compared      (shell/sh "compare" "-verbose" "-metric" "AE" "-fuzz" "8%"
-                                  (str expected-png)
-                                  (str png-output)
-                                  (str diff-output))]
-      (is (= 0 (:exit compared))
-          (format "Error comparing, result: %s \n data: %s"
-                  (str pdf-output)
-                  (pr-str compared))))))
+        (let [diff-output   (io/file outdir (str basename ".diff.png"))
+              compared      (shell/sh "compare" "-verbose" "-metric" "AE" "-fuzz" "8%"
+                                      (str expected-png)
+                                      (str png-output)
+                                      (str diff-output))]
+          (is (= 0 (:exit compared))
+              (format "Error comparing, result: %s \n data: %s"
+                      (str pdf-output)
+                      (pr-str compared))))))))
 
 (defn test-fails
   "Tests that rendering the template with the payload results in the given exception chain."
