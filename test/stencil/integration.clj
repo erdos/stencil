@@ -27,6 +27,31 @@
              c (:content (zip/node node))]
          c)))))
 
+;; input: both pdf
+(defn- assert-pdf-equal [outdir basename pdf-expected pdf-output]
+  (let [resolution 144
+        expected-png  (some-> pdf-expected (.getName) (.replaceFirst "\\.[a-z]{3,4}$" ".png") (->> (io/file outdir)))
+        png-output    (some-> pdf-output (.getName) (.replaceFirst "\\.[a-z]{3,4}$" ".png") (->> (io/file outdir)))]
+    ;; 1. convert expected PDF to png
+    (let [conversion (shell/sh "convert" "-density" (str resolution) (str pdf-expected) "-background" "white" "-alpha" "remove" "-blur" "6x6" (str expected-png))]
+      (is (= 0 (:exit conversion))
+          (format "Conversion error: %s" (pr-str conversion)))
+      (is (.exists expected-png)))
+
+    ;; 2. convert PDF to png
+    (let [conversion (shell/sh "convert" "-density" (str resolution) (str pdf-output) "-background" "white" "-alpha" "remove" "-blur" "6x6" (str png-output))]
+      (is (= 0 (:exit conversion)) (str "Conversion error: " (pr-str conversion)))
+      (is (.exists png-output)))
+
+    ;; 3. visually compare png to expected
+    (let [diff-output   (io/file outdir (str basename ".diff.png"))
+          compared      (shell/sh "compare" "-verbose" "-metric" "AE" "-fuzz" "8%"
+                                  (str expected-png) (str png-output) (str diff-output))]
+      (is (= 0 (:exit compared))
+          (format "Error comparing, result: %s \n data: %s"
+                  (str pdf-output)
+                  (pr-str compared))))))
+
 (defn render-visual-compare!
   "Render a file and then visually compare result to a screenshot"
   [& {template-name :template
@@ -34,14 +59,11 @@
       expected-img-file :expected
       fragments :fragments
       fix? :fix?}]
-  (let [resolution    144
-        basename      (str (java.util.UUID/randomUUID))
+  (let [basename      (str (java.util.UUID/randomUUID))
         outdir        (io/file (or (System/getenv "RUNNER_TEMP") "/tmp") "stencil-testing")
         docx-output   (io/file outdir (str basename ".docx"))
         pdf-output    (io/file outdir (str basename ".pdf"))
-        png-output    (io/file outdir (str basename ".png"))
-        expected-img  (io/file (io/resource expected-img-file))
-        expected-png  (some-> expected-img (.getName) (.replaceFirst "\\.[a-z]{3,4}$" ".png") (->> (io/file outdir)))]
+        expected-img  (io/file (io/resource expected-img-file))]
     (io/make-parents docx-output)
 
     ;; 1. render template
@@ -56,32 +78,12 @@
       (is (= 0 (:exit converted)) (str "PDF Error: " (pr-str converted)))
       (is (.exists pdf-output) (str "Output PDF file does not exist: " pdf-output)))
 
-    (if-not expected-img
+    ;; 3. compare pdf files
+    (if expected-img
+      (assert-pdf-equal outdir basename expected-img pdf-output)
       (do (assert fix?)
           (println "Expected file did not exist, creating: " pdf-output)
-          (io/copy pdf-output (io/file "test-resources" expected-img-file)))
-      (do
-    ;; 3. convert expected PDF to png
-        (let [conversion (shell/sh "convert" "-density" (str resolution) (str expected-img) "-background" "white" "-alpha" "remove" "-blur" "6x6" (str expected-png))]
-          (is (= 0 (:exit conversion))
-              (format "Conversion error: %s" (pr-str conversion)))
-          (is (.exists expected-png)))
-
-    ;; 4. convert PDF to png
-        (let [conversion (shell/sh "convert" "-density" (str resolution) (str pdf-output) "-background" "white" "-alpha" "remove" "-blur" "6x6" (str png-output))]
-          (is (= 0 (:exit conversion)) (str "Conversion error: " (pr-str conversion)))
-          (is (.exists png-output)))
-
-    ;; 5. visually compare png to expected
-        (let [diff-output   (io/file outdir (str basename ".diff.png"))
-              compared      (shell/sh "compare" "-verbose" "-metric" "AE" "-fuzz" "8%"
-                                      (str expected-png)
-                                      (str png-output)
-                                      (str diff-output))]
-          (is (= 0 (:exit compared))
-              (format "Error comparing, result: %s \n data: %s"
-                      (str pdf-output)
-                      (pr-str compared))))))))
+          (io/copy pdf-output (io/file "test-resources" expected-img-file))))))
 
 (defn test-fails
   "Tests that rendering the template with the payload results in the given exception chain."
