@@ -28,7 +28,8 @@
     (render-visual-compare!
      :template  (format "multipart-gen/main-%s.docx" main)
      :data      {:name "Janos"}
-     :expected  (format "multipart-gen/expected-%s-%s-%s.pdf" main body header) :fix? true
+     :expected  (format "multipart-gen/expected-%s-%s-%s.pdf" main body header)
+     :fix? true
      :fragments {"body"   (format "multipart-gen/body-%s.docx" body)
                  "header" (when header (format "multipart-gen/header-%s.docx" header))})))
 
