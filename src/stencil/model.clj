@@ -120,7 +120,6 @@
                                   fragment-names (set (:fragment-names result))]
                               (-> m
                                   (relations/model-assoc-extra-files fragment-names)
-
                                   (assoc :result result)))))]
           (-> template-model
               (update-in [:main :headers+footers] (partial mapv evaluate))
