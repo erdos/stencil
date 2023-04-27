@@ -33,13 +33,13 @@
         expected-png  (some-> pdf-expected (.getName) (.replaceFirst "\\.[a-z]{3,4}$" ".png") (->> (io/file outdir)))
         png-output    (some-> pdf-output (.getName) (.replaceFirst "\\.[a-z]{3,4}$" ".png") (->> (io/file outdir)))]
     ;; 1. convert expected PDF to png
-    (let [conversion (shell/sh "convert" "-density" (str resolution) (str pdf-expected) "-background" "white" "-alpha" "remove" "-blur" "6x6" (str expected-png))]
+    (let [conversion (shell/sh "convert" "-density" (str resolution) (str pdf-expected) "-background" "white" "-alpha" "remove" #_"-blur" #_"6x6" (str expected-png))]
       (is (= 0 (:exit conversion))
           (format "Conversion error: %s" (pr-str conversion)))
       (is (.exists expected-png)))
 
     ;; 2. convert PDF to png
-    (let [conversion (shell/sh "convert" "-density" (str resolution) (str pdf-output) "-background" "white" "-alpha" "remove" "-blur" "6x6" (str png-output))]
+    (let [conversion (shell/sh "convert" "-density" (str resolution) (str pdf-output) "-background" "white" "-alpha" "remove" #_"-blur" #_"6x6" (str png-output))]
       (is (= 0 (:exit conversion)) (str "Conversion error: " (pr-str conversion)))
       (is (.exists png-output)))
 

@@ -23,7 +23,7 @@
   (doseq [main '[plain styled plain-with-header styled-with-header]
           body  '[static static-styled]
           header '[nil static plain styled]
-          :when (= (str/includes? (name main) "header") (some? header))]
+          :when (= (str/includes? (name main) "with-header") (some? header))]
     (println :! main body header)
     (render-visual-compare!
      :template  (format "multipart-gen/main-%s.docx" main)
