@@ -15,13 +15,21 @@
 (defn -initial-numbering-context [template-model]
   (let [xml-tree (-> template-model :main :stencil.model/numbering :parsed)]
     {:extra-elems (atom []) ;; elems added during evaluation in context
-     :counter     (atom (apply max 0 (for [e (:content xml-tree)]
-                                       (->int (or (-> e :attrs ooxml/xml-abstract-num-id)
-                                                  (-> e :attrs ooxml/attr-numId))))))
+     :counter1     (atom (apply max 0 (for [e (:content xml-tree)]
+                                         (-> e :attrs ooxml/attr-numId (or "0") ->int))))
+     :counter2     (atom (apply max 0 (for [e (:content xml-tree)]
+                                         (-> e :attrs ooxml/xml-abstract-num-id (or "0") ->int))))
      :parsed      xml-tree}))
 
 (defn- gen-numbering-id []
-  (str (swap! (:counter *numbering*) inc)))
+  (str (swap! (:counter1 *numbering*) inc)))
+
+(defn- gen-abstract-numbering-id []
+  (str (swap! (:counter2 *numbering*) inc)))
+
+
+(def ^:private ignorable-tag :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fmarkup-compatibility%2F2006/Ignorable)
+
 
 (defn -add-extra-elems [evaluated-model extra-elems]
   (-> evaluated-model
@@ -30,8 +38,11 @@
                    (if (:stencil.model/path nr#)
                      (dissoc nr# :source-file)
                      (assoc nr#
-                            :parsed {:tag ooxml/tag-numbering :content []}
+                            :parsed {:tag ooxml/tag-numbering :attrs {ignorable-tag ""} :content []}
                             :stencil.model/path  "word/numbering.xml"))))
+      ;; TODO: make it conditional
+      (assoc-in [:content-types :parsed :stencil.model.content-types/override "/word/numbering.xml"]
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml")
       (update-in [:main :stencil.model/numbering :parsed :content] concat extra-elems)
       (update-in [:main :stencil.model/numbering]
                  (fn [nr#] (assoc nr# :result {:writer (->xml-writer (:parsed nr#))})))
@@ -65,7 +76,7 @@
                               (if (contains? (:abstract-num-id-rename cache) abstract-nr-id)
                                 cache
                                 (let [elem   (id->abstract-numbering abstract-nr-id)
-                                      new-id (gen-numbering-id)]
+                                      new-id (gen-abstract-numbering-id)]
                                   (add-numbering-entry! (assoc-in elem [:attrs ooxml/xml-abstract-num-id] new-id))
                                   (assoc-in cache [:abstract-num-id-rename abstract-nr-id] new-id))))
         copy-nring (fn [cache numbering-id]

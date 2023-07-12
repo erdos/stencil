@@ -12,7 +12,8 @@
             [stencil.model.common :refer [unix-path ->xml-writer resource-copier]]
             [stencil.ooxml :as ooxml]
             [stencil.model [numbering :as numbering] [relations :as relations] [style :as style] [content-types :as content-types]]
-            [stencil.cleanup :as cleanup]))
+            [stencil.cleanup :as cleanup]
+            [stencil.model.content-types :as content-types]))
 
 (set! *warn-on-reflection* true)
 
@@ -105,18 +106,19 @@
   (assert (some? fragments))
   (binding [*inserted-fragments* (atom #{})
             *all-fragments*      (into {} fragments)]
-    (style/with-styles-context template-model
-      (numbering/with-numbering-context template-model
-        (let [evaluate  (fn [m]
-                          (relations/with-extra-files-context
-                            (let [result         (eval-model-part m data functions)
-                                  fragment-names (set (:fragment-names result))]
-                              (-> m
-                                  (relations/model-assoc-extra-files fragment-names)
-                                  (assoc :result result)))))]
-          (-> template-model
-              (update-in [:main :headers+footers] (partial mapv evaluate))
-              (update :main evaluate)))))))
+    (content-types/with-content-types
+      (style/with-styles-context template-model
+        (numbering/with-numbering-context template-model
+          (let [evaluate  (fn [m]
+                            (relations/with-extra-files-context
+                              (let [result         (eval-model-part m data functions)
+                                    fragment-names (set (:fragment-names result))]
+                                (-> m
+                                    (relations/model-assoc-extra-files fragment-names)
+                                    (assoc :result result)))))]
+            (-> template-model
+                (update-in [:main :headers+footers] (partial mapv evaluate))
+                (update :main evaluate))))))))
 
 
 (defn- model-seq [model]
