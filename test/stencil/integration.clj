@@ -56,14 +56,14 @@
   "Render a file and then visually compare result to a screenshot"
   [& {template-name :template
       data :data
-      expected-img-file :expected
+      expected-pdf-file :expected
       fragments :fragments
       fix? :fix?}]
-  (let [basename      (str (java.util.UUID/randomUUID))
+  (let [basename      (str (str (.getName (io/file expected-pdf-file)) "-base"))
         outdir        (io/file (or (System/getenv "RUNNER_TEMP") "/tmp") "stencil-testing")
-        docx-output   (io/file outdir (str basename ".docx"))
-        pdf-output    (io/file outdir (str basename ".pdf"))
-        expected-img  (io/file (io/resource expected-img-file))]
+        docx-output   (io/file outdir (str basename ".result.docx"))
+        pdf-output    (io/file outdir (str basename ".result.pdf"))
+        expected-pdf  (io/file (io/resource expected-pdf-file))]
     (io/make-parents docx-output)
 
     ;; 1. render template
@@ -79,11 +79,11 @@
       (is (.exists pdf-output) (str "Output PDF file does not exist: " pdf-output)))
 
     ;; 3. compare pdf files
-    (if expected-img
-      (assert-pdf-equal outdir basename expected-img pdf-output)
+    (if expected-pdf
+      (assert-pdf-equal outdir basename expected-pdf pdf-output)
       (do (assert fix?)
           (println "Expected file did not exist, creating: " pdf-output)
-          (io/copy pdf-output (io/file "test-resources" expected-img-file))))))
+          (io/copy pdf-output (io/file "test-resources" expected-pdf-file))))))
 
 (defn test-fails
   "Tests that rendering the template with the payload results in the given exception chain."
