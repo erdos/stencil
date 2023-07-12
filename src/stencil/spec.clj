@@ -55,7 +55,7 @@
 
 (s/def :stencil.model/content-types
   (s/keys :req [:stencil.model/path]
-          :req-un [::source-file]))
+          :opt-un [::source-file]))
 
 (s/def :stencil.model/model
   (s/keys :req []

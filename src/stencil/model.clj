@@ -105,17 +105,18 @@
   (binding [numbering/*numbering* (::numbering (:main template-model))
             *inserted-fragments* (atom #{})
             *all-fragments*      (into {} fragments)]
-    (style/with-styles-context template-model
-      (relations/with-extra-files-context
-        (let [evaluate  (fn [m]
-                          (let [result         (eval-model-part m data functions)
-                                fragment-names (set (:fragment-names result))]
-                            (-> m
-                                (relations/model-assoc-extra-files fragment-names)
-                                (assoc :result result))))]
-          (-> template-model
-              (update :main evaluate)
-              (update-in [:main :headers+footers] (partial mapv evaluate))))))))
+    (content-types/with-content-types
+      (style/with-styles-context template-model
+        (relations/with-extra-files-context
+          (let [evaluate  (fn [m]
+                            (let [result         (eval-model-part m data functions)
+                                  fragment-names (set (:fragment-names result))]
+                              (-> m
+                                  (relations/model-assoc-extra-files fragment-names)
+                                  (assoc :result result))))]
+            (-> template-model
+                (update :main evaluate)
+                (update-in [:main :headers+footers] (partial mapv evaluate)))))))))
 
 
 (defn- model-seq [model]
