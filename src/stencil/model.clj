@@ -11,7 +11,7 @@
             [stencil.util :refer [unlazy-tree eval-exception]]
             [stencil.model.common :refer [unix-path ->xml-writer resource-copier]]
             [stencil.ooxml :as ooxml]
-            [stencil.model [numbering :as numbering] [relations :as relations] [style :as style]]
+            [stencil.model [numbering :as numbering] [relations :as relations] [style :as style] [content-types :as content-types]]
             [stencil.cleanup :as cleanup]))
 
 (set! *warn-on-reflection* true)
@@ -38,13 +38,6 @@
 ;; set of already inserted fragment ids.
 (def ^:private ^:dynamic *inserted-fragments* nil)
 
-(defn- parse-content-types [^File cts]
-  (assert (.exists cts))
-  (assert (.isFile cts))
-  {:source-file cts
-   ::path       (.getName cts)})
-
-
 (defn ->exec [xml-streamable]
   (with-open [stream (io/input-stream xml-streamable)]
     (-> (merger/parse-to-tokens-seq stream)
@@ -60,7 +53,7 @@
         main-document-rels (relations/->rels dir main-document)
         ->exec (binding [merger/*only-includes* (boolean (:only-includes options-map))]
                  (bound-fn* ->exec))]
-    {:content-types (parse-content-types (file dir "[Content_Types].xml"))
+    {:content-types (content-types/parse-content-types dir)
      :source-folder dir
      :relations     main-rels
      :main          (-> {::path       main-document
