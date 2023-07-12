@@ -31,7 +31,6 @@
     (is (= {:lvl-text "", :num-fmt "none", :start 1}
            (style-def-for "id-1" 2)))))
 
-
 (deftest test-style-for-def
   (binding [*numbering*
             {:parsed
