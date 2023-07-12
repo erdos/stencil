@@ -12,8 +12,7 @@
             [stencil.model.common :refer [unix-path ->xml-writer resource-copier]]
             [stencil.ooxml :as ooxml]
             [stencil.model [numbering :as numbering] [relations :as relations] [style :as style] [content-types :as content-types]]
-            [stencil.cleanup :as cleanup]
-            [stencil.model.content-types :as content-types]))
+            [stencil.cleanup :as cleanup]))
 
 (set! *warn-on-reflection* true)
 
@@ -119,7 +118,6 @@
             (-> template-model
                 (update-in [:main :headers+footers] (partial mapv evaluate))
                 (update :main evaluate))))))))
-
 
 (defn- model-seq [model]
   (let [model-keys [:relations :headers+footers :main :style :content-types :fragments ::numbering :result]]

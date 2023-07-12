@@ -1,8 +1,6 @@
 (ns stencil.model.content-types
-  (:require [clojure.java.io :refer [file]]
-            [clojure.data.xml :as xml]
+  (:require [clojure.data.xml :as xml]
             [clojure.java.io :refer [file input-stream]]
-            [stencil.ooxml :as ooxml]
             [stencil.model.common :refer [->xml-writer]])
   (:import [java.io File]))
 
@@ -22,8 +20,6 @@
     (let [parsed (xml/parse reader)]
       (assert (= "Types" (name (:tag parsed))))
       (reduce (fn [m elem]
-                ;(println :! (:tag elem) elem (pr-str elem))
-                (println :! (:attrs elem))
                 (case (name (:tag elem))
                   "Default"  (assoc-in m [::default (attr-extension (:attrs elem))] (attr-content-type (:attrs elem)))
                   "Override" (assoc-in m [::override (attr-part-name (:attrs elem))] (attr-content-type (:attrs elem)))))
@@ -34,13 +30,11 @@
   (let [cts (file dir "[Content_Types].xml")]
     (assert (.exists cts))
     (assert (.isFile cts))
-    {;:source-file cts
-     :parsed                   (parse-ct-file cts)
+    {:parsed                   (parse-ct-file cts)
      :stencil.model/path       (.getName cts)}))
 
 (defn with-content-types [model]
   (let [parsed (-> model :content-types :parsed)
-        _ (println :! parsed)
         tree   {:tag tag-types
                 :attrs {:xmlns xmlns}
                 :content (concat (for [[k v] (::default parsed)]
