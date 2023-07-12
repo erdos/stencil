@@ -9,12 +9,10 @@
         (if (map? (second body)) body (list* (first body) {} (next body)))]
     {:tag tag, :attrs attrs, :content (mapv hiccup children)}))
 
-#_
 (deftest test-style-for-def-empty
   (binding [*numbering* {:parsed (prepare-numbering-xml {:tag :numbering :content []})}]
     (is (= nil (style-def-for "id-1" 2)))))
 
-#_
 (deftest test-style-for-def-with-abstract
   (binding [*numbering*
             {:parsed
@@ -33,7 +31,6 @@
     (is (= {:lvl-text "", :num-fmt "none", :start 1}
            (style-def-for "id-1" 2)))))
 
-#_
 (deftest test-style-for-def
   (binding [*numbering*
             {:parsed
