@@ -106,7 +106,7 @@
                 clojure.lang.ExceptionInfo "Function 'decimal' was called with a wrong number of arguments (3)"))
   (testing "Missing fragment"
     (test-fails "test-resources/multipart/main.docx" {}
-                EvalException "No fragment for name: body"))
+                EvalException "No fragment for name: header"))
   (testing "date() function has custom message"
     (test-fails "test-resources/test-function-date.docx" {"date" "2022-01-04XXX11:22:33"}
                 EvalException "Error evaluating expression: {%=date(\"yyyy-MM-dd\", date)%}"

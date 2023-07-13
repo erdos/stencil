@@ -29,6 +29,11 @@ Solution: keep track of and reuse the xml ns alias names.
 See also: `Requires` attribute of the `Choice` tag.
 
 
+### In numbering definition
+
+The root node in the numbering definition must contain an `Ignorable` tag (which can be also empty). Needed for Word.
+
+
 ## XML space attribute
 
 Problem: space symbols disappear from the document.

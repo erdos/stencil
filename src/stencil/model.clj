@@ -10,6 +10,7 @@
             [stencil.types :refer [->FragmentInvoke]]
             [stencil.util :refer [unlazy-tree eval-exception]]
             [stencil.model.common :refer [unix-path ->xml-writer resource-copier]]
+            [stencil.ooxml :as ooxml]
             [stencil.model [numbering :as numbering] [relations :as relations] [style :as style] [content-types :as content-types]]
             [stencil.cleanup :as cleanup]))
 
@@ -102,22 +103,21 @@
 (defn- eval-template-model [template-model data functions fragments]
   (assert (:main template-model) "Should be a result of load-template-model call!")
   (assert (some? fragments))
-  (binding [numbering/*numbering* (::numbering (:main template-model))
-            *inserted-fragments* (atom #{})
+  (binding [*inserted-fragments* (atom #{})
             *all-fragments*      (into {} fragments)]
     (content-types/with-content-types
       (style/with-styles-context template-model
-        (relations/with-extra-files-context
+        (numbering/with-numbering-context template-model
           (let [evaluate  (fn [m]
-                            (let [result         (eval-model-part m data functions)
-                                  fragment-names (set (:fragment-names result))]
-                              (-> m
-                                  (relations/model-assoc-extra-files fragment-names)
-                                  (assoc :result result))))]
+                            (relations/with-extra-files-context
+                              (let [result         (eval-model-part m data functions)
+                                    fragment-names (set (:fragment-names result))]
+                                (-> m
+                                    (relations/model-assoc-extra-files fragment-names)
+                                    (assoc :result result)))))]
             (-> template-model
-                (update :main evaluate)
-                (update-in [:main :headers+footers] (partial mapv evaluate)))))))))
-
+                (update-in [:main :headers+footers] (partial mapv evaluate))
+                (update :main evaluate))))))))
 
 (defn- model-seq [model]
   (let [model-keys [:relations :headers+footers :main :style :content-types :fragments ::numbering :result]]
@@ -147,7 +147,7 @@
     ;; find all items in all relations
     (into result
           (for [m (model-seq evaled-template-model)
-                :when (:relations m)
+                :when (:relations m) ;:when (::path m)
                 :let [src-parent  (delay (file (or (:source-folder m)
                                                   (.getParentFile (file (:source-file m))))))
                       path-parent (some-> m ::path file .getParentFile)]
@@ -179,6 +179,20 @@
      elem)))
 
 
+;; recursively going over xml tree, rename values in attributes specified in mappers.
+(defn- xml-map-attrs [attr-mappers xml-tree]
+  (if (map? xml-tree)
+    ;; TODO: we could speed this up!
+    (if-let [f (attr-mappers (:tag xml-tree))]
+      (update-in xml-tree [:attrs ooxml/val] f)
+      (assoc xml-tree :content (mapv (partial xml-map-attrs attr-mappers) (:content xml-tree)))) 
+    xml-tree))
+
+; And therefore:
+; (defn- map-rename-relation-ids [item id-rename]
+;   (xml-map-attrs {ooxml/r-embed id-rename ooxml/r-id id-rename} item))
+
+
 (defmethod eval/eval-step :cmd/include [function local-data-map {frag-name :name}]
   (assert (map? local-data-map))
   (assert (string? frag-name))
@@ -199,7 +213,11 @@
                              (get-xml)
                              (extract-body-parts)
                              (map (partial relations/xml-rename-relation-ids relation-rename-map))
-                             (map (partial style/xml-rename-style-ids style-ids-rename)))]
+                             (map (partial xml-map-attrs
+                                           {ooxml/attr-numId
+                                            (partial numbering/copy-numbering fragment-model (atom {}))}))
+                             (map (partial style/xml-rename-style-ids style-ids-rename))
+                             (doall))]
        (swap! *inserted-fragments* conj frag-name)
        (run! relations/add-extra-file! relation-ids-rename)
        [{:text (->FragmentInvoke {:frag-evaled-parts evaled-parts})}])
