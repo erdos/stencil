@@ -130,21 +130,23 @@
   ([values] (apply str values))
   ([xform coll] (transduce xform (fn ([^Object s] (.toString s)) ([^StringBuilder b v] (.append b v))) (StringBuilder.) coll)))
 
-(defn ^{:inline (fn [c] `(case ~c (\tab \space \newline
-                                   \u00A0 \u2007 \u202F ;; non-breaking spaces
-                                   \u000B \u000C \u000D \u001C \u001D \u001E \u001F)
-                            true false))} 
-  whitespace? [c] (whitespace? c))
+(defmacro whitespace?? [c]
+  `(case ~c (\tab \space \newline
+                  \u00A0 \u2007 \u202F ;; non-breaking spaces
+                  \u000B \u000C \u000D \u001C \u001D \u001E \u001F)
+         true false))
+
+(defn whitespace? [c] (whitespace?? c))
 
 ;; like clojure.string/trim but supports a wider range of whitespace characters
 (defn ^String trim [^CharSequence s]
   (loop [right-idx (.length s)]
     (if (zero? right-idx)
       ""
-      (if (whitespace? (.charAt s (dec right-idx)))
+      (if (whitespace?? (.charAt s (dec right-idx)))
         (recur (dec right-idx))
         (loop [left-idx 0]
-          (if (whitespace? (.charAt s left-idx))
+          (if (whitespace?? (.charAt s left-idx))
             (recur (inc left-idx))
             (.toString (.subSequence s left-idx right-idx))))))))
 
