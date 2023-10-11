@@ -122,3 +122,5 @@
 
 ;; drawing, binary large image or picture
 (def blip :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fdrawingml%2F2006%2Fmain/blip)
+;; hyperlinks
+(def hyperlink :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/hyperlink)

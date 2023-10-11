@@ -1,0 +1,6 @@
+{
+  "urls": [
+    "https://stencil.erdos.dev",
+    "https://httpbin.org/get?data=1&data2=2"
+  ]
+}
