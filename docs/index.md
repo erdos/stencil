@@ -17,6 +17,7 @@ You can find the project on [Stencil's GitHub](https://github.com/erdos/stencil)
 - Reuse parts of templates with [Fragments](Fragments.md)
 - Run it in [Standalone Mode](Standalone.md) for batch processing
 - [Dynamic images](Images.md)
+- [Dynamic links](Links.md)
 
 
 ## For Programmers

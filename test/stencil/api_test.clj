@@ -133,6 +133,12 @@
     (with-open [template (prepare "test-resources/test-image-1.docx")]
       (render! template data :output f :overwrite? true))))
 
+(deftest test-link
+  (let [data {"url" "https://stencil.erdos.dev/?data=1&data2=2"}
+        f    (java.io.File/createTempFile "stencil" ".docx")]
+    (with-open [template (prepare "test-resources/test-link-1.docx")]
+      (render! template data :output f :overwrite? true))))
+
 (deftest test-multipart
   (let [template (prepare "test-resources/multipart/main.docx")
         body     (fragment "test-resources/multipart/body.docx")
