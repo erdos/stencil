@@ -36,7 +36,7 @@
 (defn- ->action-inside-parser [chars-and-tokens-to-append]
   (let [expected-close-tag-chars   (volatile! (seq close-tag))
         buffer-nonclose-chars-only (new java.util.ArrayList)
-        buffer-all-read            (new java.util.ArrayList)] 
+        buffer-all-read            (new java.util.ArrayList)]
     (fn self
       ([]
        (when (seq buffer-all-read)
@@ -86,17 +86,15 @@
              (do (.add buffer token)
                  self))))))))
 
-(defn cleanup-runs!!! []
+(defn- parser-trampoline []
   (fn [rf]
-    ;; handler fn returns a fn (like trampoline) or a collection
     (let [handler (volatile! (->action-parser []))]
       (fn
         ([acc] (rf (reduce rf acc (@handler))))
         ([acc token]
          (let [result (@handler token)]
            (if (fn? result)
-             (do (vreset! handler result)
-                 acc)
+             (do (vreset! handler result) acc)
              (reduce rf acc result))))))))
 
 (defn- unmap-text-nodes []
@@ -116,8 +114,7 @@
                (rf (rf acc new-node) x)))))))))
 
 (defn cleanup-runs [tokens-seq]
-  (sequence (comp map-text-nodes (cleanup-runs!!!) (unmap-text-nodes))
-            tokens-seq))
+  (eduction (comp map-text-nodes (parser-trampoline) (unmap-text-nodes)) tokens-seq))
 
 (defn- map-token [token] (:action token token))
 
