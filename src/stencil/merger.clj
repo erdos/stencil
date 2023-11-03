@@ -134,6 +134,6 @@
        (ignored-tag/map-ignored-attr)
        (tokenizer/structure->seq)
        (cleanup-runs)
-       (mapv map-token)))
+       (eduction (map map-token))))
 
 :OK
