@@ -55,8 +55,8 @@
                                         (vec buffer-all-read))))))
          (when (char? token)
            (vreset! expected-close-tag-chars (seq close-tag))
-           (doto buffer-nonclose-chars-only
-             (.clear) (.addAll (filter char? buffer-all-read)))
+           (.clear buffer-nonclose-chars-only)
+           (.addAll buffer-nonclose-chars-only (filter char? buffer-all-read))
            self))))))
 
 ;; returns either a collection of elements or nil
@@ -77,9 +77,8 @@
                (when-not (vswap! expected-open-tag-chars next)
                  (->action-inside-parser buffer))))
          (if (= (count open-tag) (count @expected-open-tag-chars))
-           ;; we are not inside a reading thing.
            (let [result (concat (vec buffer) [token])]
-             (.clear buffer)
+             (.clear buffer) ;; reading an open-tag from start => we dump the content of buffer
              result)
            (if (char? token)
              (let [out (vec buffer)]
