@@ -4,12 +4,10 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
-import java.util.Objects;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
 import static java.lang.System.getProperty;
-import static java.util.Objects.requireNonNullElse;
 
 /**
  * File handling utilities.
@@ -140,5 +138,9 @@ public final class FileHelper {
                 return path.toString().replaceAll(Pattern.quote(separator), "/");
             }
         }
+    }
+
+    private static <T> T requireNonNullElse(T first, T second) {
+        return first == null ? second : first;
     }
 }

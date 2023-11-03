@@ -1,7 +1,5 @@
 package io.github.erdos.stencil;
 
-import io.github.erdos.stencil.impl.FileHelper;
-
 import java.io.File;
 
 public final class PrepareOptions {
