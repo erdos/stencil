@@ -30,7 +30,9 @@
 ;; Called  from Java API
 (defn prepare-template [^InputStream stream, ^PrepareOptions options]
   (assert (instance? InputStream stream))
-  (let [zip-dir   (FileHelper/createNonexistentTempFile "stencil-" ".zip.contents")
+  (let [zip-dir   (FileHelper/createNonexistentTempFile
+                   (.getTemporaryDirectoryOverride options)
+                   "stencil-" ".zip.contents")
         options   {:only-includes (.isOnlyIncludes options)}]
     (with-open [zip-stream stream]
       (ZipHelper/unzipStreamIntoDirectory zip-stream zip-dir))
@@ -43,6 +45,7 @@
 (defn prepare-fragment [input, ^PrepareOptions options]
   (assert (some? input))
   (let [zip-dir (FileHelper/createNonexistentTempFile
+                 (.getTemporaryDirectoryOverride options)
                  "stencil-fragment-" ".zip.contents")
         options {:only-includes (.isOnlyIncludes options)}]
     (with-open [zip-stream (io/input-stream input)]

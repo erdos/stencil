@@ -4,8 +4,12 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.regex.Pattern;
+
+import static java.lang.System.getProperty;
+import static java.util.Objects.requireNonNullElse;
 
 /**
  * File handling utilities.
@@ -14,7 +18,7 @@ import java.util.regex.Pattern;
 @SuppressWarnings("WeakerAccess")
 public final class FileHelper {
 
-    private final static File TEMP_DIRECTORY = new File(System.getProperty("java.io.tmpdir"));
+    private final static File TEMP_DIRECTORY = new File(requireNonNullElse(getProperty("stencil.tmpdir"), getProperty("java.io.tmpdir")));
 
     private FileHelper() {}
 
@@ -51,7 +55,11 @@ public final class FileHelper {
      * @return a new file object pointing to a non-existing file in temp directory.
      */
     public static File createNonexistentTempFile(String prefix, String suffix) {
-        return new File(TEMP_DIRECTORY, prefix + UUID.randomUUID() + suffix);
+        return createNonexistentTempFile(null, prefix, suffix);
+    }
+
+    public static File createNonexistentTempFile(File parent, String prefix, String suffix) {
+        return new File(requireNonNullElse(parent, TEMP_DIRECTORY), prefix + UUID.randomUUID() + suffix);
     }
 
     /**

@@ -66,6 +66,13 @@ This renders the template to `/tmp/output-1.docx` with the supplied data.
 Call the `(cleanup!)` function on the prepared template instance when not used anymore to clean
 up associated resources.
 
+
+## Configuration
+
+- Use the `stencil.tmpdir` environment variable to change the default location used
+to store prepared template and fragment files. When not set, the value of `java.io.tmpdir` is used (eg.: `/tmp` in Linux).
+
+
 ## Converting to other formats
 
 If you need to convert the resulting document to other document types you can
