@@ -40,7 +40,8 @@
     (fn self
       ([]
        (when (seq buffer-all-read)
-         (throw (parsing-exception (str open-tag (apply str buffer-nonclose-chars-only) close-tag) "Not-empty buffer."))))
+         (throw (parsing-exception
+                 "" (apply str "Stencil tag is not closed. Reading " open-tag buffer-nonclose-chars-only)))))
       ([token]
        (.add buffer-all-read token)
        (if (= token (first @expected-close-tag-chars))
@@ -59,16 +60,22 @@
            self))))))
 
 ;; returns either a collection of elements or nil
-(defn ->action-parser [prepend]
+(defn- ->action-parser [prepend]
   (let [expected-open-tag-chars (volatile! (seq open-tag))
         buffer                  (new java.util.ArrayList ^java.util.Collection prepend)]
     (fn self
       ([] buffer)
       ([token]
        (if (= token (first @expected-open-tag-chars))
-         (do (.add buffer token)
-             (when-not (vswap! expected-open-tag-chars next)
-               (->action-inside-parser buffer)))
+         (if (= (count open-tag) (count @expected-open-tag-chars))
+           (let [already-read (vec buffer)]
+             (.clear buffer)
+             (.add buffer token)
+             (vswap! expected-open-tag-chars next)
+             already-read)
+           (do (.add buffer token)
+               (when-not (vswap! expected-open-tag-chars next)
+                 (->action-inside-parser buffer))))
          (if (= (count open-tag) (count @expected-open-tag-chars))
            ;; we are not inside a reading thing.
            (let [result (concat (vec buffer) [token])]
@@ -97,6 +104,7 @@
              (do (vreset! handler result) acc)
              (reduce rf acc result))))))))
 
+;; Transducer that merges consecutive characters into a text token, eg.: (1 \a \b \c 2) to (1 {:text "abc"} 2)
 (defn- unmap-text-nodes []
   (fn [rf]
     (let [builder (new java.lang.StringBuilder)]
