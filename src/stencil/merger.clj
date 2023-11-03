@@ -108,13 +108,13 @@
   (fn [rf]
     (let [builder (new java.lang.StringBuilder)]
       (fn ([acc]
-           (if (.isEmpty builder)
+           (if (empty? builder)
              (rf acc)
              (rf (rf acc {:text (str builder)}))))
         ([acc x]
          (if (char? x)
            (do (.append builder x) acc)
-           (if (.isEmpty builder)
+           (if (empty? builder)
              (rf acc x)
              (let [new-node {:text (str builder)}]
                (.delete builder 0 (.length builder))
