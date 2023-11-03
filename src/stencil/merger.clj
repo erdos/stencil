@@ -35,35 +35,28 @@
 (defn- ->action-inside-parser [chars-and-tokens-to-append]
   (let [expected-close-tag-chars   (volatile! (seq close-tag))
         buffer-nonclose-chars-only (new java.util.ArrayList)
-        buffer-all-chars           (new java.util.ArrayList)
-        buffer-tokens-only         (new java.util.ArrayList)
         buffer-all-read            (new java.util.ArrayList)] 
     (fn self
       ([]
-       (when (or (seq buffer-all-chars) (seq buffer-nonclose-chars-only) (seq buffer-tokens-only))
+       (when (seq buffer-all-read)
          (assert false "Not-empty buffer!"))
        ) ;; TODO: throw exception if any of the buffers is not empty.
       ([token]
        (.add buffer-all-read token)
        (if (= token (first @expected-close-tag-chars))
-         (if (= 1 (count @expected-close-tag-chars))
+         (when-not (vswap! expected-close-tag-chars next)
            ;; we have read the whole close token 
            (let [action (map-action-token {:action (apply str buffer-nonclose-chars-only)})]
              (if (:action action)
-               (->action-parser (concat [action] (remove char? chars-and-tokens-to-append) (vec buffer-tokens-only)))
-               (->action-parser (concat (vec chars-and-tokens-to-append) (vec buffer-all-read)))))
-           ;; we have read one char of the close
-           (do (vswap! expected-close-tag-chars next)
-               (.add buffer-all-chars token)
-               self))
-         (if (char? token)
-           (do (.add buffer-all-chars token)
-               (doto buffer-nonclose-chars-only
-                 (.clear) (.addAll buffer-all-chars))
-               (vreset! expected-close-tag-chars (seq close-tag))
-               self)
-           (do (.add buffer-tokens-only token)
-               self)))))))
+               (->action-parser (concat [action]
+                                        (remove char? chars-and-tokens-to-append)
+                                        (remove char? buffer-all-read)))
+               (->action-parser (concat (vec chars-and-tokens-to-append) (vec buffer-all-read))))))
+         (when (char? token)
+           (doto buffer-nonclose-chars-only
+             (.clear) (.addAll (filter char? buffer-all-read)))
+           (vreset! expected-close-tag-chars (seq close-tag))
+           self))))))
 
 ;; returns either a collection of elements or nil
 (defn ->action-parser [prepend]
