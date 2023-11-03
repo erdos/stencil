@@ -52,7 +52,7 @@
   (testing "Unchanged"
     (are [x expected] (= expected (cleanup-runs x))
       [{:text "asdf{"} {:text "{aaa"}]
-      [{:text "asdf{"} {:text "{aaa"}])))
+      [{:text "asdf{{aaa"}])))
 
 (defmacro are+ [argv [& exprs] & bodies] (list* 'do (for [e exprs] `(are ~argv ~e ~@bodies))))
 
@@ -90,7 +90,7 @@
             [{:text "abcd"} {:action {:cmd :cmd/echo, :expression 1 :raw "{%=1%}"}} O1 O2 O3 O4{:text "b"}]
 
             [{:text "abc{"} O1 {:text "%"} O2 {:text "=1"} O3 {:text "2"} O4 {:text "%"} O5 {:text "}"} {:text "b"}]
-            [{:text "abc{"} O1 {:text "%"} O2 {:text "=1"} O3 {:text "2"} O4 {:text "%"} O5 {:text "}"} {:text "b"}]
+            [{:text "abc{"} O1 {:text "%"} O2 {:text "=1"} O3 {:text "2"} O4 {:text "%"} O5 {:text "}b"}]
             [{:text "abc"} {:action {:cmd :cmd/echo, :expression 12 :raw "{%=12%}"}} O1 O2 O3 O4 O5 {:text "b"}]
 
             [O1 {:text "{%if p"} O2 O3 {:text "%}one{%end%}"} O4]
