@@ -105,20 +105,9 @@
 
 ;; Transducer that merges consecutive characters into a text token, eg.: (1 \a \b \c 2) to (1 {:text "abc"} 2)
 (defn- unmap-text-nodes []
-  (fn [rf]
-    (let [builder (new java.lang.StringBuilder)]
-      (fn ([acc]
-           (if (empty? builder)
-             (rf acc)
-             (rf (rf acc {:text (str builder)}))))
-        ([acc x]
-         (if (char? x)
-           (do (.append builder x) acc)
-           (if (empty? builder)
-             (rf acc x)
-             (let [new-node {:text (str builder)}]
-               (.delete builder 0 (.length builder))
-               (rf (rf acc new-node) x)))))))))
+  (let [tmp (volatile! true)]
+    (comp (partition-by (fn [x] (when-not (char? x) (vswap! tmp not))))
+          (map (fn [x] (if (every? char? x) {:text (apply str x)} (first x)))))))
 
 (defn cleanup-runs [tokens-seq]
   (eduction (comp map-text-nodes (parser-trampoline) (unmap-text-nodes)) tokens-seq))
