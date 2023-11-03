@@ -61,16 +61,14 @@
 ;; returns either a collection of elements or nil
 (defn ->action-parser [prepend]
   (let [expected-open-tag-chars (volatile! (seq open-tag))
-        buffer                  (new java.util.ArrayList prepend)]
+        buffer                  (new java.util.ArrayList ^java.util.Collection prepend)]
     (fn self
       ([] buffer)
       ([token]
        (if (= token (first @expected-open-tag-chars))
-         (if-not (vswap! expected-open-tag-chars next)
-           (do (.add buffer token)
-               (->action-inside-parser buffer))
-           (do (.add buffer token)
-               self))
+         (do (.add buffer token)
+             (when-not (vswap! expected-open-tag-chars next)
+               (->action-inside-parser buffer)))
          (if (= (count open-tag) (count @expected-open-tag-chars))
            ;; we are not inside a reading thing.
            (let [result (concat (vec buffer) [token])]
