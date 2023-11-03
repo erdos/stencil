@@ -6,41 +6,6 @@
 
 (use-fixtures :each (fn [f] (with-redefs [map-action-token identity] (f))))
 
-(deftest peek-next-text-test
-  (testing "Simple case"
-    (is (= nil (peek-next-text nil)))
-    (is (= nil (peek-next-text [])))
-    (is (= nil (peek-next-text [{:open 1} {:open 2} {:close 2}])))
-    (is (= '({:char \a, :stack nil, :text-rest (\b), :rest ({:text "cd"})}
-             {:char \b, :stack nil, :text-rest nil, :rest ({:text "cd"})}
-             {:char \c, :stack nil, :text-rest (\d), :rest nil}
-             {:char \d, :stack nil, :text-rest nil, :rest nil})
-           (peek-next-text [{:text "ab"} {:text "cd"}])))))
-
-(deftest find-first-code-test
-  (testing "Simple cases"
-    (are [x res] (is (= res (find-first-code x)))
-      "asdf{%xy%}gh" {:action "xy" :before "asdf" :after "gh"}
-      "{%xy%}gh"     {:action "xy" :after "gh"}
-      "asdf{%xy%}"   {:action "xy" :before "asdf"}
-      "{%xy%}"       {:action "xy"}
-      "a{%xy"        {:action-part "xy" :before "a"}
-      "a{%x%"        {:action-part "x%" :before "a"}
-      "{%xy"         {:action-part "xy"})))
-
-(deftest text-split-tokens-test
-  (testing "Simple cases"
-    (are [x expected] (is (= expected (text-split-tokens x)))
-
-      "a{%a%}b{%d"
-      {:tokens [{:text "a"} {:action "a"} {:text "b"}] :action-part "d"}
-
-      "{%a%}{%x%}"
-      {:tokens [{:action "a"} {:action "x"}]}
-
-      ""
-      {:tokens []})))
-
 (deftest cleanup-runs-test
   (testing "Simple cases"
     (are [x expected] (= expected (cleanup-runs x))
