@@ -4,6 +4,7 @@
             [stencil.postprocess.ignored-tag :as ignored-tag]
             [stencil
              [types :refer [open-tag close-tag]]
+             [util :refer [parsing-exception]]
              [tokenizer :as tokenizer]]))
 
 (set! *warn-on-reflection* true)
@@ -39,59 +40,52 @@
     (fn self
       ([]
        (when (seq buffer-all-read)
-         (assert false "Not-empty buffer!"))
-       ) ;; TODO: throw exception if any of the buffers is not empty.
+         (throw (parsing-exception (str open-tag (apply str buffer-nonclose-chars-only) close-tag) "Not-empty buffer."))))
       ([token]
        (.add buffer-all-read token)
        (if (= token (first @expected-close-tag-chars))
          (when-not (vswap! expected-close-tag-chars next)
-           ;; we have read the whole close token 
            (let [action (map-action-token {:action (apply str buffer-nonclose-chars-only)})]
              (if (:action action)
                (->action-parser (concat [action]
                                         (remove char? chars-and-tokens-to-append)
                                         (remove char? buffer-all-read)))
-               (->action-parser (concat (vec chars-and-tokens-to-append) (vec buffer-all-read))))))
+               (->action-parser (concat (vec chars-and-tokens-to-append)
+                                        (vec buffer-all-read))))))
          (when (char? token)
+           (vreset! expected-close-tag-chars (seq close-tag))
            (doto buffer-nonclose-chars-only
              (.clear) (.addAll (filter char? buffer-all-read)))
-           (vreset! expected-close-tag-chars (seq close-tag))
            self))))))
 
 ;; returns either a collection of elements or nil
 (defn ->action-parser [prepend]
   (let [expected-open-tag-chars (volatile! (seq open-tag))
-        buffer-chars-and-tags   (new java.util.ArrayList prepend)]
+        buffer                  (new java.util.ArrayList prepend)]
     (fn self
-      ([]
-       ;; TODO: dump everything to output except if we are already inside an action part 
-       (vec buffer-chars-and-tags))
+      ([] buffer)
       ([token]
        (if (= token (first @expected-open-tag-chars))
-         (if (= 1 (count @expected-open-tag-chars))
-           (do
-             (.add buffer-chars-and-tags token)
-           ;; if we have processed the last char of an open tag sequence...
-             (->action-inside-parser buffer-chars-and-tags))
-           ;; 
-           (do (.add buffer-chars-and-tags token)
-               (vswap! expected-open-tag-chars next)
+         (if-not (vswap! expected-open-tag-chars next)
+           (do (.add buffer token)
+               (->action-inside-parser buffer))
+           (do (.add buffer token)
                self))
          (if (= (count open-tag) (count @expected-open-tag-chars))
            ;; we are not inside a reading thing.
-           (let [result (concat (vec buffer-chars-and-tags) [token])]
-             (.clear buffer-chars-and-tags)
+           (let [result (concat (vec buffer) [token])]
+             (.clear buffer)
              result)
            (if (char? token)
-             (let [out (vec buffer-chars-and-tags)]
+             (let [out (vec buffer)]
                (vreset! expected-open-tag-chars (seq open-tag))
-               (.clear buffer-chars-and-tags)
+               (.clear buffer)
                (if (= token (first @expected-open-tag-chars))
-                 (do (.add buffer-chars-and-tags token)
+                 (do (.add buffer token)
                      (vswap! expected-open-tag-chars next)
                      out)
                  (concat out [token])))
-             (do (.add buffer-chars-and-tags token)
+             (do (.add buffer token)
                  self))))))))
 
 (defn cleanup-runs!!! []
