@@ -28,11 +28,11 @@
        (reduce rf acc (:text x))
        (rf acc x)))))
 
-(declare ->action-parser)
+(declare parse-upto-open-tag)
 
 ;; Constructs a function that reads the inside of a stencil expression until close-tag is reached.
 ;; The fn returns a collection when read fully or itself when there are characters left to read.
-(defn- ->action-inside-parser [chars-and-tokens-to-append]
+(defn- parse-until-close-tag [chars-and-tokens-to-append]
   (let [expected-close-tag-chars   (volatile! (seq close-tag))
         buffer-nonclose-chars-only (new java.util.ArrayList)
         buffer-all-read            (new java.util.ArrayList)]
@@ -47,10 +47,10 @@
          (when-not (vswap! expected-close-tag-chars next)
            (let [action (map-action-token {:action (apply str buffer-nonclose-chars-only)})]
              (if (:action action)
-               (->action-parser (concat [action]
+               (parse-upto-open-tag (concat [action]
                                         (remove char? chars-and-tokens-to-append)
                                         (remove char? buffer-all-read)))
-               (->action-parser (concat (vec chars-and-tokens-to-append)
+               (parse-upto-open-tag (concat (vec chars-and-tokens-to-append)
                                         (vec buffer-all-read))))))
          (when (char? token)
            (vreset! expected-close-tag-chars (seq close-tag))
@@ -58,8 +58,8 @@
            (.addAll buffer-nonclose-chars-only (filter char? buffer-all-read))
            self))))))
 
-;; returns either a collection of elements or nil
-(defn- ->action-parser [prepend]
+;; Similar to the fn above. Consumes tokens up to the first open tag, then returns another parser (trampoline style).
+(defn- parse-upto-open-tag [prepend]
   (let [expected-open-tag-chars (volatile! (seq open-tag))
         buffer                  (new java.util.ArrayList ^java.util.Collection prepend)]
     (fn self
@@ -74,7 +74,7 @@
              already-read)
            (do (.add buffer token)
                (when-not (vswap! expected-open-tag-chars next)
-                 (->action-inside-parser buffer))))
+                 (parse-until-close-tag buffer))))
          (if (= (count open-tag) (count @expected-open-tag-chars))
            (let [result (concat (vec buffer) [token])]
              (.clear buffer) ;; reading an open-tag from start => we dump the content of buffer
@@ -93,13 +93,13 @@
 
 (defn- parser-trampoline []
   (fn [rf]
-    (let [handler (volatile! (->action-parser []))]
+    (let [parser (volatile! (parse-upto-open-tag []))]
       (fn
-        ([acc] (rf (reduce rf acc (@handler))))
+        ([acc] (rf (reduce rf acc (@parser))))
         ([acc token]
-         (let [result (@handler token)]
+         (let [result (@parser token)]
            (if (fn? result)
-             (do (vreset! handler result) acc)
+             (do (vreset! parser result) acc)
              (reduce rf acc result))))))))
 
 ;; Transducer that merges consecutive characters into a text token, eg.: (1 \a \b \c 2) to (1 {:text "abc"} 2)
