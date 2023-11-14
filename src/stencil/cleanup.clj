@@ -110,11 +110,7 @@
 ;; Itt nincsen blokk, amit normalizálni kellene
 (defmethod control-ast-normalize :cmd/echo [echo-command] echo-command)
 
-(defmethod control-ast-normalize :cmd/include [include-command]
-  (if-not (string? (:name include-command))
-    (throw (parsing-exception (pr-str (:name include-command))
-                              "Parameter of include call must be a single string literal!"))
-    include-command))
+(defmethod control-ast-normalize :cmd/include [include-command] include-command)
 
 ;; A feltételes elágazásoknál mindig generálunk egy javított THEN ágat
 (defmethod control-ast-normalize :if [control-ast]
@@ -188,6 +184,7 @@
           (collect-1 [mapping x]
                      (case (:cmd x)
                        :cmd/echo (expr mapping (:expression x))
+                       :cmd/include (expr mapping (:name x))
 
                        :if   (concat (expr mapping (:condition x))
                                      (collect mapping (apply concat (::blocks x))))
@@ -205,7 +202,8 @@
   ;; returns a set of fragment names use in this document
   (set (for [item (tree-seq map? (comp flatten ::blocks) {::blocks [control-ast]})
              :when (map? item)
-             :when (= :cmd/include (:cmd item))]
+             :when (= :cmd/include (:cmd item))
+             :when (string? (:name item))]
          (:name item))))
 
 (defn process [raw-token-seq]
