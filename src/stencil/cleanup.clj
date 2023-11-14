@@ -12,37 +12,36 @@
 
 (set! *warn-on-reflection* true)
 
-(defn- tokens->ast-step [[queue & ss0 :as stack] token]
-  (case (:cmd token)
-    (:if :for) (conj (mod-stack-top-conj stack token) [])
+(defmulti tokens->ast-step (fn [stack token] (:cmd token)))
 
-    :else
-    (if (empty? ss0)
-      (throw (parsing-exception (str open-tag "else" close-tag)
-                                "Unexpected {%else%} tag, it must come right after a condition!"))
-      (conj (mod-stack-top-last ss0 update ::blocks (fnil conj []) {::children queue}) []))
+(defmethod tokens->ast-step :if [stack token] (conj (mod-stack-top-conj stack token) []))
+(defmethod tokens->ast-step :for [stack token] (conj (mod-stack-top-conj stack token) []))
+(defmethod tokens->ast-step :cmd/echo [stack token] (mod-stack-top-conj stack token))
+(defmethod tokens->ast-step nil [stack token] (mod-stack-top-conj stack token))
+(defmethod tokens->ast-step :cmd/include [stack token] (mod-stack-top-conj stack token))
 
-    :else-if
-    (if (empty? ss0)
-      (throw (parsing-exception (str open-tag "else if" close-tag)
-                                "Unexpected {%else if%} tag, it must come right after a condition!"))
-      (-> ss0
-          (mod-stack-top-last update ::blocks (fnil conj []) {::children queue})
-          (conj [(assoc token :cmd :if :r true)])
-          (conj [])))
+(defmethod tokens->ast-step :else [[queue & rest-stack] _]
+  (-> (not-empty rest-stack)
+      (or (throw (parsing-exception (str open-tag "else" close-tag)
+                                    "Unexpected {%else%} tag, it must come right after a condition!")))
+      (mod-stack-top-last update ::blocks (fnil conj []) {::children queue})
+      (conj [])))
 
-    :end
-    (if (empty? ss0)
-      (throw (parsing-exception (str open-tag "end" close-tag)
-                                "Too many {%end%} tags!"))
-      (loop [[queue & ss0] stack]
-        (let [new-stack (mod-stack-top-last ss0 update ::blocks conj {::children queue})]
-          (if (:r (peek (first new-stack)))
-            (recur (mod-stack-top-last new-stack dissoc :r))
-            new-stack))))
+(defmethod tokens->ast-step :else-if [[queue & rest-stack] token]
+  (-> (not-empty rest-stack)
+      (or (throw (parsing-exception (str open-tag "else if" close-tag)
+                                    "Unexpected {%else if%} tag, it must come right after a condition!")))
+      (mod-stack-top-last update ::blocks (fnil conj []) {::children queue})
+      (conj [(assoc token :cmd :if :r true)] [])))
 
-    (:cmd/echo nil :cmd/include)
-    (mod-stack-top-conj stack token)))
+(defmethod tokens->ast-step :end [stack _]
+  (if (empty? (next stack))
+    (throw (parsing-exception (str open-tag "end" close-tag) "Too many {%end%} tags!"))
+    (loop [[queue & ss0] stack]
+      (let [new-stack (mod-stack-top-last ss0 update ::blocks conj {::children queue})]
+        (if (:r (peek (first new-stack)))
+          (recur (mod-stack-top-last new-stack dissoc :r))
+          new-stack)))))
 
 (defn tokens->ast
   "Flat token listabol nested AST-t csinal (listak listai)"
