@@ -4,7 +4,8 @@
            [java.util.zip ZipEntry ZipOutputStream]
            [io.github.erdos.stencil EvaluatedDocument PrepareOptions PreparedFragment PreparedTemplate TemplateVariables]
            [io.github.erdos.stencil.impl FileHelper ZipHelper])
-  (:require [clojure.java.io :as io]
+  (:require [clojure.core.protocols :refer [Datafiable]]
+            [clojure.java.io :as io]
             [stencil.log :as log]
             [stencil.model :as model]
             [stencil.model.common :refer [unix-path]]))
@@ -59,7 +60,11 @@
         (or @model (throw (IllegalStateException. "Fragment has alrady been cleared."))))
       (close [_]
         (reset! model nil)
-        (FileHelper/forceDelete zip-dir)))))
+        (FileHelper/forceDelete zip-dir))
+      Object
+      (toString [_] (str "<PreparedTemplate of " fragment-file ">"))
+      Datafiable
+      (datafy [_] @model))))
 
 (defn- render-writers-map [writers-map outstream]
   (assert (map? writers-map))
