@@ -108,7 +108,7 @@ public class DirWatcherTemplateFactoryTest implements TemplateFactory {
             }
 
             @Override
-            public void cleanup() {
+            public void close() {
                 // NOP
 
             }

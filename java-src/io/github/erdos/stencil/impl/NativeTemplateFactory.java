@@ -6,12 +6,8 @@ import io.github.erdos.stencil.*;
 import io.github.erdos.stencil.exceptions.ParsingException;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static io.github.erdos.stencil.TemplateDocumentFormats.ofExtension;
 import static io.github.erdos.stencil.impl.FileHelper.forceDeleteOnExit;
@@ -33,8 +29,12 @@ public final class NativeTemplateFactory implements TemplateFactory {
             throw new IllegalArgumentException("Template preparation options are missing!");
         }
 
-        try (InputStream input = new FileInputStream(inputTemplateFile)) {
-            return prepareTemplateImpl(templateDocFormat.get(), input, inputTemplateFile, options);
+        try {
+            return (PreparedTemplate) ClojureHelper.findFunction("prepare-template").invoke(inputTemplateFile, options);
+        } catch (ParsingException e) {
+            throw e;
+        } catch (Exception e) {
+            throw ParsingException.wrapping("Could not parse template file!", e);
         }
     }
 
@@ -84,77 +84,5 @@ public final class NativeTemplateFactory implements TemplateFactory {
         return prepared.containsKey(ClojureHelper.Keywords.FRAGMENTS.kw)
                 ? unmodifiableSet(new HashSet<>((Collection<String>) prepared.get(ClojureHelper.Keywords.FRAGMENTS.kw)))
                 : emptySet();
-    }
-
-    @SuppressWarnings("unchecked")
-    private static PreparedTemplate prepareTemplateImpl(TemplateDocumentFormats templateDocFormat, InputStream input, File originalFile, PrepareOptions options) {
-        final IFn prepareFunction = ClojureHelper.findFunction("prepare-template");
-
-        final String format = templateDocFormat.name();
-        final Map<Keyword, Object> prepared;
-
-        try {
-            prepared = (Map<Keyword, Object>) prepareFunction.invoke(input, options);
-        } catch (ParsingException e) {
-            throw e;
-        } catch (Exception e) {
-            throw ParsingException.wrapping("Could not parse template file!", e);
-        }
-
-        final TemplateVariables vars = TemplateVariables.fromPaths(variableNames(prepared), fragmentNames(prepared));
-
-        final File zipDirResource = (File) prepared.get(ClojureHelper.Keywords.SOURCE_FOLDER.kw);
-        if (zipDirResource != null) {
-            forceDeleteOnExit(zipDirResource);
-        }
-
-        return new PreparedTemplate() {
-            final LocalDateTime now = LocalDateTime.now();
-            final AtomicBoolean valid = new AtomicBoolean(true);
-
-            @Override
-            public File getTemplateFile() {
-                return originalFile;
-            }
-
-            @Override
-            public TemplateDocumentFormats getTemplateFormat() {
-                return templateDocFormat;
-            }
-
-            @Override
-            public LocalDateTime creationDateTime() {
-                return now;
-            }
-
-            @Override
-            public Object getSecretObject() {
-                if (!valid.get()) {
-                    throw new IllegalStateException("Can not render destroyed template!");
-                } else {
-                    return prepared;
-                }
-            }
-
-            @Override
-            public TemplateVariables getVariables() {
-                return vars;
-            }
-
-            @Override
-            public void cleanup() {
-                if (valid.compareAndSet(true, false)) {
-                    // deletes unused temporary zip directory
-                    if (zipDirResource != null) {
-                        FileHelper.forceDelete(zipDirResource);
-                    }
-                }
-            }
-
-            @Override
-            public String toString() {
-                return "<Template from file " + originalFile + ">";
-            }
-        };
     }
 }

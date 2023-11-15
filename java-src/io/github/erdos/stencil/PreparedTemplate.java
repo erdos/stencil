@@ -50,20 +50,17 @@ public interface PreparedTemplate extends AutoCloseable{
     TemplateVariables getVariables();
 
     /**
-     * Makes the template clean up any resources allocated for it. Subsequential invocations of this method have no
-     * effects. Rendering the template after this method call will throw an IllegalStateException.
+     * Makes the template clean up any resources allocated for it.
+     * Subsequent invocations of this method have no effects.
+     * Rendering the template after this method call will throw an IllegalStateException.
      */
-    void cleanup();
+    @Override
+    void close();
 
     /**
      * Renders the current prepared template file with the given template data.
      */
     default EvaluatedDocument render(TemplateData templateData) {
         return API.render(this, templateData);
-    }
-
-    @Override
-    default void close() {
-        cleanup();
     }
 }

@@ -1,8 +1,8 @@
 (ns stencil.process
   "These functions are called from Java."
-  (:import [java.io InputStream]
+  (:import [java.io File InputStream]
            [java.util.zip ZipEntry ZipOutputStream]
-           [io.github.erdos.stencil PrepareOptions]
+           [io.github.erdos.stencil PrepareOptions PreparedTemplate TemplateVariables]
            [io.github.erdos.stencil.impl FileHelper ZipHelper])
   (:require [clojure.java.io :as io]
             [stencil.log :as log]
@@ -28,18 +28,29 @@
                          v (:variables (:executable x))] v)))))
 
 ;; Called  from Java API
-(defn prepare-template [^InputStream stream, ^PrepareOptions options]
-  (assert (instance? InputStream stream))
+(defn prepare-template [^File template-file, ^PrepareOptions options]
   (let [zip-dir   (FileHelper/createNonexistentTempFile
                    (.getTemporaryDirectoryOverride options)
                    "stencil-" ".zip.contents")
-        options   {:only-includes (.isOnlyIncludes options)}]
-    (with-open [zip-stream stream]
-      (ZipHelper/unzipStreamIntoDirectory zip-stream zip-dir))
-    (-> zip-dir
-        (model/load-template-model options)
-        merge-fragment-names
-        merge-variable-names)))
+        options   {:only-includes (.isOnlyIncludes options)}
+        _         (with-open [zip-stream (io/input-stream template-file)]
+                    (ZipHelper/unzipStreamIntoDirectory zip-stream zip-dir))
+        model (-> (model/load-template-model zip-dir options)
+                  (merge-fragment-names)
+                  (merge-variable-names)
+                  (atom))
+        datetime (java.time.LocalDateTime/now)
+        variables (TemplateVariables/fromPaths (:variables @model) (:fragments @model))]
+    ;; (FileHelper/forceDeleteOnExit zip-dir)
+    (reify PreparedTemplate
+      (getTemplateFile [_] template-file)
+      (creationDateTime [_] datetime)
+      (getSecretObject [_]
+        (or @model (throw (IllegalStateException. "Template has already been cleared."))))
+      (close [_]
+        (reset! model nil)
+        (FileHelper/forceDelete zip-dir))
+      (getVariables [_] variables))))
 
 ;; Called from Java API
 (defn prepare-fragment [input, ^PrepareOptions options]
