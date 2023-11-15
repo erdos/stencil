@@ -6,7 +6,8 @@
            [io.github.erdos.stencil.impl FileHelper ZipHelper])
   (:require [clojure.java.io :as io]
             [stencil.log :as log]
-            [stencil.model :as model]))
+            [stencil.model :as model]
+            [stencil.model.common :refer [unix-path]]))
 
 (set! *warn-on-reflection* true)
 
@@ -57,7 +58,7 @@
   (io!
    (with-open [zipstream (new ZipOutputStream outstream)]
      (doseq [[k writer] writers-map
-             :let  [rel-path (FileHelper/toUnixSeparatedString (.toPath (io/file k)))
+             :let  [rel-path (unix-path (io/file k))
                     ze       (new ZipEntry rel-path)]]
        (assert (not (.contains rel-path "../")))
        (log/trace "ZIP: writing {}" rel-path)
