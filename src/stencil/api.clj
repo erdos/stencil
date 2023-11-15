@@ -55,7 +55,7 @@
       (.toInputStream result clojure.lang.Agent/soloExecutor)
 
       (instance? java.io.OutputStream (:output opts))
-      (.writeToStream result (:output opts))
+      (.write result (:output opts))
 
       (:output opts)
       (let [f (io/file (:output opts))]

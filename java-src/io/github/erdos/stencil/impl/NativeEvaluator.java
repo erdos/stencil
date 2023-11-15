@@ -3,30 +3,25 @@ package io.github.erdos.stencil.impl;
 import clojure.lang.AFunction;
 import clojure.lang.IFn;
 import clojure.lang.PersistentHashMap;
-import io.github.erdos.stencil.*;
+import io.github.erdos.stencil.EvaluatedDocument;
+import io.github.erdos.stencil.PreparedFragment;
+import io.github.erdos.stencil.PreparedTemplate;
+import io.github.erdos.stencil.TemplateData;
 import io.github.erdos.stencil.exceptions.EvalException;
 import io.github.erdos.stencil.functions.FunctionEvaluator;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static io.github.erdos.stencil.impl.Logging.debugStopWatch;
 import static java.util.Collections.emptyList;
 
 /**
  * Default implementation that calls the engine written in Clojure.
  */
 public final class NativeEvaluator {
-
-    private final static Logger LOGGER = LoggerFactory.getLogger(NativeEvaluator.class);
 
     private final FunctionEvaluator functions = new FunctionEvaluator();
 
@@ -46,24 +41,16 @@ public final class NativeEvaluator {
             throw new IllegalArgumentException("Template data is missing!");
         }
 
-        final Consumer<Supplier<String>> stopwatch = debugStopWatch(LOGGER);
-        stopwatch.accept(() -> "Starting document rendering for template " + template.getTemplateFile());
-
         final IFn fn = ClojureHelper.findFunction("eval-template");
         final Object argsMap = makeArgsMap(template.getSecretObject(), fragments, data.getData());
 
-        final Map result;
         try {
-            result = (Map) fn.invoke(argsMap);
+            return (EvaluatedDocument) fn.invoke(argsMap);
         } catch (EvalException e) {
             throw e;
         } catch (Exception e) {
             throw new EvalException("Unexpected error", e);
         }
-
-        final Consumer<OutputStream> stream = resultWriter(result);
-
-        return build(stream, template.getTemplateFormat());
     }
 
 
@@ -73,27 +60,6 @@ public final class NativeEvaluator {
     @SuppressWarnings("unused")
     public FunctionEvaluator getFunctionEvaluator() {
         return functions;
-    }
-
-    private static EvaluatedDocument build(Consumer<OutputStream> writer, TemplateDocumentFormats format) {
-        return new EvaluatedDocument() {
-
-            @Override
-            public TemplateDocumentFormats getFormat() {
-                return format;
-            }
-
-            @Override
-            public Consumer<OutputStream> getWriter() {
-                return writer;
-            }
-        };
-    }
-
-    @SuppressWarnings("unchecked")
-    private static Consumer<OutputStream> resultWriter(Map result) {
-        IFn writer = (IFn) ClojureHelper.Keywords.WRITER.getOrThrow(result);
-        return writer::invoke;
     }
 
     @SuppressWarnings("unchecked")

@@ -2,7 +2,7 @@
   "These functions are called from Java."
   (:import [java.io File]
            [java.util.zip ZipEntry ZipOutputStream]
-           [io.github.erdos.stencil PrepareOptions PreparedFragment PreparedTemplate TemplateVariables]
+           [io.github.erdos.stencil EvaluatedDocument PrepareOptions PreparedFragment PreparedTemplate TemplateVariables]
            [io.github.erdos.stencil.impl FileHelper ZipHelper])
   (:require [clojure.java.io :as io]
             [stencil.log :as log]
@@ -77,5 +77,7 @@
 (defn eval-template [{:keys [template data function fragments]}]
   (assert (:source-folder template))
   (let [data        (into {} data)
-        writers-map (model/template-model->writers-map template data function fragments)]
-    {:writer (partial render-writers-map writers-map)}))
+        writers-map (model/template-model->writers-map template data function fragments)
+        writer      (partial render-writers-map writers-map)]
+    (reify EvaluatedDocument
+      (write [_ target-stream] (writer target-stream)))))
