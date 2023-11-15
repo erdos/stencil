@@ -33,4 +33,12 @@
                          {:close :a}],
             :fragments #{"elefant"}
             :variables ()}
-           (test-prepare "<a><b>{%include \"elefant\"%}</b></a>")))))
+           (test-prepare "<a><b>{%include \"elefant\"%}</b></a>"))))
+  (testing "Fragment invocation is a dynamic expression"
+    (is (= {:dynamic? true,
+            :executable [{:open :a}
+                         {:stencil.cleanup/blocks [], :cmd :cmd/include, :name 'valtozo :raw "{%include valtozo%}"}
+                         {:close :a}],
+            :fragments #{}
+            :variables '("valtozo")}
+           (test-prepare "<a>{%include valtozo%}</a>")))))

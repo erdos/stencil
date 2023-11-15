@@ -6,6 +6,7 @@
   (:require [clojure.data.xml :as xml]
             [clojure.java.io :as io :refer [file]]
             [stencil.eval :as eval]
+            [stencil.infix :refer [eval-rpn]]
             [stencil.merger :as merger]
             [stencil.types :refer [->FragmentInvoke]]
             [stencil.util :refer [unlazy-tree eval-exception]]
@@ -193,32 +194,31 @@
 ;   (xml-map-attrs {ooxml/r-embed id-rename ooxml/r-id id-rename} item))
 
 
-(defmethod eval/eval-step :cmd/include [function local-data-map {frag-name :name}]
+(defmethod eval/eval-step :cmd/include [function local-data-map step]
   (assert (map? local-data-map))
-  (assert (string? frag-name))
-  (do
-   (if-let [fragment-model (get *all-fragments* frag-name)]
-     (let [;; merge style definitions from fragment
-           style-ids-rename (-> fragment-model :main :style :parsed (doto assert) (style/insert-styles!))
+  (let [frag-name (eval-rpn local-data-map function (:name step))]
+    (if-let [fragment-model (get *all-fragments* frag-name)]
+      (let [;; merge style definitions from fragment
+            style-ids-rename (-> fragment-model :main :style :parsed (doto assert) (style/insert-styles!))
 
-           relation-ids-rename (relations/ids-rename fragment-model frag-name)
-           relation-rename-map (into {} (map (juxt :old-id :new-id)) relation-ids-rename)
+            relation-ids-rename (relations/ids-rename fragment-model frag-name)
+            relation-rename-map (into {} (map (juxt :old-id :new-id)) relation-ids-rename)
 
            ;; evaluate
-           evaled (eval-template-model fragment-model local-data-map function {})
+            evaled (eval-template-model fragment-model local-data-map function {})
 
            ;; write back
-           get-xml      (fn [x] (or (:xml x) @(:xml-delay x)))
-           evaled-parts (->> evaled :main :result
-                             (get-xml)
-                             (extract-body-parts)
-                             (map (partial relations/xml-rename-relation-ids relation-rename-map))
-                             (map (partial xml-map-attrs
-                                           {ooxml/attr-numId
-                                            (partial numbering/copy-numbering fragment-model (atom {}))}))
-                             (map (partial style/xml-rename-style-ids style-ids-rename))
-                             (doall))]
-       (swap! *inserted-fragments* conj frag-name)
-       (run! relations/add-extra-file! relation-ids-rename)
-       [{:text (->FragmentInvoke {:frag-evaled-parts evaled-parts})}])
-     (throw (eval-exception (str "No fragment for name: " frag-name) nil)))))
+            get-xml      (fn [x] (or (:xml x) @(:xml-delay x)))
+            evaled-parts (->> evaled :main :result
+                              (get-xml)
+                              (extract-body-parts)
+                              (map (partial relations/xml-rename-relation-ids relation-rename-map))
+                              (map (partial xml-map-attrs
+                                            {ooxml/attr-numId
+                                             (partial numbering/copy-numbering fragment-model (atom {}))}))
+                              (map (partial style/xml-rename-style-ids style-ids-rename))
+                              (doall))]
+        (swap! *inserted-fragments* conj frag-name)
+        (run! relations/add-extra-file! relation-ids-rename)
+        [{:text (->FragmentInvoke {:frag-evaled-parts evaled-parts})}])
+      (throw (eval-exception (str "No fragment for name: " frag-name) nil)))))
