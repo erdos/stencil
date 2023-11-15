@@ -15,10 +15,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static io.github.erdos.stencil.impl.Logging.debugStopWatch;
 import static java.util.Collections.emptyList;
 
 /**
@@ -45,9 +43,6 @@ public final class NativeEvaluator {
         } else if (data == null) {
             throw new IllegalArgumentException("Template data is missing!");
         }
-
-        final Consumer<Supplier<String>> stopwatch = debugStopWatch(LOGGER);
-        stopwatch.accept(() -> "Starting document rendering for template " + template.getTemplateFile());
 
         final IFn fn = ClojureHelper.findFunction("eval-template");
         final Object argsMap = makeArgsMap(template.getSecretObject(), fragments, data.getData());
