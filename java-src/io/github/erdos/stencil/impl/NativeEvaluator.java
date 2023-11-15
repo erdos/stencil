@@ -1,7 +1,7 @@
 package io.github.erdos.stencil.impl;
 
 import clojure.lang.AFunction;
-import clojure.lang.IFn;
+import clojure.lang.Keyword;
 import clojure.lang.PersistentHashMap;
 import io.github.erdos.stencil.EvaluatedDocument;
 import io.github.erdos.stencil.PreparedFragment;
@@ -41,11 +41,10 @@ public final class NativeEvaluator {
             throw new IllegalArgumentException("Template data is missing!");
         }
 
-        final IFn fn = ClojureHelper.findFunction("eval-template");
         final Object argsMap = makeArgsMap(template.getSecretObject(), fragments, data.getData());
 
         try {
-            return (EvaluatedDocument) fn.invoke(argsMap);
+            return (EvaluatedDocument) ClojureHelper.findFunction("eval-template").invoke(argsMap);
         } catch (EvalException e) {
             throw e;
         } catch (Exception e) {
@@ -62,9 +61,8 @@ public final class NativeEvaluator {
         return functions;
     }
 
-    @SuppressWarnings("unchecked")
     private Object makeArgsMap(Object template, Map<String, PreparedFragment> fragments, Object data) {
-        final Map result = new HashMap();
+        final Map<Keyword, Object> result = new HashMap<>();
         result.put(ClojureHelper.Keywords.TEMPLATE.kw, template);
         result.put(ClojureHelper.Keywords.DATA.kw, data);
         result.put(ClojureHelper.Keywords.FUNCTION.kw, new FunctionCaller());
