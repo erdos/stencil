@@ -82,7 +82,6 @@ public final class NativeEvaluator {
          * @param argsList     a Collection of arguments
          */
         @Override
-        @SuppressWarnings("unchecked")
         public Object invoke(Object functionName, Object argsList) {
             if (!(functionName instanceof String)) {
                 throw new IllegalArgumentException("First argument must be a String!");
@@ -92,7 +91,7 @@ public final class NativeEvaluator {
                 throw new IllegalArgumentException("Second argument must be a collection!");
             }
 
-            final Object[] args = new ArrayList((Collection) argsList).toArray();
+            final Object[] args = new ArrayList<Object>((Collection<?>) argsList).toArray();
 
             return functions.call(functionName.toString(), args);
         }
