@@ -1,8 +1,8 @@
 (ns stencil.process
   "These functions are called from Java."
-  (:import [java.io File InputStream]
+  (:import [java.io File]
            [java.util.zip ZipEntry ZipOutputStream]
-           [io.github.erdos.stencil PrepareOptions PreparedTemplate TemplateVariables]
+           [io.github.erdos.stencil PrepareOptions PreparedFragment PreparedTemplate TemplateVariables]
            [io.github.erdos.stencil.impl FileHelper ZipHelper])
   (:require [clojure.java.io :as io]
             [stencil.log :as log]
@@ -11,21 +11,17 @@
 (set! *warn-on-reflection* true)
 
 ;; merge a set of fragment names under the :fragments key
-(defn- merge-fragment-names [model]
-  (assoc model
-         :fragments
-         (-> #{}
-             (into (-> model :main :executable :fragments))
-             (into (for [x (:headers+footers (:main model))
-                         f (:fragments (:executable x))] f)))))
+(defn- get-fragment-names [model]
+  (-> #{}
+      (into (-> model :main :executable :fragments))
+      (into (for [x (:headers+footers (:main model))
+                  f (:fragments (:executable x))] f))))
 
-(defn- merge-variable-names [model]
-  (assoc model
-         :variables
-         (-> #{}
-             (into (-> model :main :executable :variables))
-             (into (for [x (:headers+footers (:main model))
-                         v (:variables (:executable x))] v)))))
+(defn- get-variable-names [model]
+  (-> #{}
+      (into (-> model :main :executable :variables))
+      (into (for [x (:headers+footers (:main model))
+                  v (:variables (:executable x))] v))))
 
 ;; Called  from Java API
 (defn prepare-template [^File template-file, ^PrepareOptions options]
@@ -35,13 +31,9 @@
         options   {:only-includes (.isOnlyIncludes options)}
         _         (with-open [zip-stream (io/input-stream template-file)]
                     (ZipHelper/unzipStreamIntoDirectory zip-stream zip-dir))
-        model (-> (model/load-template-model zip-dir options)
-                  (merge-fragment-names)
-                  (merge-variable-names)
-                  (atom))
-        datetime (java.time.LocalDateTime/now)
-        variables (TemplateVariables/fromPaths (:variables @model) (:fragments @model))]
-    ;; (FileHelper/forceDeleteOnExit zip-dir)
+        model     (atom (model/load-template-model zip-dir options))
+        variables (TemplateVariables/fromPaths (get-variable-names @model) (get-fragment-names @model))
+        datetime  (java.time.LocalDateTime/now)]
     (reify PreparedTemplate
       (getTemplateFile [_] template-file)
       (creationDateTime [_] datetime)
@@ -53,15 +45,20 @@
       (getVariables [_] variables))))
 
 ;; Called from Java API
-(defn prepare-fragment [input, ^PrepareOptions options]
-  (assert (some? input))
+(defn prepare-fragment [^File fragment-file, ^PrepareOptions options]
   (let [zip-dir (FileHelper/createNonexistentTempFile
                  (.getTemporaryDirectoryOverride options)
                  "stencil-fragment-" ".zip.contents")
-        options {:only-includes (.isOnlyIncludes options)}]
-    (with-open [zip-stream (io/input-stream input)]
-      (ZipHelper/unzipStreamIntoDirectory zip-stream zip-dir))
-    (model/load-fragment-model zip-dir options)))
+        options {:only-includes (.isOnlyIncludes options)}
+        _       (with-open [zip-stream (io/input-stream fragment-file)]
+                  (ZipHelper/unzipStreamIntoDirectory zip-stream zip-dir))
+        model   (atom (model/load-fragment-model zip-dir options))]
+    (reify PreparedFragment
+      (getImpl [_]
+        (or @model (throw (IllegalStateException. "Fragment has alrady been cleared."))))
+      (close [_]
+        (reset! model nil)
+        (FileHelper/forceDelete zip-dir)))))
 
 (defn- render-writers-map [writers-map outstream]
   (assert (map? writers-map))
