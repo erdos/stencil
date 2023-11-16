@@ -35,9 +35,11 @@
         options   {:only-includes (.isOnlyIncludes options)}
         _         (with-open [zip-stream (io/input-stream template-file)]
                     (ZipHelper/unzipStreamIntoDirectory zip-stream zip-dir))
-        model     (atom (model/load-template-model zip-dir options))
-        variables (TemplateVariables/fromPaths (get-variable-names @model) (get-fragment-names @model))
-        datetime  (java.time.LocalDateTime/now)]
+        model     (model/load-template-model zip-dir options)
+        variables (TemplateVariables/fromPaths (get-variable-names model) (get-fragment-names model))
+        datetime  (java.time.LocalDateTime/now)
+        cleanup-fn #(FileHelper/forceDelete zip-dir)
+        lock       (new io.github.erdos.stencil.impl.LifecycleLock cleanup-fn)]
     (reify PreparedTemplate
       (getTemplateFile [_] template-file)
       (creationDateTime [_] datetime)
@@ -46,18 +48,19 @@
         ;; TODO: use lifecycle lock here
         (let [data        (into {} (.getData data))
               function    (fn [name args] (.call function name (into-array Object args)))
-              writers-map (model/template-model->writers-map @model data function (update-vals fragments datafy))
-              writer      (partial render-writers-map writers-map)]
+              fragments   (update-vals fragments datafy)
+              all-locks   (cons lock (keep ::lock (vals fragments)))
+              lock-wrapper (fn [f] ((reduce (fn [f lock] #(.execute lock f)) f all-locks)) ) ;; calls f wrapped in all locks
+              writers-map (lock-wrapper #(model/template-model->writers-map model data function fragments))]
           (reify EvaluatedDocument
             (write [_ target-stream]
-              ;; TODO: use lifecycle lock here as well.<
-              (writer target-stream)))))
-      (close [_]
-        (reset! model nil)
-        (FileHelper/forceDelete zip-dir))
+              (lock-wrapper #(render-writers-map writers-map target-stream))))))
+      (close [_] (.close lock))
       (getVariables [_] variables)
-      clojure.core.protocols/Datafiable
-      (datafy [_] @model))))
+      Object
+      (toString [_] (str "<PreparedTemplate of " template-file ">"))
+      Datafiable
+      (datafy [_] model))))
 
 ;; Called from Java API
 (defn prepare-fragment [^File fragment-file, ^PrepareOptions options]
@@ -67,17 +70,13 @@
         options {:only-includes (.isOnlyIncludes options)}
         _       (with-open [zip-stream (io/input-stream fragment-file)]
                   (ZipHelper/unzipStreamIntoDirectory zip-stream zip-dir))
-        model   (atom (model/load-fragment-model zip-dir options))]
-    (reify PreparedFragment
-      (getImpl [_]
-        (or @model (throw (IllegalStateException. "Fragment has alrady been cleared."))))
-      (close [_]
-        (reset! model nil)
-        (FileHelper/forceDelete zip-dir))
-      Object
-      (toString [_] (str "<PreparedTemplate of " fragment-file ">"))
-      clojure.core.protocols/Datafiable
-      (datafy [_] @model))))
+        lock    (new io.github.erdos.stencil.impl.LifecycleLock #(FileHelper/forceDelete zip-dir))
+        model   (-> (model/load-fragment-model zip-dir options)
+                    (assoc ::lock lock))]
+    (reify
+      PreparedFragment (close [_] (.close lock))
+      Object           (toString [_] (str "<PreparedFragment of " fragment-file ">"))
+      Datafiable       (datafy [_] model))))
 
 (defn- render-writers-map [writers-map outstream]
   (assert (map? writers-map))

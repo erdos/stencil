@@ -1,13 +1,15 @@
 package io.github.erdos.stencil.impl;
 
+import java.util.Collection;
 import java.util.Objects;
+import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.function.Supplier;
 
 public final class LifecycleLock implements AutoCloseable {
 
-    private final ReentrantReadWriteLock lock;
+    private final ReadWriteLock lock;
     private final AtomicBoolean alive;
     private final Runnable cleanup;
 
@@ -17,11 +19,11 @@ public final class LifecycleLock implements AutoCloseable {
         this.cleanup = Objects.requireNonNull(cleanup);
     }
 
-    public <T> T run(Supplier<T> supplier) {
+    public <T> T execute(Callable<T> supplier) throws Exception {
         lock.readLock().lock();
         try {
             if (alive.get()) {
-                return supplier.get();
+                return supplier.call();
             } else {
                 throw new IllegalStateException("Component has already been closed.");
             }
