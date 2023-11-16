@@ -1,9 +1,5 @@
 package io.github.erdos.stencil.functions;
 
-import clojure.lang.AFn;
-import clojure.lang.IFn;
-import clojure.lang.RestFn;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
