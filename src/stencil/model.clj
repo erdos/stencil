@@ -164,7 +164,7 @@
 (defn template-model->writers-map
   "Evaluates a prepared template and returns a {path writer-fn} map that can be used to write the zip stream."
   [template data function fragments]
-  (assert (map? data))
+  (assert (map? data) (pr-str [:not-map data]))
   (-> template
       (eval-template-model data function fragments)
       (evaled-template-model->writers-map)))

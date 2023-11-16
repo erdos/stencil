@@ -15,7 +15,7 @@
 
 (defn normal-control-ast->evaled-seq [data function items]
   (assert (map? data))
-  (assert (ifn? function))
+  (assert (ifn? function) (pr-str "Not function" function))
   (assert (or (nil? items) (sequential? items)))
   (eduction (mapcat (partial eval-step function data)) items))
 

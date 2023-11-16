@@ -1,7 +1,10 @@
 package io.github.erdos.stencil;
 
+import io.github.erdos.stencil.functions.FunctionEvaluator;
+
 import java.io.File;
 import java.time.LocalDateTime;
+import java.util.Map;
 
 /**
  * Represents an already preprocessed template file.
@@ -32,16 +35,7 @@ public interface PreparedTemplate extends AutoCloseable {
      *
      * @return template preprocess call time
      */
-    LocalDateTime creationDateTime();
-
-    /**
-     * Contains the preprocess result.
-     * <p>
-     * Implementation detail. May be used for serializing these objects. May be used for debugging too.
-     *
-     * @return inner representation of prepared template
-     */
-    Object getSecretObject();
+    LocalDateTime creationDateTime(); // TODO: remove?
 
 
     /**
@@ -60,7 +54,5 @@ public interface PreparedTemplate extends AutoCloseable {
     /**
      * Renders the current prepared template file with the given template data.
      */
-    default EvaluatedDocument render(TemplateData templateData) {
-        return API.render(this, templateData);
-    }
+    EvaluatedDocument render(Map<String, PreparedFragment> fragments, FunctionEvaluator function, TemplateData templateData);
 }

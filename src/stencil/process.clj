@@ -5,12 +5,14 @@
            [io.github.erdos.stencil EvaluatedDocument PrepareOptions PreparedFragment PreparedTemplate TemplateVariables]
            [io.github.erdos.stencil.impl FileHelper ZipHelper])
   (:require [clojure.core.protocols :refer [Datafiable]]
+            [clojure.datafy :refer [datafy]]
             [clojure.java.io :as io]
             [stencil.log :as log]
             [stencil.model :as model]
             [stencil.model.common :refer [unix-path]]))
 
 (set! *warn-on-reflection* true)
+(declare render-writers-map)
 
 ;; merge a set of fragment names under the :fragments key
 (defn- get-fragment-names [model]
@@ -39,8 +41,17 @@
     (reify PreparedTemplate
       (getTemplateFile [_] template-file)
       (creationDateTime [_] datetime)
-      (getSecretObject [_]
-        (or @model (throw (IllegalStateException. "Template has already been cleared."))))
+      ;; TODO: rather than returning a secret objet, let's add a .render() function here.
+      (render [_ fragments function data]
+        ;; TODO: use lifecycle lock here
+        (let [data        (into {} (.getData data))
+              function    (fn [name & args] (.call function) (into-array Object args))
+              writers-map (model/template-model->writers-map @model data function (update-vals fragments datafy))
+              writer      (partial render-writers-map writers-map)]
+          (reify EvaluatedDocument
+            (write [_ target-stream]
+              ;; TODO: use lifecycle lock here as well.<
+              (writer target-stream)))))
       (close [_]
         (reset! model nil)
         (FileHelper/forceDelete zip-dir))
@@ -63,7 +74,7 @@
         (FileHelper/forceDelete zip-dir))
       Object
       (toString [_] (str "<PreparedTemplate of " fragment-file ">"))
-      Datafiable
+      clojure.core.protocols/Datafiable
       (datafy [_] @model))))
 
 (defn- render-writers-map [writers-map outstream]

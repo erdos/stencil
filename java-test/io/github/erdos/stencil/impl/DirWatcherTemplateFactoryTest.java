@@ -98,11 +98,6 @@ public class DirWatcherTemplateFactoryTest implements TemplateFactory {
             }
 
             @Override
-            public Object getSecretObject() {
-                return null;
-            }
-
-            @Override
             public TemplateVariables getVariables() {
                 return null;
             }
