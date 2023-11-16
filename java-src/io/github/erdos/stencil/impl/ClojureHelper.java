@@ -1,7 +1,6 @@
 package io.github.erdos.stencil.impl;
 
 import clojure.lang.IFn;
-import clojure.lang.Keyword;
 import clojure.lang.RT;
 import clojure.lang.Symbol;
 
@@ -12,12 +11,6 @@ import clojure.lang.Symbol;
 public final class ClojureHelper {
 
     private ClojureHelper() {}
-
-    enum Keywords {
-        DATA, FUNCTION, FRAGMENTS, TEMPLATE;
-
-        public final Keyword kw = Keyword.intern(name().toLowerCase().replace('_', '-'));
-    }
 
     // requires stencil.process namespace so stencil is loaded.
     static {

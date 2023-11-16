@@ -1,21 +1,21 @@
 package io.github.erdos.stencil.impl;
 
-import io.github.erdos.stencil.PrepareOptions;
+import io.github.erdos.stencil.*;
+import io.github.erdos.stencil.functions.FunctionEvaluator;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import io.github.erdos.stencil.PreparedTemplate;
-import io.github.erdos.stencil.TemplateFactory;
-import io.github.erdos.stencil.TemplateVariables;
 
+import javax.naming.OperationNotSupportedException;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.time.LocalDateTime;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import static org.junit.Assert.assertFalse;
@@ -106,6 +106,11 @@ public class DirWatcherTemplateFactoryTest implements TemplateFactory {
             public void close() {
                 // NOP
 
+            }
+
+            @Override
+            public EvaluatedDocument render(Map<String, PreparedFragment> fragments, FunctionEvaluator function, TemplateData templateData) {
+                throw new RuntimeException("not implemented");
             }
         };
     }
