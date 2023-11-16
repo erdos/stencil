@@ -13,7 +13,7 @@
 
 (deftest test-load-template-model
   (let [model (datafy (api/prepare "test-resources/multipart/main.docx"))]
-
+    (println (type model) (type (datafy model)))
     (is (contains? model :main))
     (is (contains? model :content-types))
 

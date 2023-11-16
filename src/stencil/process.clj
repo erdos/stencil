@@ -45,7 +45,7 @@
       (render [_ fragments function data]
         ;; TODO: use lifecycle lock here
         (let [data        (into {} (.getData data))
-              function    (fn [name & args] (.call function) (into-array Object args))
+              function    (fn [name args] (.call function name (into-array Object args)))
               writers-map (model/template-model->writers-map @model data function (update-vals fragments datafy))
               writer      (partial render-writers-map writers-map)]
           (reify EvaluatedDocument
@@ -55,7 +55,9 @@
       (close [_]
         (reset! model nil)
         (FileHelper/forceDelete zip-dir))
-      (getVariables [_] variables))))
+      (getVariables [_] variables)
+      clojure.core.protocols/Datafiable
+      (datafy [_] @model))))
 
 ;; Called from Java API
 (defn prepare-fragment [^File fragment-file, ^PrepareOptions options]
