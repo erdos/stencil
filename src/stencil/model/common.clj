@@ -23,5 +23,5 @@
       nil)))
 
 
-(defn unix-path [^File f]
+(defn unix-path ^String [^File f]
   (some-> f .toPath FileHelper/toUnixSeparatedString))
