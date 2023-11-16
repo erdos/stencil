@@ -3,7 +3,7 @@
   (:import [java.io File]
            [java.util.zip ZipEntry ZipOutputStream]
            [io.github.erdos.stencil EvaluatedDocument PrepareOptions PreparedFragment PreparedTemplate TemplateVariables]
-           [io.github.erdos.stencil.impl FileHelper ZipHelper])
+           [io.github.erdos.stencil.impl FileHelper ZipHelper LifecycleLock])
   (:require [clojure.core.protocols :refer [Datafiable]]
             [clojure.datafy :refer [datafy]]
             [clojure.java.io :as io]
@@ -38,23 +38,20 @@
         model     (model/load-template-model zip-dir options)
         variables (TemplateVariables/fromPaths (get-variable-names model) (get-fragment-names model))
         datetime  (java.time.LocalDateTime/now)
-        cleanup-fn #(FileHelper/forceDelete zip-dir)
-        lock       (new io.github.erdos.stencil.impl.LifecycleLock cleanup-fn)]
+        lock      (new LifecycleLock #(FileHelper/forceDelete zip-dir))]
     (reify PreparedTemplate
       (getTemplateFile [_] template-file)
       (creationDateTime [_] datetime)
-      ;; TODO: rather than returning a secret objet, let's add a .render() function here.
       (render [_ fragments function data]
-        ;; TODO: use lifecycle lock here
         (let [data        (into {} (.getData data))
               function    (fn [name args] (.call function name (into-array Object args)))
               fragments   (update-vals fragments datafy)
               all-locks   (cons lock (keep ::lock (vals fragments)))
-              lock-wrapper (fn [f] ((reduce (fn [f lock] #(.execute lock f)) f all-locks)) ) ;; calls f wrapped in all locks
-              writers-map (lock-wrapper #(model/template-model->writers-map model data function fragments))]
+              run-locked  (fn [f] ((reduce (fn [f lock] #(.execute lock f)) f all-locks))) 
+              writers-map (run-locked #(model/template-model->writers-map model data function fragments))]
           (reify EvaluatedDocument
             (write [_ target-stream]
-              (lock-wrapper #(render-writers-map writers-map target-stream))))))
+              (run-locked #(render-writers-map writers-map target-stream))))))
       (close [_] (.close lock))
       (getVariables [_] variables)
       Object
@@ -70,7 +67,7 @@
         options {:only-includes (.isOnlyIncludes options)}
         _       (with-open [zip-stream (io/input-stream fragment-file)]
                   (ZipHelper/unzipStreamIntoDirectory zip-stream zip-dir))
-        lock    (new io.github.erdos.stencil.impl.LifecycleLock #(FileHelper/forceDelete zip-dir))
+        lock    (new LifecycleLock #(FileHelper/forceDelete zip-dir))
         model   (-> (model/load-fragment-model zip-dir options)
                     (assoc ::lock lock))]
     (reify
