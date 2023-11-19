@@ -21,3 +21,4 @@ junit.xml
 .lsp/
 *.jfr
 .clj-kondo/
+/_site/

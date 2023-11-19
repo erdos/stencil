@@ -14,11 +14,9 @@ permissions:
   pages: write
   id-token: write
 
-# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
-# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
 concurrency:
   group: "pages"
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   # Build job
@@ -34,6 +32,10 @@ jobs:
         with:
           source: ./docs
           destination: ./_site
+      - name: Compile uberjar
+        run: lein uberjar
+      - name: Run javadoc tool
+        run: javadoc -d _site/javadoc --source-path ./java-src -cp target/stencil-core-*-standalone.jar -subpackages io.github.erdos.stencil
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v2
 
