@@ -35,7 +35,7 @@ public final class TemplateVariables {
         root = r;
     }
 
-    private Node reduce(Node originalNode, String path) {
+    private static Node reduce(Node originalNode, String path) {
         if (path.isEmpty())
             return LEAF;
         else if (originalNode == null)
@@ -151,7 +151,7 @@ public final class TemplateVariables {
         return validateImpl("", data, schema).collect(toList());
     }
 
-    private Stream<SchemaError> validateImpl(String path, Object data, Node schema) {
+    private static Stream<SchemaError> validateImpl(String path, Object data, Node schema) {
         return schema.accept(new NodeVisitor<Stream<SchemaError>>() {
             @Override
             public Stream<SchemaError> visitArray(Node wrapped) {

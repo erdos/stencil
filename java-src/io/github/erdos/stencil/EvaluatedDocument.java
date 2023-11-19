@@ -4,7 +4,6 @@ import io.github.erdos.stencil.impl.InputStreamExceptionPropagation;
 
 import java.io.*;
 import java.util.concurrent.ExecutorService;
-import java.util.function.Consumer;
 
 /**
  * An evaluated document ready to be converted to the final output format.
@@ -12,9 +11,7 @@ import java.util.function.Consumer;
 @SuppressWarnings("unused")
 public interface EvaluatedDocument {
 
-    TemplateDocumentFormats getFormat();
-
-    Consumer<OutputStream> getWriter();
+    void write(OutputStream target);
 
     /**
      * Writes output of this document to a file
@@ -24,12 +21,8 @@ public interface EvaluatedDocument {
             throw new IllegalArgumentException("Output file already exists: " + output);
         }
         try (FileOutputStream fos = new FileOutputStream(output)) {
-            writeToStream(fos);
+            write(fos);
         }
-    }
-
-    default void writeToStream(OutputStream outputStream) {
-        getWriter().accept(outputStream);
     }
 
     /**
@@ -59,7 +52,7 @@ public interface EvaluatedDocument {
                 throw new IllegalStateException("The supplied executor must submit jobs to new threads!");
             } else {
                 try {
-                    writeToStream(outputStream);
+                    write(outputStream);
                 } catch (Throwable e) {
                     inputStreamErrors.fail(e);
                     throw e;

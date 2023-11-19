@@ -1,7 +1,7 @@
 package io.github.erdos.stencil;
 
 import io.github.erdos.stencil.functions.Function;
-import io.github.erdos.stencil.impl.NativeEvaluator;
+import io.github.erdos.stencil.functions.FunctionEvaluator;
 import io.github.erdos.stencil.impl.NativeTemplateFactory;
 
 import java.io.File;
@@ -57,10 +57,10 @@ public final class API {
     }
 
     public static EvaluatedDocument render(PreparedTemplate template, Map<String, PreparedFragment> fragments, TemplateData data, Collection<Function> customFunctions) {
-        final NativeEvaluator evaluator = new NativeEvaluator();
+        FunctionEvaluator function = new FunctionEvaluator();
         if (customFunctions != null) {
-            evaluator.getFunctionEvaluator().registerFunctions(customFunctions.toArray(new Function[0]));
+            function.registerFunctions(customFunctions.toArray(new Function[0]));
         }
-        return evaluator.render(template, fragments, data);
+        return template.render(fragments, function, data);
     }
 }

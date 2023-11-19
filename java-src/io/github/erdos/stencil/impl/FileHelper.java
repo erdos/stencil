@@ -102,22 +102,6 @@ public final class FileHelper {
     }
 
     /**
-     * Recursively marks a directory or a file for deletion on exit.
-     *
-     * @param file to delete, not null
-     * @throws NullPointerException on null or invalid file
-     */
-    @SuppressWarnings({"ConstantConditions"})
-    public static void forceDeleteOnExit(final File file) {
-        file.deleteOnExit();
-        if (file.isDirectory()) {
-            for (File child : file.listFiles()) {
-                forceDeleteOnExit(child);
-            }
-        }
-    }
-
-    /**
      * Returns a string representation of path with unix separators ("/") instead of the
      * system-dependent separators (which is backslash on Windows).
      *

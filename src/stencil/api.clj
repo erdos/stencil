@@ -55,7 +55,7 @@
       (.toInputStream result clojure.lang.Agent/soloExecutor)
 
       (instance? java.io.OutputStream (:output opts))
-      (.writeToStream result (:output opts))
+      (.write result (:output opts))
 
       (:output opts)
       (let [f (io/file (:output opts))]
@@ -71,8 +71,8 @@
 
 
 (defn cleanup! [template]
-  (cond (instance? PreparedTemplate template) (.cleanup ^PreparedTemplate template)
-        (instance? PreparedFragment template) (.cleanup ^PreparedFragment template)
+  (cond (instance? PreparedTemplate template) (.close ^PreparedTemplate template)
+        (instance? PreparedFragment template) (.close ^PreparedFragment template)
         :else (throw (ex-info "Unexpected object to clean up!" {:template template})))
   template)
 
