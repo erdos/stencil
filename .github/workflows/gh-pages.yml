@@ -25,17 +25,19 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+      - name: Compile uberjar
+        run: lein uberjar
+      - name: Run javadoc tool
+        run: mkdir -p _site/javadoc && javadoc -d _site/javadoc --source-path ./java-src -cp target/stencil-core-*-standalone.jar -subpackages io.github.erdos.stencil
       - name: Setup Pages
         uses: actions/configure-pages@v3
       - name: Build with Jekyll
         uses: actions/jekyll-build-pages@v1
         with:
           source: ./docs
-          destination: ./_site
-      - name: Compile uberjar
-        run: lein uberjar
-      - name: Run javadoc tool
-        run: javadoc -d _site/javadoc --source-path ./java-src -cp target/stencil-core-*-standalone.jar -subpackages io.github.erdos.stencil
+          destination: ./_site_jekyll
+      - name: copy
+        run: cp -R ./_site_jekyll/* ./_site/
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v2
 
