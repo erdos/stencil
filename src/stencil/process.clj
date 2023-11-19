@@ -47,7 +47,7 @@
               function    (fn [name args] (.call function name (into-array Object args)))
               fragments   (update-vals fragments datafy)
               all-locks   (cons lock (keep ::lock (vals fragments)))
-              run-locked  (fn [f] ((reduce (fn [f lock] #(.execute ^LifecycleLock lock f)) f all-locks))) 
+              run-locked  #(LifecycleLock/execute all-locks %)
               writers-map (run-locked #(model/template-model->writers-map model data function fragments))]
           (reify EvaluatedDocument
             (write [_ target-stream]

@@ -1,7 +1,6 @@
 package io.github.erdos.stencil.impl;
 
-import java.util.Collection;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReadWriteLock;
@@ -19,16 +18,28 @@ public final class LifecycleLock implements AutoCloseable {
         this.cleanup = Objects.requireNonNull(cleanup);
     }
 
-    public <T> T execute(Callable<T> supplier) throws Exception {
-        lock.readLock().lock();
-        try {
-            if (alive.get()) {
+    public static <T> T execute(List<LifecycleLock> locks, Callable<T> supplier) throws Exception {
+        if (locks.isEmpty()) {
+            return supplier.call();
+        } else {
+            ListIterator<LifecycleLock> iterator = locks.listIterator();
+            try {
+                while (iterator.hasNext()) {
+                    iterator.next().acquireReadLockAndCheck();
+                }
                 return supplier.call();
-            } else {
-                throw new IllegalStateException("Component has already been closed.");
+            } finally {
+                while (iterator.hasPrevious()) {
+                    iterator.previous().lock.readLock().unlock();
+                }
             }
-        } finally {
-            lock.readLock().unlock();
+        }
+    }
+
+    private void acquireReadLockAndCheck() {
+        lock.readLock().lock();
+        if (!alive.get()) { // we DO NOT release read lock, because it will be released in finally block!
+            throw new IllegalStateException("Component has already been closed.");
         }
     }
 
