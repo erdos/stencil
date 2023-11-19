@@ -76,9 +76,7 @@
   (when (contains? digits (first characters))
     (let [content (string (take-while (set "1234567890._")) characters)
           content (.replaceAll content "_" "")
-          number  (if (some #{\.} content)
-                    (Double/parseDouble content)
-                    (Long/parseLong     content))]
+          number  (if (some #{\.} content) (parse-double content) (parse-long content))]
       [number (drop (count content) characters)])))
 
 (defn- read-ops2 [chars]

@@ -4,9 +4,9 @@
   (when-let [[[_ major minor patch modifier]]
              (seq (re-seq #"(\d+)\.(\d+)\.(\d+)(-SNAPSHOT)?"
                           version))]
-    {:major (Long/parseLong major)
-     :minor (Long/parseLong minor)
-     :patch (Long/parseLong patch)
+    {:major (parse-long major)
+     :minor (parse-long minor)
+     :patch (parse-long patch)
      :modifier (case modifier
                  "-SNAPSHOT" modifier-snapshot
                  nil nil)}))
