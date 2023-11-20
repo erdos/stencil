@@ -55,18 +55,6 @@
       (testing "Difference clojure core"
         (is (not (zip/branch? (xml-zip 42))))))))
 
-(deftest test-suffixes
-  (is (= [] (suffixes nil)))
-  (is (= [] (suffixes [])))
-  (is (= [[1]] (suffixes [1])))
-  (is (= [[1 2 3] [2 3] [3]] (suffixes [1 2 3]))))
-
-(deftest test-prefixes
-  (is (= [] (prefixes nil)))
-  (is (= [] (prefixes [])))
-  (is (= [[1]] (prefixes [1])))
-  (is (= [[1 2 3] [1 2] [1]] (prefixes [1 2 3]))))
-
 (deftest test-->int
   (is (= nil (->int nil)))
   (is (= 23 (->int 23)))
@@ -96,14 +84,6 @@
 
 (deftest fail-test
   (is (thrown? clojure.lang.ExceptionInfo (fail "test error" {}))))
-
-(deftest prefixes-test
-  (is (= [] (prefixes []) (prefixes nil)))
-  (is (= [[1 2 3] [1 2] [1]] (prefixes [1 2 3]))))
-
-(deftest suffixes-test
-  (is (= [] (suffixes []) (suffixes nil)))
-  (is (= [[1 2 3] [2 3] [3]] (suffixes [1 2 3]))))
 
 (deftest whitespace?-test
   (is (= true (whitespace? \space)))

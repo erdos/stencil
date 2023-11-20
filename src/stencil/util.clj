@@ -52,9 +52,6 @@
 (defn assoc-if-val [m k v]
   (if (some? v) (assoc m k v) m))
 
-(defn suffixes [xs] (take-while seq (iterate next xs)))
-(defn prefixes [xs] (take-while seq (iterate butlast xs)))
-
 (defmacro fail [msg obj]
   (assert (string? msg))
   (assert (map? obj))
@@ -65,8 +62,6 @@
         (string? x) (Integer/parseInt (str x))
         (number? x) (int x)
         :else       (fail "Unexpected type of input" {:type (:type x) :input x})))
-
-(defn subs-last [^String s ^long n] (.substring s (- (.length s) n)))
 
 (defn parsing-exception [expression message]
   (ParsingException/fromMessage (str expression) (str message)))
