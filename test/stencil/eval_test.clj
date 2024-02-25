@@ -23,7 +23,7 @@
 (deftest test-if
   (testing "THEN branch"
     (test-eval [-text1-
-                {:cmd :if :condition 'truthy
+                {:cmd :cmd/if :condition 'truthy
                  :branch/then [{:text "ok"}]
                  :branch/else [{:text "err"}]}
                 -text1-]
@@ -33,7 +33,7 @@
 
   (testing "ELSE branch"
     (test-eval [-text1-
-                {:cmd :if :condition 'falsey
+                {:cmd :cmd/if :condition 'falsey
                  :branch/then [{:text "ok"}]
                  :branch/else [{:text "err"}]}]
                [-text1-
@@ -49,7 +49,7 @@
 
 (deftest test-for
   (testing "loop without any items"
-    (test-eval [{:cmd :for
+    (test-eval [{:cmd :cmd/for
                  :variable "index"
                  :index-var "i"
                  :expression 'list0
@@ -59,7 +59,7 @@
                [{:text "meh"}]))
 
   (testing "loop with exactly 1 item"
-    (test-eval [{:cmd :for
+    (test-eval [{:cmd :cmd/for
                  :variable "index"
                  :index-var "i"
                  :expression 'list1
@@ -69,7 +69,7 @@
                [{:text "1"}]))
 
   (testing "loop with exactly 1 item and index var used"
-    (test-eval [{:cmd :for
+    (test-eval [{:cmd :cmd/for
                  :variable "index"
                  :index-var "i"
                  :expression 'abc
@@ -79,7 +79,7 @@
                [{:text "def"} {:text "==>"} {:text "Okay"}]))
 
   (testing "loop with exactly 3 items"
-    (test-eval [{:cmd :for
+    (test-eval [{:cmd :cmd/for
                  :variable "index"
                  :index-var "i"
                  :expression 'list3

@@ -12,21 +12,21 @@
   (let [text (trim text)
         pattern-elseif #"^(else\s*if|elif|elsif)(\(|\s+)"]
     (cond
-      (#{"end" "endfor" "endif"} text) {:cmd :end}
-      (= text "else") {:cmd :else}
+      (#{"end" "endfor" "endif"} text) {:cmd :cmd/end}
+      (= text "else") {:cmd :cmd/else}
 
       (.startsWith text "if ")
-      {:cmd       :if
+      {:cmd       :cmd/if
        :condition (infix/parse (.substring text 3))}
 
       (.startsWith text "unless ")
-      {:cmd       :if
+      {:cmd       :cmd/if
        :condition (list :not (infix/parse (.substring text 7)))}
 
       (.startsWith text "for ")
       (let [[v expr] (split (subs text 4) #" in " 2)
              [idx v] (if (includes? v ",") (split v #",") ["$" v])]
-        {:cmd        :for
+        {:cmd        :cmd/for
          :variable   (symbol (trim v))
          :index-var  (symbol (trim idx))
          :expression (infix/parse expr)})
@@ -43,7 +43,7 @@
       ;; `else if` expression
       (seq (re-seq pattern-elseif text))
       (let [prefix-len (count (ffirst (re-seq pattern-elseif text)))]
-        {:cmd :else-if
+        {:cmd :cmd/else-if
          :condition (infix/parse (.substring text prefix-len))})
 
       :else (throw (ex-info (str "Unexpected command: " text) {})))))

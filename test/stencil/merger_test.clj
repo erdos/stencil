@@ -130,5 +130,5 @@
 
             [O1 {:text "{%if p"} O2 O3 {:text "%}one{%end%}"} O4]
             [O1 {:text "{%if p"} O2 O3 {:text "%}one"} {:text "{%end%}"} O4]
-            [O1 {:action {:cmd :if, :condition 'p :raw "{%if p%}"}} O2 O3 {:text "one"} {:action {:cmd :end :raw "{%end%}"}} O4]           
+            [O1 {:action {:cmd :cmd/if, :condition 'p :raw "{%if p%}"}} O2 O3 {:text "one"} {:action {:cmd :cmd/end :raw "{%end%}"}} O4]           
             ))))

@@ -14,27 +14,27 @@
 
 (defmulti tokens->ast-step (fn [stack token] (:cmd token)))
 
-(defmethod tokens->ast-step :if [stack token] (conj (mod-stack-top-conj stack token) []))
-(defmethod tokens->ast-step :for [stack token] (conj (mod-stack-top-conj stack token) []))
+(defmethod tokens->ast-step :cmd/if [stack token] (conj (mod-stack-top-conj stack token) []))
+(defmethod tokens->ast-step :cmd/for [stack token] (conj (mod-stack-top-conj stack token) []))
 (defmethod tokens->ast-step :cmd/echo [stack token] (mod-stack-top-conj stack token))
 (defmethod tokens->ast-step nil [stack token] (mod-stack-top-conj stack token))
 (defmethod tokens->ast-step :cmd/include [stack token] (mod-stack-top-conj stack token))
 
-(defmethod tokens->ast-step :else [[queue & rest-stack] _]
+(defmethod tokens->ast-step :cmd/else [[queue & rest-stack] _]
   (-> (not-empty rest-stack)
       (or (throw (parsing-exception (str open-tag "else" close-tag)
                                     "Unexpected {%else%} tag, it must come right after a condition!")))
       (mod-stack-top-last update ::blocks (fnil conj []) {::children queue})
       (conj [])))
 
-(defmethod tokens->ast-step :else-if [[queue & rest-stack] token]
+(defmethod tokens->ast-step :cmd/else-if [[queue & rest-stack] token]
   (-> (not-empty rest-stack)
       (or (throw (parsing-exception (str open-tag "else if" close-tag)
                                     "Unexpected {%else if%} tag, it must come right after a condition!")))
       (mod-stack-top-last update ::blocks (fnil conj []) {::children queue})
-      (conj [(assoc token :cmd :if :r true)] [])))
+      (conj [(assoc token :cmd :cmd/if :r true)] [])))
 
-(defmethod tokens->ast-step :end [stack _]
+(defmethod tokens->ast-step :cmd/end [stack _]
   (if (empty? (next stack))
     (throw (parsing-exception (str open-tag "end" close-tag) "Too many {%end%} tags!"))
     (loop [[queue & ss0] stack]
@@ -113,7 +113,7 @@
 (defmethod control-ast-normalize :cmd/include [include-command] include-command)
 
 ;; A feltételes elágazásoknál mindig generálunk egy javított THEN ágat
-(defmethod control-ast-normalize :if [control-ast]
+(defmethod control-ast-normalize :cmd/if [control-ast]
   (case (count (::blocks control-ast))
     2 (let [[then else] (::blocks control-ast)
             then2 (concat (map control-ast-normalize (::children then))
@@ -140,7 +140,7 @@
 ;; - body-run-once: a body resz eloszor fut le, ha a lista legalabb egy elemu
 ;; - body-run-next: a body resz masodik, harmadik, stb. beillesztese, haa lista legalabb 2 elemu.
 ;; Ezekbol az esetekbol kell futtataskor a megfelelo(ket) kivalasztani es behelyettesiteni.
-(defmethod control-ast-normalize :for [control-ast]
+(defmethod control-ast-normalize :cmd/for [control-ast]
   (when-not (= 1 (count (::blocks control-ast)))
     (throw (parsing-exception (str open-tag "else" close-tag)
                               "Unexpected {%else%} in a loop!")))
@@ -186,15 +186,15 @@
                        :cmd/echo (expr mapping (:expression x))
                        :cmd/include (expr mapping (:name x))
 
-                       :if   (concat (expr mapping (:condition x))
-                                     (collect mapping (apply concat (::blocks x))))
+                       :cmd/if   (concat (expr mapping (:condition x))
+                                         (collect mapping (apply concat (::blocks x))))
 
-                       :for  (let [variable (maybe-variable mapping (:expression x))
-                                   exprs    (expr mapping (:expression x))
-                                   mapping  (if variable
-                                              (assoc mapping (:variable x) (str variable "[]"))
-                                              mapping)]
-                               (concat exprs (collect mapping (apply concat (::blocks x)))))
+                       :cmd/for  (let [variable (maybe-variable mapping (:expression x))
+                                       exprs    (expr mapping (:expression x))
+                                       mapping  (if variable
+                                                  (assoc mapping (:variable x) (str variable "[]"))
+                                                  mapping)]
+                                   (concat exprs (collect mapping (apply concat (::blocks x)))))
                        []))]
     (distinct (collect {} control-ast))))
 
