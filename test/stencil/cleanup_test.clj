@@ -12,7 +12,7 @@
   (testing "Egyszeru es ures esetek"
     (is (= [] (stack-revert-close [])))
     (is (= [] (stack-revert-close nil)))
-    (is (= [] (stack-revert-close [{:whatever 1} {:else 2}]))))
+    (is (= [] (stack-revert-close [{:whatever 1} {:cmd/else 2}]))))
   (testing "A kinyito elemeket be kell csukni"
     (is (= [(->close "a") (->close "b")]
            (stack-revert-close [{:open "b"} {:open "a"}])))))
@@ -30,19 +30,19 @@
   (testing "felteteles elagazasra egyszeru tesztesetek"
     (are [input output] (= output (tokens->ast input))
       ;; if-then-fi
-      [{:cmd       :if :condition 1}
+      [{:cmd       :cmd/if :condition 1}
        {:text      "Then"}
-       {:cmd       :end}]
-      [{:cmd :if :condition 1
+       {:cmd       :cmd/end}]
+      [{:cmd :cmd/if :condition 1
         :stencil.cleanup/blocks [{:stencil.cleanup/children [{:text "Then"}]}]}]
 
       ;; if-then-else-fi
-      [{:cmd :if :condition 1}
+      [{:cmd :cmd/if :condition 1}
        {:text "Then"}
-       {:cmd :else}
+       {:cmd :cmd/else}
        {:text "Else"}
-       {:cmd :end}]
-      [{:cmd :if, :condition 1
+       {:cmd :cmd/end}]
+      [{:cmd :cmd/if, :condition 1
         :stencil.cleanup/blocks [{:stencil.cleanup/children [{:text "Then"}]} {:stencil.cleanup/children [{:text "Else"}]}]}])))
 
 (deftest normal-ast-test-1
@@ -51,7 +51,7 @@
            [(->open "html")
             (->open "a")
             (->text "Inka")
-            {:cmd :if
+            {:cmd :cmd/if
              :stencil.cleanup/blocks [{:stencil.cleanup/children [
                                   (->text "ikarusz")
                                   (->close "a")
@@ -71,7 +71,7 @@
          [(->open "html")
           (->open "a")
           (->text "Inka")
-          {:cmd :if
+          {:cmd :cmd/if
            :branch/then [(->text "ikarusz")
                   (->close "a")
                   (->text "bela")
@@ -99,12 +99,12 @@
   (testing "Amikor a formazas a THEN blokk kozepeig tart, akkor az ELSE blokk-ba is be kell tenni a lezaro taget."
     (is (= (map control-ast-normalize
             (annotate-environments
-             [{:cmd :if
+             [{:cmd :cmd/if
                :stencil.cleanup/blocks [{:stencil.cleanup/children [(->text "bela") <b> (->text "Hello")]}
                         {:stencil.cleanup/children [(->text "Virag")]}]}
               (->close "b")]))
 
-           [{:cmd :if
+           [{:cmd :cmd/if
              :branch/then [(->text "bela") <b> (->text "Hello")]
              :branch/else [<b> (->text "Virag")]}
             (->close "b")]))))
@@ -113,12 +113,12 @@
   (testing "Amikor a formazas a THEN blokk kozepeig tart, akkor az ELSE blokk-ba is be kell tenni a lezaro taget."
     (is (= (map control-ast-normalize
             (annotate-environments
-             [{:cmd :if
+             [{:cmd :cmd/if
                :stencil.cleanup/blocks [{:stencil.cleanup/children [(->text "bela") <b> <i> (->text "Hello") <／i>]}
                         {:stencil.cleanup/children [<j> (->text "Virag") <／j>]}]}
               <／b>]))
 
-           [{:cmd :if
+           [{:cmd :cmd/if
              :branch/then [(->text "bela") <b> <i> (->text "Hello") <／i>]
              :branch/else [<b> <j> (->text "Virag") <／j>]}
             <／b>]))))
@@ -128,18 +128,18 @@
     (is (= (map control-ast-normalize
             (annotate-environments
              [<a>
-              {:cmd :if
+              {:cmd :cmd/if
                :stencil.cleanup/blocks [{:stencil.cleanup/children [(->text "bela") <b> <i> (->text "Hello") <／i>]}]}
               <／b>
               <／a>]))
 
-           [<a> {:cmd :if
+           [<a> {:cmd :cmd/if
                  :branch/then [(->text "bela") <b> <i> (->text "Hello") <／i>]
                  :branch/else [<b>]}
             <／b>
             <／a>]))))
 
-(defn >>for-loop [& children] {:cmd :for :stencil.cleanup/blocks [{:stencil.cleanup/children (vec children)}]})
+(defn >>for-loop [& children] {:cmd :cmd/for :stencil.cleanup/blocks [{:stencil.cleanup/children (vec children)}]})
 
 (deftest test-normal-ast-for-loop-1
   (testing "ismetleses ciklusban"
@@ -152,7 +152,7 @@
               <／b>]))
            [<a>
             (->text "before")
-            {:cmd :for
+            {:cmd :cmd/for
              :branch/body-run-none [<／a> <b>]
              :branch/body-run-once [(->text "inside1") <／a> <b> (->text "inside2")]
              :branch/body-run-next [<／b> <a> (->text "inside1") <／a> <b> (->text "inside2")]}
@@ -169,23 +169,23 @@
     (is (= ["a"] (find-variables [{:cmd :cmd/echo :expression '[:plus a 1]}]))))
 
   (testing "Variables from if conditions"
-    (is (= ["a"] (find-variables [{:cmd :if :condition '[:eq a 1]}]))))
+    (is (= ["a"] (find-variables [{:cmd :cmd/if :condition '[:eq a 1]}]))))
 
   (testing "Variables from if branches"
-    (is (= ["x"] (find-variables [{:cmd :if :condition '3
+    (is (= ["x"] (find-variables [{:cmd :cmd/if :condition '3
                                    :stencil.cleanup/blocks [[] [{:cmd :cmd/echo :expression 'x}]]}]))))
 
   (testing "Variables from loop expressions"
     (is (= ["xs" "xs[]"]
-           (find-variables '[{:cmd :for, :variable y, :expression xs,
+           (find-variables '[{:cmd :cmd/for, :variable y, :expression xs,
                               :stencil.cleanup/blocks [[{:cmd :cmd/echo, :expression [:plus y 1]}]]}])))
     (is (= ["xs" "xs[]" "xs[][]"]
-           (find-variables '[{:cmd :for, :variable y, :expression xs
-                              :stencil.cleanup/blocks [[{:cmd :for :variable w :expression y
+           (find-variables '[{:cmd :cmd/for, :variable y, :expression xs
+                              :stencil.cleanup/blocks [[{:cmd :cmd/for :variable w :expression y
                                          :stencil.cleanup/blocks [[{:cmd :cmd/echo :expression [:plus 1 w]}]]}]]}])))
     (is (= ["xs" "xs[].z.k"]
            (find-variables
-            '[{:cmd :for :variable y :expression xs
+            '[{:cmd :cmd/for :variable y :expression xs
                :stencil.cleanup/blocks [[{:cmd :cmd/echo :expression [:plus [:get y "z" "k"] 1]}]]}]))))
 
   (testing "Variables from loop bindings and bodies"
@@ -198,8 +198,8 @@
   (testing "Nested loop bindings"
     (is (= ["xs" "xs[].t" "xs[].t[].n"]
            (find-variables
-            '[{:cmd :for :variable a :expression xs
-               :stencil.cleanup/blocks [[{:cmd :for :variable b :expression [:get a "t"]
+            '[{:cmd :cmd/for :variable a :expression xs
+               :stencil.cleanup/blocks [[{:cmd :cmd/for :variable b :expression [:get a "t"]
                           :stencil.cleanup/blocks [[{:cmd :cmd/echo :expression [:plus [:get b "n"] 1]}]]}]]}])))
     ))
 
@@ -207,7 +207,7 @@
   (is (=
        '[{:open :body}
          {:open :a}
-         {:cmd :if, :condition a,
+         {:cmd :cmd/if, :condition a,
           :branch/then [{:close :a}
                  {:open :a}
                  {:text "THEN"}
@@ -219,22 +219,22 @@
 
        (:executable (process '({:open :body}
                                {:open :a}
-                               {:cmd :if, :condition a}
+                               {:cmd :cmd/if, :condition a}
                                {:close :a}
                                {:open :a}
                                {:text "THEN"}
                                {:close :a}
                                {:open :a, :attrs {:a "three"}}
-                               {:cmd :end}
+                               {:cmd :cmd/end}
                                {:close :a}
                                {:close :body}))))))
 
 (deftest test-process-if-nested
   (is (=
        [<a>
-        {:cmd :if, :condition '[:get x "a"],
+        {:cmd :cmd/if, :condition '[:get x "a"],
          :branch/then [<／a>
-                {:cmd :if, :condition '[:get x "b"],
+                {:cmd :cmd/if, :condition '[:get x "b"],
                  :branch/then [<a> {:text "THEN"}]
                  :branch/else [<a>]}
                 <／a>]
@@ -242,13 +242,13 @@
        (:executable
         (process
          [<a>
-          ,,{:cmd :if, :condition '[:get x "a"]}
+          ,,{:cmd :cmd/if, :condition '[:get x "a"]}
           <／a>
-          {:cmd :if, :condition '[:get x "b"]}
+          {:cmd :cmd/if, :condition '[:get x "b"]}
           <a>
           ,,{:text "THEN"}
-          ,,{:cmd :end}
+          ,,{:cmd :cmd/end}
           <／a>
-          {:cmd :end}])))))
+          {:cmd :cmd/end}])))))
 
 :OK
