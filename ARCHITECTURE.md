@@ -20,13 +20,8 @@ Preparing a `docx` template file starts with uncompressing it's content into a t
 - These relation files point to other parts of the template: style definition files, numbering definitions, headers and footers.
 - Header and footer files are just like our main document xml file so we continue parsing the template recursively there.
 
-### Merge and Cleanup steps
-
-The central idea of Stencil is an algorithm to make sure that templating expressions embedded in an OOXML document can be evaluated while the semantic correctness of the document is maintained.
-
 ```mermaid
 flowchart LR
-      direction TB
       p1("unzip docx file") --> Parse
 
       subgraph Parse
@@ -35,9 +30,11 @@ flowchart LR
         pp1("Relations")
         pp1 --> pp2("Style")
         pp1 --> pp3("Numbering")
+        pp1 --> ppm("Main document")
         pp1 --> pphf("Headers and Footers")
       end
 
+      ppm  --> Merge
       pphf --> Merge --> Cleanup
 
       subgraph Merge
@@ -53,7 +50,17 @@ flowchart LR
       Cleanup --> done("Prepared Template")
 ```
 
+### Merge and Cleanup steps
+
+The central idea of Stencil is an algorithm to make sure that templating expressions embedded in an OOXML document can be evaluated while the semantic correctness of the document is maintained.
+
 ### Rendering
+
+```mermaid
+flowchart LR
+  rr("render main, footers, headers") --> wm("build writers map") --> asdf
+
+```
 
 TODO!
 
