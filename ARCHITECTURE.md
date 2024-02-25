@@ -39,7 +39,7 @@ flowchart LR
 
       subgraph Merge
         direction TB
-        mm1("parse xml") --> mm2("map ignored attributes") -->  mm3("tokenize") --> mm4("cleanup runs")
+        mm1("parse xml") --> mm2("map ignored attributes") --> flatten("flatten") -->  mm3("tokenize") --> mm4("cleanup runs")
       end
 
       subgraph Cleanup
@@ -54,12 +54,31 @@ flowchart LR
 
 The central idea of Stencil is an algorithm to make sure that templating expressions embedded in an OOXML document can be evaluated while the semantic correctness of the document is maintained.
 
-### Rendering
+## Rendering
 
 ```mermaid
 flowchart LR
-  rr("render main, footers, headers") --> wm("build writers map") --> asdf
+  data("Template Data") --> RR -- "unflatten" --> xmltree("XML tree") --> Postprocess -- "collect" --> wm("Writers Map") -- "write file" --> ednd("docx file")
 
+  subgraph RR [Render part]
+    direction LR
+    r2("Substitute values")
+    r3("Evaluate conditions")
+    r4("Unroll loops")
+    re("Include fragments")
+  end
+
+  subgraph Postprocess [Postprocess step]
+    direction LR
+    pp1("Images")
+    pp2("Links")
+    pp3("Numberings")
+    pp4("Tables")
+    pp5("Whitespaces")
+    pp6("List refs")
+    pp7("Embed HTML")
+    pp8("Ignored tag")
+  end
 ```
 
 TODO!
