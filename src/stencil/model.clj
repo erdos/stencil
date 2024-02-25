@@ -9,10 +9,11 @@
             [stencil.infix :refer [eval-rpn]]
             [stencil.merger :as merger]
             [stencil.types :refer [->FragmentInvoke]]
-            [stencil.util :refer [unlazy-tree eval-exception]]
+            [stencil.util :refer [unlazy-tree]]
             [stencil.model.common :refer [unix-path ->xml-writer resource-copier]]
             [stencil.ooxml :as ooxml]
-            [stencil.model [numbering :as numbering] [relations :as relations] [style :as style] [content-types :as content-types]]
+            [stencil.model [numbering :as numbering] [relations :as relations]
+             [style :as style] [content-types :as content-types] [fragments :as fragments]]
             [stencil.cleanup :as cleanup]))
 
 (set! *warn-on-reflection* true)
@@ -32,12 +33,6 @@
 
 (def extra-relations
   #{rel-type-footer rel-type-header rel-type-slide})
-
-;; all insertable fragments. map of id to frag def.
-(def ^:private ^:dynamic *all-fragments* nil)
-
-;; set of already inserted fragment ids.
-(def ^:private ^:dynamic *inserted-fragments* nil)
 
 (defn ->exec [xml-streamable]
   (with-open [stream (io/input-stream xml-streamable)]
@@ -81,10 +76,7 @@
 (defn- eval-model-part-exec [part data functions]
   (assert (:executable part))
   (assert (:dynamic? part))
-  (let [[result fragments] (binding [*inserted-fragments* (atom #{})]
-                             [(eval/eval-executable part data functions)
-                              @*inserted-fragments*])]
-    (swap! *inserted-fragments* into fragments)
+  (let [[result fragments] (fragments/with-sub-fragments (eval/eval-executable part data functions))]
     {:xml    result
      :fragment-names fragments
      :writer (->xml-writer result)}))
@@ -104,8 +96,7 @@
 (defn- eval-template-model [template-model data functions fragments]
   (assert (:main template-model) "Should be a result of load-template-model call!")
   (assert (some? fragments))
-  (binding [*inserted-fragments* (atom #{})
-            *all-fragments*      (into {} fragments)]
+  (fragments/with-fragments fragments
     (content-types/with-content-types
       (style/with-styles-context template-model
         (numbering/with-numbering-context template-model
@@ -196,29 +187,26 @@
 
 (defmethod eval/eval-step :cmd/include [function local-data-map step]
   (assert (map? local-data-map))
-  (let [frag-name (eval-rpn local-data-map function (:name step))]
-    (if-let [fragment-model (get *all-fragments* frag-name)]
-      (let [;; merge style definitions from fragment
-            style-ids-rename (-> fragment-model :main :style :parsed (doto assert) (style/insert-styles!))
+  (let [frag-name        (eval-rpn local-data-map function (:name step))
+        fragment-model   (fragments/use-fragment frag-name)
+        style-ids-rename (-> fragment-model :main :style :parsed (doto assert) (style/insert-styles!))
 
-            relation-ids-rename (relations/ids-rename fragment-model frag-name)
-            relation-rename-map (into {} (map (juxt :old-id :new-id)) relation-ids-rename)
+        relation-ids-rename (relations/ids-rename fragment-model frag-name)
+        relation-rename-map (into {} (map (juxt :old-id :new-id)) relation-ids-rename)
 
-           ;; evaluate
-            evaled (eval-template-model fragment-model local-data-map function {})
+        ;; evaluate
+        evaled (eval-template-model fragment-model local-data-map function {})
 
-           ;; write back
-            get-xml      (fn [x] (or (:xml x) @(:xml-delay x)))
-            evaled-parts (->> evaled :main :result
-                              (get-xml)
-                              (extract-body-parts)
-                              (map (partial relations/xml-rename-relation-ids relation-rename-map))
-                              (map (partial xml-map-attrs
-                                            {ooxml/attr-numId
-                                             (partial numbering/copy-numbering fragment-model (atom {}))}))
-                              (map (partial style/xml-rename-style-ids style-ids-rename))
-                              (doall))]
-        (swap! *inserted-fragments* conj frag-name)
-        (run! relations/add-extra-file! relation-ids-rename)
-        [{:text (->FragmentInvoke {:frag-evaled-parts evaled-parts})}])
-      (throw (eval-exception (str "No fragment for name: " frag-name) nil)))))
+        ;; write back
+        get-xml      (fn [x] (or (:xml x) @(:xml-delay x)))
+        evaled-parts (->> evaled :main :result
+                          (get-xml)
+                          (extract-body-parts)
+                          (map (partial relations/xml-rename-relation-ids relation-rename-map))
+                          (map (partial xml-map-attrs
+                                        {ooxml/attr-numId
+                                         (partial numbering/copy-numbering fragment-model (atom {}))}))
+                          (map (partial style/xml-rename-style-ids style-ids-rename))
+                          (doall))]
+    (run! relations/add-extra-file! relation-ids-rename)
+    [{:text (->FragmentInvoke {:frag-evaled-parts evaled-parts})}]))
