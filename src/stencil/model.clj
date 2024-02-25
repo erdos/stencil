@@ -17,22 +17,6 @@
 
 (set! *warn-on-reflection* true)
 
-(def rel-type-main
-  "Relationship type of main document in _rels/.rels file."
-  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument")
-
-(def rel-type-footer
-  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer")
-
-(def rel-type-header
-  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/header")
-
-(def rel-type-slide
-  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide")
-
-(def extra-relations
-  #{rel-type-footer rel-type-header rel-type-slide})
-
 ;; all insertable fragments. map of id to frag def.
 (def ^:private ^:dynamic *all-fragments* nil)
 
@@ -50,7 +34,7 @@
   (assert (.isDirectory dir))
   (assert (map? options-map))
   (let [main-rels          (relations/->rels dir nil)
-        [main-document]    (relations/targets-by-type main-rels #{rel-type-main})
+        [main-document]    (relations/targets-by-type main-rels #{relations/rel-type-main})
         main-document-rels (relations/->rels dir main-document)
         ->exec (binding [merger/*only-includes* (boolean (:only-includes options-map))]
                  (bound-fn* ->exec))]
@@ -62,7 +46,7 @@
                          :executable  (->exec (file dir main-document))
                          :relations   main-document-rels
                          :headers+footers (doall
-                                           (for [t (relations/targets-by-type main-document-rels extra-relations)
+                                           (for [t (relations/targets-by-type main-document-rels relations/extra-relations)
                                                  :let [f (file (.getParentFile (file main-document)) t)]]
                                              {::path       (unix-path f)
                                               :source-file (file dir f)

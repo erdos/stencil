@@ -1,6 +1,7 @@
 (ns stencil.api-test
   (:import [io.github.erdos.stencil.exceptions EvalException])
   (:require [clojure.test :refer [deftest testing is]]
+            [clojure.java.io]
             [stencil.api :refer [prepare render! fragment cleanup!]]
             [stencil.functions :refer [call-fn]]))
 

@@ -20,6 +20,23 @@
   "Relationship type of image files in .rels files."
   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image")
 
+(def rel-type-main
+  "Relationship type of main document in _rels/.rels file."
+  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument")
+
+(def rel-type-footer
+  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer")
+
+(def rel-type-header
+  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/header")
+
+(def rel-type-slide
+  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide")
+
+(def extra-relations
+  #{rel-type-footer rel-type-header rel-type-slide})
+
+
 (defn- parse [rel-file]
   (with-open [reader (io/input-stream (file rel-file))]
     (let [parsed (xml/parse reader)]
