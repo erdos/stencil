@@ -5,9 +5,9 @@ The lifecycle of a template (fragment or document) consists of three stages:
 
 ```mermaid
 flowchart TB
-   Prepare --> Render --> Cleanup
+   Prepare --> Render --> Clear
    Render --> Render
-   Prepare --> Cleanup
+   Prepare --> Clear
 ```
 
 ## Prepare
@@ -22,7 +22,7 @@ Preparing a `docx` template file starts with uncompressing it's content into a t
 
 ### Merge and Cleanup steps
 
-TODO!
+The central idea of Stencil is an algorithm to make sure that templating expressions embedded in an OOXML document can be evaluated while the semantic correctness of the document is maintained.
 
 ```mermaid
 flowchart LR
@@ -57,10 +57,12 @@ flowchart LR
 
 TODO!
 
-### Cleanup step
+## Clearing step
 
-When a prepared template is cleaned up, the allocated resources are freed, such as:
+When a prepared template is cleared, the allocated resources are freed, such as:
 - The temporary files that were created when uncompressing the template file in the first step.
 - Any associated in-memory buffers.
 
 Finally, the template object in the memory is marked as cleaned up to prevent accidentally rendering it again and producing incomplete documents.
+
+A Read-Write lock is used to make sure that it is not possible to clear up a template that is still being rendered. Also, it is not possible to render a template that has already been cleared up, and an exception is thrown when tried.
