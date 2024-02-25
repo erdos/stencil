@@ -15,6 +15,7 @@
 
 (def column-resize-modes #{:resize-first :resize-last :rational :cut})
 
+#_{:clj-kondo/ignore [:redefined-var]}
 (defn ->HideTableColumnMarker
   ([] (HideTableColumnMarker. :cut))
   ([x] (assert (column-resize-modes x))

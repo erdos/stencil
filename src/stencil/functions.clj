@@ -7,6 +7,7 @@
 
 (set! *warn-on-reflection* true)
 
+#_{:clj-kondo/ignore [:unused-binding]}
 (defmulti call-fn
   "Extend this multimethod to make additional functions available from the template files.
    The first argument is the lowercase function name which is used for dispatching the calls.

@@ -2,6 +2,7 @@
   (:import [java.io File])
   (:require [clojure.spec.alpha :as s]
             [stencil.model :as m]
+            [stencil.model.relations :as relations]
             [stencil.process]))
 
 
@@ -13,10 +14,10 @@
 (s/def ::data map?)
 
 ;; other types are also possible
-(s/def :stencil.model/type #{stencil.model/rel-type-footer
-                             stencil.model/rel-type-header
-                             stencil.model/rel-type-main
-                             stencil.model/rel-type-slide})
+(s/def :stencil.model/type #{relations/rel-type-footer
+                             relations/rel-type-header
+                             relations/rel-type-main
+                             relations/rel-type-slide})
 
 (s/def :stencil.model/path (s/and string? not-empty #(not (.startsWith ^String % "/"))))
 

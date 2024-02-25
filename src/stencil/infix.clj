@@ -152,7 +152,7 @@
 (defmethod eval-tree :fncall [[_ f & args]]
   (let [args (mapv eval-tree args)]
     (try (apply call-fn (name f) args)
-         (catch clojure.lang.ArityException e
+         (catch clojure.lang.ArityException _
                 (throw (ex-info (format "Function '%s' was called with a wrong number of arguments (%d)" f (count args))
                                 {:fn f :args args}))))))
 
