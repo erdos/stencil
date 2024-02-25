@@ -18,7 +18,7 @@
         fragment)
     (throw (eval-exception (str "No fragment for name: " frag-name) nil))))
 
-;; evaluates body in a clear fragment context and returns a tuple of [newly-added-fragments result]
+;; evaluates body in a clear fragment context and returns a tuple of [result newly-added-fragments]
 (defmacro with-sub-fragments [body]
   `(let [[result# fragments#] (binding [*inserted-fragments* (atom #{})]
                                 [~body @*inserted-fragments*])]
