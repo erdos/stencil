@@ -1,10 +1,9 @@
 (ns stencil.spec
-  (:import [java.io File])
   (:require [clojure.spec.alpha :as s]
+            [stencil.fs :as fs]
             [stencil.model :as m]
             [stencil.model.relations :as relations]
             [stencil.process]))
-
 
 
 ;; TODO
@@ -38,12 +37,12 @@
                                         :opt-un [::result])))
 
 (s/def ::source-folder (s/and (partial instance? java.io.File)
-                              #(.isDirectory ^File %)
-                              #(.exists ^File %)))
+                              fs/directory?
+                              fs/exists?))
 
 (s/def ::source-file (s/and (partial instance? java.io.File)
-                            #(.isFile ^File %)
-                            #(.exists ^File %)))
+                            (complement fs/directory?)
+                            fs/exists?))
 
 (s/def ::main (s/keys :req [:stencil.model/path]
                       :opt-un [:stencil.model/headers+footers ::result] ;; not present in fragments

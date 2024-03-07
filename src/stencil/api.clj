@@ -2,6 +2,7 @@
   "A simple public API for document generation from templates."
   (:require [clojure.walk :refer [stringify-keys]]
             [clojure.java.io :as io]
+            [stencil.fs :as fs]
             [stencil.types])
   (:import [io.github.erdos.stencil API PreparedFragment PreparedTemplate TemplateData]
            [java.util Map]))
@@ -59,7 +60,7 @@
 
       (:output opts)
       (let [f (io/file (:output opts))]
-        (when (.exists f)
+        (when (fs/exists? f)
           (if (:overwrite? opts)
             (.delete f)
             (throw (ex-info "File already exists! " {:file f}))))

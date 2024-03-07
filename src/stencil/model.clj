@@ -2,7 +2,6 @@
   "Handling the meta-model of OOXML documents.
    See: http://officeopenxml.com/anatomyofOOXML.php
   "
-  (:import [java.io File])
   (:require [clojure.data.xml :as xml]
             [clojure.java.io :as io :refer [file]]
             [stencil.eval :as eval]
@@ -10,11 +9,12 @@
             [stencil.merger :as merger]
             [stencil.types :refer [->FragmentInvoke]]
             [stencil.util :refer [unlazy-tree]]
-            [stencil.model.common :refer [unix-path ->xml-writer resource-copier]]
+            [stencil.model.common :refer [->xml-writer resource-copier]]
             [stencil.ooxml :as ooxml]
             [stencil.model [numbering :as numbering] [relations :as relations]
              [style :as style] [content-types :as content-types] [fragments :as fragments]]
-            [stencil.cleanup :as cleanup]))
+            [stencil.cleanup :as cleanup]
+            [stencil.fs :as fs]))
 
 (set! *warn-on-reflection* true)
 
@@ -24,9 +24,9 @@
         (cleanup/process)
         (select-keys [:variables :dynamic? :executable :fragments]))))
 
-(defn load-template-model [^File dir, options-map]
-  (assert (.exists dir))
-  (assert (.isDirectory dir))
+(defn load-template-model [dir, options-map]
+  (assert (fs/exists? dir))
+  (assert (fs/directory? dir))
   (assert (map? options-map))
   (let [main-rels          (relations/->rels dir nil)
         [main-document]    (relations/targets-by-type main-rels #{relations/rel-type-main})
@@ -42,8 +42,8 @@
                          :relations   main-document-rels
                          :headers+footers (doall
                                            (for [t (relations/targets-by-type main-document-rels relations/extra-relations)
-                                                 :let [f (file (.getParentFile (file main-document)) t)]]
-                                             {::path       (unix-path f)
+                                                 :let [f (file (fs/parent-file (file main-document)) t)]]
+                                             {::path       (fs/unix-path f)
                                               :source-file (file dir f)
                                               :executable  (->exec (file dir f))
                                               :relations   (relations/->rels dir f)}))}
@@ -125,11 +125,11 @@
           (for [m (model-seq evaled-template-model)
                 :when (:relations m) ;:when (::path m)
                 :let [src-parent  (delay (file (or (:source-folder m)
-                                                  (.getParentFile (file (:source-file m))))))
-                      path-parent (some-> m ::path file .getParentFile)]
+                                                   (fs/parent-file (file (:source-file m))))))
+                      path-parent (some-> m ::path file fs/parent-file)]
                 relation (vals (:parsed (:relations m)))
                 :when (not= "External" (::mode relation))
-                :let [path (unix-path (.toFile (.normalize (.toPath (file path-parent (::target relation))))))]
+                :let [path (fs/unix-path (.toFile (.normalize (.toPath (file path-parent (::target relation))))))]
                 :when (or (:writer relation) (not (contains? result path)))
                 :let [src (or (:source-file relation) (file @src-parent (::target relation)))]]
             [path (or (:writer relation)

@@ -1,8 +1,10 @@
 (ns stencil.model.content-types
   (:require [clojure.data.xml :as xml]
             [clojure.java.io :refer [file input-stream]]
-            [stencil.model.common :refer [->xml-writer]])
-  (:import [java.io File]))
+            [stencil.fs :as fs]
+            [stencil.model.common :refer [->xml-writer]]))
+
+(set! *warn-on-reflection* true)
 
 (def xmlns "http://schemas.openxmlformats.org/package/2006/content-types")
 
@@ -25,10 +27,10 @@
                   "Override" (assoc-in m [::override (attr-part-name (:attrs elem))] (attr-content-type (:attrs elem)))))
               {} (remove string? (:content parsed)))))) ;; rm empty strings
 
-(defn parse-content-types [^File dir]
-  (assert (.isDirectory dir))
+(defn parse-content-types [dir]
+  (assert (fs/directory? dir))
   (let [cts (file dir "[Content_Types].xml")]
-    (assert (.exists cts))
+    (assert (fs/exists? cts))
     (assert (.isFile cts))
     {:parsed                   (parse-ct-file cts)
      :stencil.model/path       (.getName cts)}))

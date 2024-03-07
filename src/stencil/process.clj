@@ -1,7 +1,6 @@
 (ns stencil.process
   "These functions are called from Java."
-  (:import [java.io File]
-           [java.util.zip ZipEntry ZipOutputStream]
+  (:import [java.util.zip ZipEntry ZipOutputStream]
            [io.github.erdos.stencil EvaluatedDocument PrepareOptions PreparedFragment PreparedTemplate TemplateVariables]
            [io.github.erdos.stencil.impl FileHelper ZipHelper LifecycleLock])
   (:require [clojure.core.protocols :refer [Datafiable]]
@@ -9,7 +8,7 @@
             [clojure.java.io :as io]
             [stencil.log :as log]
             [stencil.model :as model]
-            [stencil.model.common :refer [unix-path]]))
+            [stencil.fs :refer [unix-path]]))
 
 (set! *warn-on-reflection* true)
 (declare render-writers-map)
@@ -28,7 +27,7 @@
                   v (:variables (:executable x))] v))))
 
 ;; Called  from Java API
-(defn prepare-template [^File template-file, ^PrepareOptions options]
+(defn prepare-template [template-file, ^PrepareOptions options]
   (let [zip-dir   (FileHelper/createNonexistentTempFile
                    (.getTemporaryDirectoryOverride options)
                    "stencil-" ".zip.contents")
@@ -60,7 +59,7 @@
       (datafy [_] model))))
 
 ;; Called from Java API
-(defn prepare-fragment [^File fragment-file, ^PrepareOptions options]
+(defn prepare-fragment [fragment-file, ^PrepareOptions options]
   (let [zip-dir (FileHelper/createNonexistentTempFile
                  (.getTemporaryDirectoryOverride options)
                  "stencil-fragment-" ".zip.contents")

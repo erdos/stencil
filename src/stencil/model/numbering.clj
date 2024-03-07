@@ -3,7 +3,8 @@
             [clojure.java.io :as io]
             [stencil.ooxml :as ooxml]
             [stencil.util :refer [unlazy-tree ->int assoc-if-val find-first]]
-            [stencil.model.common :refer [unix-path ->xml-writer]]))
+            [stencil.model.common :refer [->xml-writer]]
+            [stencil.fs :as fs :refer [unix-path]]))
 
 
 (def ^:private rel-type-numbering
@@ -161,7 +162,7 @@
 (defn- main-numbering [dir main-document main-document-rels]
   (when-let [main-numbering-path
              (some #(when (= rel-type-numbering (:stencil.model/type %))
-                      (unix-path (io/file (.getParentFile (io/file main-document))
+                      (unix-path (io/file (fs/parent-file (io/file main-document))
                                           (:stencil.model/target %))))
                    (vals (:parsed main-document-rels)))]
     {:stencil.model/path       main-numbering-path

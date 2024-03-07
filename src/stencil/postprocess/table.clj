@@ -75,10 +75,8 @@
   [loc]
   (assert (zipper? loc))
   (assert (loc-cell? loc))
-  (let [cell-loc      (find-enclosing-cell loc)
-        cell          (zip/node cell-loc)]
-    (or (some->> loc (child-of-tag "tcPr") (child-of-tag "gridSpan") zip/node :attrs ooxml/val ->int)
-        1)))
+  (or (some->> loc (child-of-tag "tcPr") (child-of-tag "gridSpan") zip/node :attrs ooxml/val ->int)
+      1))
 
 (defn shrink-column
   "Decreases logical width of current TD cell."

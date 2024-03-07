@@ -3,6 +3,7 @@
   (:import [java.io File])
   (:require [org.httpkit.server :refer [run-server]]
             [stencil.api :as api]
+            [stencil.fs :as fs]
             [stencil.functions]
             [stencil.log :as log]
             [stencil.slf4j :as slf4j]
@@ -19,14 +20,14 @@
 
 (defn get-template-dir []
   (if-let [dir (some-> (System/getenv "STENCIL_TEMPLATE_DIR") (file))]
-    (if-not (.exists dir)
+    (if-not (fs/exists? dir)
       (throw (ex-info "Template directory does not exist!" {:status 500}))
       dir)
     (throw (ex-info "Missing STENCIL_TEMPLATE_DIR property!" {}))))
 
 (defn eval-js-file []
   (let [f (file (get-template-dir) "stencil.js")]
-    (when (.exists f)
+    (when (fs/exists? f)
       (log/info "Evaluating stencil.js file")
       (let [manager (new javax.script.ScriptEngineManager)
             engine (.getEngineByName manager "rhino")
@@ -59,7 +60,7 @@
   (let [template-name (.substring (str template-name) 1) ;; so they dont start with /
         parent (get-template-dir)
         template (file parent template-name)]
-    (if (.exists template)
+    (if (fs/exists? template)
       (prepared template)
       (throw (ex-info "Template file does not exist!" {:status 404})))))
 
