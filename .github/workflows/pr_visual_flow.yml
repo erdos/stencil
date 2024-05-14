@@ -32,3 +32,5 @@ jobs:
     - name: Publish Test Report
       if: ${{ always() }}
       uses: scacap/action-surefire-report@v1
+      with:
+        report_paths: 'target/surefire-reports/*.xml'

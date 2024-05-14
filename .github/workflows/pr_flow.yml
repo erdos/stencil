@@ -23,7 +23,7 @@ jobs:
     - name: Run Java Tests
       run: lein pom && mvn test --batch-mode --fail-at-end
     - name: Unit tests in Clojure
-      run: lein junit
+      run: lein test
     - name: Publish Test Report
       if: ${{ always() }}
       uses: scacap/action-surefire-report@v1
