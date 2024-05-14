@@ -12,8 +12,7 @@
   :pom-addition ([:properties ["maven.compiler.source" "8"] ["maven.compiler.target" "8"]])
   :pom-plugins [[org.apache.maven.plugins/maven-surefire-plugin "2.20"]]
   :main io.github.erdos.stencil.Main
-  :aliases      {"junit" ["with-profile" "+test" "test-out" "junit" "target/surefire-reports/clojure.xml"]
-                 "coverage" ["with-profile" "+ci" "cloverage" "--codecov"
+  :aliases      {"coverage" ["with-profile" "+ci" "cloverage" "--codecov"
                              "--exclude-call" "clojure.core/assert"
                              "--exclude-call" "stencil.util/trace"
                              "--exclude-call" "stencil.util/fail"
@@ -38,7 +37,7 @@
                     :dependencies [[junit/junit "4.13.2"]
                                    [org.xmlunit/xmlunit-core "2.5.1"]
                                    [hiccup "1.0.5"]]
-                    :plugins      [[lein-test-out "0.3.1"]]
+                    :plugins      [[lein-test-report-junit-xml "0.2.0"]]
                     :resource-paths    ["test-resources"]
                     :test-paths ["java-test"]
                     :injections [(require 'stencil.spec)
