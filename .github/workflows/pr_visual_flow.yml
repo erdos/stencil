@@ -35,3 +35,4 @@ jobs:
       uses: scacap/action-surefire-report@v1
       with:
         report_paths: 'target/visual-reports/*.xml'
+        check_name: Visual Test Reports
