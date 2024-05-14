@@ -6,6 +6,7 @@ on:
 
 env:
   STENCIL_TEST_VISUAL: true
+  TEST_REPORT_JUNIT_XML_OUTPUT_DIR: target/visual-reports
 
 jobs:
   build:
@@ -31,6 +32,6 @@ jobs:
           /home/runner/work/_temp/**/*.png
     - name: Publish Test Report
       if: ${{ always() }}
-      uses: scacap/action-surefire-report@v1.8.0
+      uses: scacap/action-surefire-report@v1
       with:
-        report_paths: 'target/surefire-reports/*.xml'
+        report_paths: 'target/visual-reports/*.xml'

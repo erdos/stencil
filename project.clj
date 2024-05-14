@@ -37,9 +37,7 @@
                     :dependencies [[junit/junit "4.13.2"]
                                    [org.xmlunit/xmlunit-core "2.5.1"]
                                    [hiccup "1.0.5"]]
-                    :plugins      [[lein-test-out "0.3.1"]
-                                   [lein-test-report-junit-xml "0.2.0"]]
-                    :test-report-junit-xml {:output-dir "target/surefire-reports"}
+                    :plugins      [[lein-test-report-junit-xml "0.2.0"]]
                     :resource-paths    ["test-resources"]
                     :test-paths ["java-test"]
                     :injections [(require 'stencil.spec)
