@@ -30,9 +30,10 @@ jobs:
         name: test-visual-images
         path: |
           /home/runner/work/_temp/**/*.png
-    - name: Publish Test Report
-      if: ${{ always() }}
-      uses: scacap/action-surefire-report@v1
+    - name: Test Report
+      uses: dorny/test-reporter@v1
+      if: success() || failure()
       with:
-        report_paths: 'target/visual-reports/*.xml'
-        check_name: Visual Test Reports
+        name: Visual Tests
+        path: target/visual-reports/*.xml
+        reporter: java-junit
