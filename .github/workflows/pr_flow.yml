@@ -26,6 +26,6 @@ jobs:
       run: lein test
     - name: Publish Test Report
       if: ${{ always() }}
-      uses: scacap/action-surefire-report@v1
+      uses: scacap/action-surefire-report@v1.8.0
       with:
         report_paths: 'target/surefire-reports/*.xml'
