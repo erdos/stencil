@@ -12,7 +12,7 @@
   :pom-addition ([:properties ["maven.compiler.source" "8"] ["maven.compiler.target" "8"]])
   :pom-plugins [[org.apache.maven.plugins/maven-surefire-plugin "2.20"]]
   :main io.github.erdos.stencil.Main
-  :aliases      {"junit" ["with-profile" "+test" "test-out" "junit" "junit.xml"]
+  :aliases      {"junit" ["with-profile" "+test" "test-out" "junit" "target/surefire-reports/clojure.xml"]
                  "coverage" ["with-profile" "+ci" "cloverage" "--codecov"
                              "--exclude-call" "clojure.core/assert"
                              "--exclude-call" "stencil.util/trace"

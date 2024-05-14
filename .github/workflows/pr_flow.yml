@@ -13,8 +13,6 @@ jobs:
       run: lein deps
     - name: Compile Java
       run: lein javac
-    - name: Compile Clojure
-      run: lein test
     - name: Coverage
       run: lein coverage
     - name: Codecov
@@ -24,6 +22,10 @@ jobs:
         files: ./target/coverage/codecov.json
     - name: Run Java Tests
       run: lein pom && mvn test --batch-mode --fail-at-end
+    - name: Unit tests in Clojure
+      run: lein junit
     - name: Publish Test Report
       if: ${{ always() }}
       uses: scacap/action-surefire-report@v1
+      with:
+        report_paths: 'target/surefire-reports/*.xml'
