@@ -31,12 +31,22 @@
 (def rel-type-header
   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/header")
 
+;; PPTX
+
 (def rel-type-slide
   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide")
 
-(def extra-relations
-  #{rel-type-footer rel-type-header rel-type-slide})
+(def rel-type-slide-master
+  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster")
 
+(def rel-type-slide-layout
+  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout")
+
+(def rel-type-theme
+  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme")
+
+(def extra-relations
+  #{rel-type-footer rel-type-header rel-type-slide rel-type-slide-master})
 
 (defn- parse [rel-file]
   (with-open [reader (io/input-stream (file rel-file))]

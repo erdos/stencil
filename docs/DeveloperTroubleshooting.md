@@ -80,5 +80,39 @@ Problem: The zip entry paths mut not contain a `../` part.
                                         +-----------------+
                                         | word/styles.xml | > shared across all
                                         +-----------------+
+```
 
+## OOXML Presentation Model
+
+- Entry point is the same `.rels` file and main document is usually `ppt/_rels/presentation.xml`
+- Main document references both `slide` and `slideMaster` and `theme`
+  - SlideMaster references `slideLayout` (and `theme`) pages
+  - Slide references `slideLayout` pages
+  - Theme page has no references
+- SlideLayout references SlideMaster pages
+  - circular reference there!
+
+```                                                                                                         
++-------------+                                                                                             
+| _rels/.rels | < this is the entry point                                                                   
++-------------+                                                                                             
+       |                                         ┌───────────────► /ppt/presProps.xml                       
+       v                                         │                                                          
+┌─────────────────────┐                          │                                                          
+│/ppt/presentation.xml├─────┬────────┬────────┬──┴───────────────► /ppt/theme/theme1.xml                    
+└─────────────────────┘     │        │        │                         ▲                                   
+                            │        │        ▼                         │                                   
+                            │        │     ┌────────────────────────────┴─────┐                             
+                            │        │     │/ppt/slideMasters/slideMaster1.xml├────────┐                    
+                            │        │     └──────────────────────────────────┘        │                    
+                            │        ▼                                ▲                │                    
+                            │   ┌──────────────────────────────────┐  │                ▼                    
+                            │   │/ppt/slideMasters/slideMaster2.xml│  │ ┌──────────────────────────────────┐
+                            │   └──────────────────────────────────┘  └─┤/ppt/slideLayouts/slideLayout1.xml│
+                            ▼                                           └──────────────────────────────────┘
+                       ┌──────────────────────┐                                        ▲                    
+                       │/ppt/slides/slide1.xml├────────────────────────────────────────┘                    
+                       ├──────────────────────┤                                                             
+                       │/ppt/slides/slide2.xml│                                                             
+                       └──────────────────────┘                                                             
 ```
