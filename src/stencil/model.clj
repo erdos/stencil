@@ -129,7 +129,7 @@
                       path-parent (some-> m ::path file fs/parent-file)]
                 relation (vals (:parsed (:relations m)))
                 :when (not= "External" (::mode relation))
-                :let [path (fs/unix-path (.toFile (.normalize (.toPath (file path-parent (::target relation))))))]
+                :let [path (fs/unix-path (fs/unroll (file path-parent (::target relation))))]
                 :when (or (:writer relation) (not (contains? result path)))
                 :let [src (or (:source-file relation) (file @src-parent (::target relation)))]]
             [path (or (:writer relation)
