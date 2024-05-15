@@ -18,7 +18,11 @@
                              relations/rel-type-main
                              relations/rel-type-slide})
 
-(s/def :stencil.model/path (s/and string? not-empty #(not (.startsWith ^String % "/"))))
+(s/def :stencil.model/path (s/and string?
+                                  not-empty
+                                  #(not (.startsWith (str %) "/"))
+                                  #(not (.endsWith (str %) "/"))
+                                  #(not (.contains (str %) ".."))))
 
 ;; relationship file
 (s/def ::relations (s/keys :req    [:stencil.model/path]
@@ -32,13 +36,12 @@
 (s/def ::style (s/keys :req [:stencil.model/path]
                        :opt-un [::result]))
 
-(s/def :stencil.model/headers+footers (s/* (s/keys :req [:stencil.model/path]
-                                        :req-un [::source-file :stencil.model/executable :?/relations]
-                                        :opt-un [::result])))
+(s/def :stencil.model/headers+footers
+  (s/* (s/keys :req [:stencil.model/path]
+               :req-un [::source-file :stencil.model/executable :?/relations]
+               :opt-un [::result])))
 
-(s/def ::source-folder (s/and (partial instance? java.io.File)
-                              fs/directory?
-                              fs/exists?))
+(s/def ::source-folder (s/and fs/directory? fs/exists?))
 
 (s/def ::source-file (s/and (partial instance? java.io.File)
                             (complement fs/directory?)
@@ -63,8 +66,9 @@
 
 (s/def ::parsed any?)
 
-(s/def :stencil.model/numbering (s/nilable (s/keys :req [:stencil.model/path]
-                                        :req-un [::source-file ::parsed])))
+(s/def :stencil.model/numbering
+  (s/nilable (s/keys :req [:stencil.model/path]
+                     :req-un [::source-file ::parsed])))
 
 (s/fdef stencil.model/load-template-model
   :args (s/cat :dir ::source-folder, :opts map?)
