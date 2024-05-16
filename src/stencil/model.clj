@@ -24,16 +24,18 @@
         (cleanup/process)
         (select-keys [:variables :dynamic? :executable :fragments]))))
 
+(defn- ->submodel [dir f]
+  {::path       (fs/unix-path (fs/unroll f))
+   :source-file (file dir f)
+   :executable  (->exec (file dir f))
+   :relations   (relations/->rels dir f)})
+
 (defn- assoc-slide-layouts-notes [main-document dir]
   (->> (for [hf     (:headers+footers main-document)
              :when  (:relations hf)
              target (relations/targets-by-type (:relations hf)
-                                               #{relations/rel-type-slide-layout relations/rel-type-notes-slide})
-             :let [f (file (fs/parent-file (file (::path hf))) target)]]
-         {::path       (fs/unix-path (fs/unroll f))
-          :source-file (file dir f)
-          :executable  (->exec (file dir f))
-          :relations   (relations/->rels dir f)})
+                                               #{relations/rel-type-slide-layout relations/rel-type-notes-slide})]
+         (->submodel dir (file (fs/parent-file (file (::path hf))) target)))
        (doall)
        (assoc main-document ::slide-layouts)))
 
@@ -54,12 +56,8 @@
                          :executable  (->exec (file dir main-document))
                          :relations   main-document-rels
                          :headers+footers (doall
-                                           (for [t (relations/targets-by-type main-document-rels relations/extra-relations)
-                                                 :let [f (fs/unroll (file (fs/parent-file (file main-document)) t))]]
-                                             {::path       (fs/unix-path f)
-                                              :source-file (file dir f)
-                                              :executable  (->exec (file dir f))
-                                              :relations   (relations/->rels dir f)}))}
+                                           (for [t (relations/targets-by-type main-document-rels relations/extra-relations)]
+                                             (->submodel dir (fs/unroll (file (fs/parent-file (file main-document)) t)))))}
                         (assoc-slide-layouts-notes dir)
                         (style/assoc-style dir)
                         (numbering/assoc-numbering dir))}))
