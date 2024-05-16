@@ -26,3 +26,6 @@
   (is (true? (fs/exists? (file "src"))))
   (is (false? (fs/exists? (file "/does/not-exist"))))
   (is (false? (fs/exists? (file "does/not-exist")))))
+
+(deftest test-unroll
+  (is (= (file "a/b/c/d") (fs/unroll (file "a/b/x/../c/d")))))

@@ -15,3 +15,6 @@
 
 (defn parent-file ^File [^File f]
   (.getParentFile f))
+
+;; remove /../ parts
+(defn unroll [^File f] (-> f .toPath .normalize .toFile))
