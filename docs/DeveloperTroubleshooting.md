@@ -89,8 +89,16 @@ Problem: The zip entry paths mut not contain a `../` part.
   - SlideMaster references `slideLayout` (and `theme`) pages
   - Slide references `slideLayout` pages
   - Theme page has no references
-- SlideLayout references SlideMaster pages
-  - circular reference there!
+  - SlideLayout references `slideMaster` pages. Note, there is a circular reference there!
+
+### SlideMaster
+
+> The master slide is the template upon which presentation slides are built. It specifies the shapes and objects as placeholders for content on presentation slides, as well as the formatting of the content within the placeholders. Of course the content and formatting specified on a master slide can be altered by layout slides and the presentation slides themselves, but absent such overrides, the master slide establishes the overall look and feel of the presentation. [Source](http://officeopenxml.com/prSlideMaster.php)
+
+### SlideLayout
+
+> A slide layout is essentially a template design which can be applied to one or more slides, defining the default appearance and positioning of objects on the slide. It "sits" on top of the master slide, acting as an override to alter or supplement information provided on the master slide. When applied to a slide, all corresponding content within objects on the slide is mapped to the slide layout placeholders. [Source](http://officeopenxml.com/prSlideLayout.php)
+
 
 ```                                                                                                         
 +-------------+                                                                                             
