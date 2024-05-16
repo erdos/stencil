@@ -45,6 +45,9 @@
 (def rel-type-theme
   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme")
 
+(def rel-type-notes-slide
+  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesSlide")
+
 (def extra-relations
   #{rel-type-footer rel-type-header rel-type-slide rel-type-slide-master})
 

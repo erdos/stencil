@@ -24,6 +24,19 @@
         (cleanup/process)
         (select-keys [:variables :dynamic? :executable :fragments]))))
 
+(defn- assoc-slide-layouts-notes [main-document dir]
+  (->> (for [hf     (:headers+footers main-document)
+             :when  (:relations hf)
+             target (relations/targets-by-type (:relations hf)
+                                               #{relations/rel-type-slide-layout relations/rel-type-notes-slide})
+             :let [f (file (fs/parent-file (file (::path hf))) target)]]
+         {::path       (fs/unix-path (fs/unroll f))
+          :source-file (file dir f)
+          :executable  (->exec (file dir f))
+          :relations   (relations/->rels dir f)})
+       (doall)
+       (assoc main-document ::slide-layouts)))
+
 (defn load-template-model [dir, options-map]
   (assert (fs/exists? dir))
   (assert (fs/directory? dir))
@@ -42,11 +55,12 @@
                          :relations   main-document-rels
                          :headers+footers (doall
                                            (for [t (relations/targets-by-type main-document-rels relations/extra-relations)
-                                                 :let [f (file (fs/parent-file (file main-document)) t)]]
+                                                 :let [f (fs/unroll (file (fs/parent-file (file main-document)) t))]]
                                              {::path       (fs/unix-path f)
                                               :source-file (file dir f)
                                               :executable  (->exec (file dir f))
                                               :relations   (relations/->rels dir f)}))}
+                        (assoc-slide-layouts-notes dir)
                         (style/assoc-style dir)
                         (numbering/assoc-numbering dir))}))
 
@@ -93,10 +107,11 @@
                                     (assoc :result result)))))]
             (-> template-model
                 (update-in [:main :headers+footers] (partial mapv evaluate))
+                (update-in [:main ::slide-layouts] (partial mapv evaluate))
                 (update :main evaluate))))))))
 
 (defn- model-seq [model]
-  (let [model-keys [:relations :headers+footers :main :style :content-types :fragments ::numbering :result]]
+  (let [model-keys [:relations :headers+footers :main :style :content-types :fragments ::numbering :result ::slide-layouts]]
     (tree-seq map? (fn [node] (flatten (keep node model-keys))) model)))
 
 
@@ -161,7 +176,7 @@
     ;; TODO: we could speed this up!
     (if-let [f (attr-mappers (:tag xml-tree))]
       (update-in xml-tree [:attrs ooxml/val] f)
-      (assoc xml-tree :content (mapv (partial xml-map-attrs attr-mappers) (:content xml-tree)))) 
+      (assoc xml-tree :content (mapv (partial xml-map-attrs attr-mappers) (:content xml-tree))))
     xml-tree))
 
 ; And therefore:
