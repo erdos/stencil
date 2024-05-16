@@ -63,7 +63,7 @@
 
 (defn ->rels [^java.io.File dir f]
   (let [rels-path (if f
-                    (unix-path (file (fs/parent-file (file f)) "_rels" (str (.getName (file f)) ".rels")))
+                    (unix-path (fs/unroll (file (fs/parent-file (file f)) "_rels" (str (.getName (file f)) ".rels"))))
                     (unix-path (file "_rels" ".rels"))) 
         rels-file (file dir rels-path)]
     (when (fs/exists? rels-file)
