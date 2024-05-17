@@ -48,8 +48,11 @@
 (def rel-type-notes-slide
   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesSlide")
 
+(def rel-type-notes-master
+  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesMaster")
+
 (def extra-relations
-  #{rel-type-footer rel-type-header rel-type-slide rel-type-slide-master})
+  #{rel-type-footer rel-type-header rel-type-slide rel-type-slide-master rel-type-notes-master})
 
 (defn- parse [rel-file]
   (with-open [reader (io/input-stream (file rel-file))]
