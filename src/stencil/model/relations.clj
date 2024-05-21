@@ -31,12 +31,28 @@
 (def rel-type-header
   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/header")
 
+;; PPTX
+
 (def rel-type-slide
   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide")
 
-(def extra-relations
-  #{rel-type-footer rel-type-header rel-type-slide})
+(def rel-type-slide-master
+  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster")
 
+(def rel-type-slide-layout
+  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout")
+
+(def rel-type-theme
+  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme")
+
+(def rel-type-notes-slide
+  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesSlide")
+
+(def rel-type-notes-master
+  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesMaster")
+
+(def extra-relations
+  #{rel-type-footer rel-type-header rel-type-slide rel-type-slide-master rel-type-notes-master})
 
 (defn- parse [rel-file]
   (with-open [reader (io/input-stream (file rel-file))]
@@ -53,7 +69,7 @@
 
 (defn ->rels [^java.io.File dir f]
   (let [rels-path (if f
-                    (unix-path (file (fs/parent-file (file f)) "_rels" (str (.getName (file f)) ".rels")))
+                    (unix-path (fs/unroll (file (fs/parent-file (file f)) "_rels" (str (.getName (file f)) ".rels"))))
                     (unix-path (file "_rels" ".rels"))) 
         rels-file (file dir rels-path)]
     (when (fs/exists? rels-file)

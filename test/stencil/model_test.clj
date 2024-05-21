@@ -30,6 +30,13 @@
 
     ))
 
+(deftest test-load-template-model-presentation
+  (with-open [template (api/prepare "test-resources/presentation/presentation.pptx")]
+    (let [model (datafy template)
+          slide-layouts (:stencil.model/slide-layouts (:main model))]
+      (is (seq slide-layouts))
+      (is (= 26 (count slide-layouts))))))
+
 (defn- debug-model [model]
   (-> model
       (assoc-in [:content-types] :CT)
