@@ -104,3 +104,11 @@
             [O1 {:text "{%if p"} O2 O3 {:text "%}one{%end%}"} O4]
             [O1 {:text "{%if p"} O2 O3 {:text "%}one{%end%}"} O4]
             [O1 {:action {:cmd :cmd/if, :condition 'p :raw "{%if p%}"}} O2 O3 {:text "one"} {:action {:cmd :cmd/end :raw "{%end%}"}} O4]))))
+
+(deftest test-unmap-text-nodes
+  (let [unmap-text-nodes @#'stencil.merger/unmap-text-nodes]
+    (is (= [] (into [] (unmap-text-nodes) [])))
+    (is (= [1 2 3] (into [] (unmap-text-nodes) [1 2 3])))
+    (is (= [{:text "abc"}] (into [] (unmap-text-nodes) "abc")))
+    (is (= [1 2 {:text "bc"} 3 {:text "d"} 4 5 {:text "e"} 6]
+           (into [] (unmap-text-nodes) [1 2 \b \c 3 \d 4 5 \e 6])))))
