@@ -104,9 +104,9 @@
 
 ;; Transducer that merges consecutive characters into a text token, eg.: (1 \a \b \c 2) to (1 {:text "abc"} 2)
 (defn- unmap-text-nodes []
-  (let [tmp (volatile! true)]
-    (comp (partition-by (fn [x] (when-not (char? x) (vswap! tmp not))))
-          (map (fn [x] (if (every? char? x) {:text (apply str x)} (first x)))))))
+  (let [state (volatile! true)]
+    (comp (partition-by (fn [x] (when-not (char? x) (vswap! state not))))
+          (map (fn [x] (if (char? (first x)) {:text (apply str x)} (first x)))))))
 
 (defn cleanup-runs [tokens-seq]
   (eduction (comp map-text-nodes (parser-trampoline) (unmap-text-nodes)) tokens-seq))
