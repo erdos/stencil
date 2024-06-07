@@ -21,6 +21,7 @@
       {:text source}
       {:action parsed})))
 
+;; Transducer that unwraps {:text .} objects. eg.: [1 2 {:text ab} 3] => [1 2 \a \b 3]
 (defn- map-text-nodes [rf]
   (fn ([acc] (rf acc))
     ([acc x]
@@ -48,10 +49,10 @@
            (let [action (map-action-token {:action (apply str buffer-nonclose-chars-only)})]
              (if (:action action)
                (parse-upto-open-tag (concat [action]
-                                        (remove char? chars-and-tokens-to-append)
-                                        (remove char? buffer-all-read)))
+                                            (remove char? chars-and-tokens-to-append)
+                                            (remove char? buffer-all-read)))
                (parse-upto-open-tag (concat (vec chars-and-tokens-to-append)
-                                        (vec buffer-all-read))))))
+                                            (vec buffer-all-read))))))
          (when (char? token)
            (vreset! expected-close-tag-chars (seq close-tag))
            (.clear buffer-nonclose-chars-only)
