@@ -1,10 +1,5 @@
 /**
- * General purpose functions.
- * <p>
- * Function implementations come here.
- *
- *
- * <h3>Custom Functions</h3>
+ * <h2>Custom Functions</h2>
  * <p>
  * It is possible to define custom functions on the host code and invoke them from  within the template files.
  * Custom functions must implement the {@link io.github.erdos.stencil.functions.Function} interface and be registered

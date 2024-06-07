@@ -43,12 +43,6 @@
     (throw-ex-parsing? "<a>{%for x in xs%}a</a>")))
 
 
-(deftest test-wrong-include
-  (testing "Unexpected value in inlude tag"
-    (throw-ex-parsing? "<a>{% include header %}</a>")
-    (throw-ex-parsing? "<a>{% include a+1 %}</a>")))
-
-
 (deftest test-not-closed
   (testing "Expressions are not closed properly"
     (throw-ex-parsing? "<a>{%=</a>")

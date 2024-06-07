@@ -3,7 +3,7 @@
   (:import [stencil.types FragmentInvoke])
   (:require [clojure.zip :as zip]
             [clojure.data.xml :as xml]
-            [stencil.types :refer :all]
+            [stencil.types :refer [->FragmentInvoke control?]]
             [stencil.ooxml :as ooxml]
             [stencil.functions :refer [call-fn]]
             [stencil.util :refer :all]))

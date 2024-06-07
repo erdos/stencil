@@ -6,6 +6,7 @@ on:
 
 env:
   STENCIL_TEST_VISUAL: true
+  TEST_REPORT_JUNIT_XML_OUTPUT_DIR: target/visual-reports
 
 jobs:
   build:
@@ -29,6 +30,10 @@ jobs:
         name: test-visual-images
         path: |
           /home/runner/work/_temp/**/*.png
-    - name: Publish Test Report
-      if: ${{ always() }}
-      uses: scacap/action-surefire-report@v1
+    - name: Test Report
+      uses: dorny/test-reporter@v1
+      if: success() || failure()
+      with:
+        name: Visual Tests
+        path: target/visual-reports/*.xml
+        reporter: java-junit

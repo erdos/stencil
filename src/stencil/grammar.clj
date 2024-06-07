@@ -7,7 +7,7 @@
 
 ;; left-associative chained infix expression
 (defn- chained [reader reader* reducer]
-  (fn [tokens] chained
+  (fn [tokens]
     (when-let [[result tokens] (reader tokens)]
       (loop [tokens tokens
              result result]
@@ -58,6 +58,7 @@
 (defn- optional [reader] ;; always matches
   (fn [t] (or (reader t) [nil t])))
 
+#_{:clj-kondo/ignore [:unresolved-symbol]}
 (def testlang
   (grammar [val  (some-fn iden-or-fncall
                           (parenthesed expression)

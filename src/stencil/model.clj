@@ -2,41 +2,21 @@
   "Handling the meta-model of OOXML documents.
    See: http://officeopenxml.com/anatomyofOOXML.php
   "
-  (:import [java.io File])
   (:require [clojure.data.xml :as xml]
             [clojure.java.io :as io :refer [file]]
             [stencil.eval :as eval]
+            [stencil.infix :refer [eval-rpn]]
             [stencil.merger :as merger]
             [stencil.types :refer [->FragmentInvoke]]
-            [stencil.util :refer [unlazy-tree eval-exception]]
-            [stencil.model.common :refer [unix-path ->xml-writer resource-copier]]
+            [stencil.util :refer [unlazy-tree]]
+            [stencil.model.common :refer [->xml-writer resource-copier]]
             [stencil.ooxml :as ooxml]
-            [stencil.model [numbering :as numbering] [relations :as relations] [style :as style] [content-types :as content-types]]
-            [stencil.cleanup :as cleanup]))
+            [stencil.model [numbering :as numbering] [relations :as relations]
+             [style :as style] [content-types :as content-types] [fragments :as fragments]]
+            [stencil.cleanup :as cleanup]
+            [stencil.fs :as fs]))
 
 (set! *warn-on-reflection* true)
-
-(def rel-type-main
-  "Relationship type of main document in _rels/.rels file."
-  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument")
-
-(def rel-type-footer
-  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer")
-
-(def rel-type-header
-  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/header")
-
-(def rel-type-slide
-  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide")
-
-(def extra-relations
-  #{rel-type-footer rel-type-header rel-type-slide})
-
-;; all insertable fragments. map of id to frag def.
-(def ^:private ^:dynamic *all-fragments* nil)
-
-;; set of already inserted fragment ids.
-(def ^:private ^:dynamic *inserted-fragments* nil)
 
 (defn ->exec [xml-streamable]
   (with-open [stream (io/input-stream xml-streamable)]
@@ -44,12 +24,27 @@
         (cleanup/process)
         (select-keys [:variables :dynamic? :executable :fragments]))))
 
-(defn load-template-model [^File dir, options-map]
-  (assert (.exists dir))
-  (assert (.isDirectory dir))
+(defn- ->submodel [dir f]
+  {::path       (fs/unix-path (fs/unroll f))
+   :source-file (file dir f)
+   :executable  (->exec (file dir f))
+   :relations   (relations/->rels dir f)})
+
+(defn- assoc-slide-layouts-notes [main-document dir]
+  (->> (for [hf     (:headers+footers main-document)
+             :when  (:relations hf)
+             target (relations/targets-by-type (:relations hf)
+                                               #{relations/rel-type-slide-layout relations/rel-type-notes-slide})]
+         (->submodel dir (file (fs/parent-file (file (::path hf))) target)))
+       (doall)
+       (assoc main-document ::slide-layouts)))
+
+(defn load-template-model [dir, options-map]
+  (assert (fs/exists? dir))
+  (assert (fs/directory? dir))
   (assert (map? options-map))
   (let [main-rels          (relations/->rels dir nil)
-        [main-document]    (relations/targets-by-type main-rels #{rel-type-main})
+        [main-document]    (relations/targets-by-type main-rels #{relations/rel-type-main})
         main-document-rels (relations/->rels dir main-document)
         ->exec (binding [merger/*only-includes* (boolean (:only-includes options-map))]
                  (bound-fn* ->exec))]
@@ -61,12 +56,9 @@
                          :executable  (->exec (file dir main-document))
                          :relations   main-document-rels
                          :headers+footers (doall
-                                           (for [t (relations/targets-by-type main-document-rels extra-relations)
-                                                 :let [f (file (.getParentFile (file main-document)) t)]]
-                                             {::path       (unix-path f)
-                                              :source-file (file dir f)
-                                              :executable  (->exec (file dir f))
-                                              :relations   (relations/->rels dir f)}))}
+                                           (for [t (relations/targets-by-type main-document-rels relations/extra-relations)]
+                                             (->submodel dir (fs/unroll (file (fs/parent-file (file main-document)) t)))))}
+                        (assoc-slide-layouts-notes dir)
                         (style/assoc-style dir)
                         (numbering/assoc-numbering dir))}))
 
@@ -80,10 +72,7 @@
 (defn- eval-model-part-exec [part data functions]
   (assert (:executable part))
   (assert (:dynamic? part))
-  (let [[result fragments] (binding [*inserted-fragments* (atom #{})]
-                             [(eval/eval-executable part data functions)
-                              @*inserted-fragments*])]
-    (swap! *inserted-fragments* into fragments)
+  (let [[result fragments] (fragments/with-sub-fragments (eval/eval-executable part data functions))]
     {:xml    result
      :fragment-names fragments
      :writer (->xml-writer result)}))
@@ -103,8 +92,7 @@
 (defn- eval-template-model [template-model data functions fragments]
   (assert (:main template-model) "Should be a result of load-template-model call!")
   (assert (some? fragments))
-  (binding [*inserted-fragments* (atom #{})
-            *all-fragments*      (into {} fragments)]
+  (fragments/with-fragments fragments
     (content-types/with-content-types
       (style/with-styles-context template-model
         (numbering/with-numbering-context template-model
@@ -117,10 +105,11 @@
                                     (assoc :result result)))))]
             (-> template-model
                 (update-in [:main :headers+footers] (partial mapv evaluate))
+                (update-in [:main ::slide-layouts] (partial mapv evaluate))
                 (update :main evaluate))))))))
 
 (defn- model-seq [model]
-  (let [model-keys [:relations :headers+footers :main :style :content-types :fragments ::numbering :result]]
+  (let [model-keys [:relations :headers+footers :main :style :content-types :fragments ::numbering :result ::slide-layouts]]
     (tree-seq map? (fn [node] (flatten (keep node model-keys))) model)))
 
 
@@ -149,11 +138,11 @@
           (for [m (model-seq evaled-template-model)
                 :when (:relations m) ;:when (::path m)
                 :let [src-parent  (delay (file (or (:source-folder m)
-                                                  (.getParentFile (file (:source-file m))))))
-                      path-parent (some-> m ::path file .getParentFile)]
+                                                   (fs/parent-file (file (:source-file m))))))
+                      path-parent (some-> m ::path file fs/parent-file)]
                 relation (vals (:parsed (:relations m)))
                 :when (not= "External" (::mode relation))
-                :let [path (unix-path (.toFile (.normalize (.toPath (file path-parent (::target relation))))))]
+                :let [path (fs/unix-path (fs/unroll (file path-parent (::target relation))))]
                 :when (or (:writer relation) (not (contains? result path)))
                 :let [src (or (:source-file relation) (file @src-parent (::target relation)))]]
             [path (or (:writer relation)
@@ -185,7 +174,7 @@
     ;; TODO: we could speed this up!
     (if-let [f (attr-mappers (:tag xml-tree))]
       (update-in xml-tree [:attrs ooxml/val] f)
-      (assoc xml-tree :content (mapv (partial xml-map-attrs attr-mappers) (:content xml-tree)))) 
+      (assoc xml-tree :content (mapv (partial xml-map-attrs attr-mappers) (:content xml-tree))))
     xml-tree))
 
 ; And therefore:
@@ -193,32 +182,28 @@
 ;   (xml-map-attrs {ooxml/r-embed id-rename ooxml/r-id id-rename} item))
 
 
-(defmethod eval/eval-step :cmd/include [function local-data-map {frag-name :name}]
+(defmethod eval/eval-step :cmd/include [function local-data-map step]
   (assert (map? local-data-map))
-  (assert (string? frag-name))
-  (do
-   (if-let [fragment-model (get *all-fragments* frag-name)]
-     (let [;; merge style definitions from fragment
-           style-ids-rename (-> fragment-model :main :style :parsed (doto assert) (style/insert-styles!))
+  (let [frag-name        (eval-rpn local-data-map function (:name step))
+        fragment-model   (fragments/use-fragment frag-name)
+        style-ids-rename (-> fragment-model :main :style :parsed (doto assert) (style/insert-styles!))
 
-           relation-ids-rename (relations/ids-rename fragment-model frag-name)
-           relation-rename-map (into {} (map (juxt :old-id :new-id)) relation-ids-rename)
+        relation-ids-rename (relations/ids-rename fragment-model frag-name)
+        relation-rename-map (into {} (map (juxt :old-id :new-id)) relation-ids-rename)
 
-           ;; evaluate
-           evaled (eval-template-model fragment-model local-data-map function {})
+        ;; evaluate
+        evaled (eval-template-model fragment-model local-data-map function {})
 
-           ;; write back
-           get-xml      (fn [x] (or (:xml x) @(:xml-delay x)))
-           evaled-parts (->> evaled :main :result
-                             (get-xml)
-                             (extract-body-parts)
-                             (map (partial relations/xml-rename-relation-ids relation-rename-map))
-                             (map (partial xml-map-attrs
-                                           {ooxml/attr-numId
-                                            (partial numbering/copy-numbering fragment-model (atom {}))}))
-                             (map (partial style/xml-rename-style-ids style-ids-rename))
-                             (doall))]
-       (swap! *inserted-fragments* conj frag-name)
-       (run! relations/add-extra-file! relation-ids-rename)
-       [{:text (->FragmentInvoke {:frag-evaled-parts evaled-parts})}])
-     (throw (eval-exception (str "No fragment for name: " frag-name) nil)))))
+        ;; write back
+        get-xml      (fn [x] (or (:xml x) @(:xml-delay x)))
+        evaled-parts (->> evaled :main :result
+                          (get-xml)
+                          (extract-body-parts)
+                          (map (partial relations/xml-rename-relation-ids relation-rename-map))
+                          (map (partial xml-map-attrs
+                                        {ooxml/attr-numId
+                                         (partial numbering/copy-numbering fragment-model (atom {}))}))
+                          (map (partial style/xml-rename-style-ids style-ids-rename))
+                          (doall))]
+    (run! relations/add-extra-file! relation-ids-rename)
+    [{:text (->FragmentInvoke {:frag-evaled-parts evaled-parts})}]))

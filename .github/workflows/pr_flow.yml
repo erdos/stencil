@@ -4,6 +4,9 @@ on:
   pull_request:
     branches: [ master ]
 
+env:
+  TEST_REPORT_JUNIT_XML_OUTPUT_DIR: target/surefire-reports
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -13,8 +16,6 @@ jobs:
       run: lein deps
     - name: Compile Java
       run: lein javac
-    - name: Compile Clojure
-      run: lein test
     - name: Coverage
       run: lein coverage
     - name: Codecov
@@ -24,6 +25,12 @@ jobs:
         files: ./target/coverage/codecov.json
     - name: Run Java Tests
       run: lein pom && mvn test --batch-mode --fail-at-end
-    - name: Publish Test Report
-      if: ${{ always() }}
-      uses: scacap/action-surefire-report@v1
+    - name: Unit tests in Clojure
+      run: lein test
+    - name: Test Report
+      uses: dorny/test-reporter@v1
+      if: success() || failure()
+      with:
+        name: Unit Tests
+        path: target/surefire-reports/*.xml
+        reporter: java-junit

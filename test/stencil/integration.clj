@@ -47,6 +47,9 @@
         diff-output   (io/file outdir (str basename ".diff.png"))
         compared      (shell/sh "compare" "-verbose" "-metric" "AE" "-fuzz" "8%"
                                 (str expected-png) (str png-output) (str diff-output))]
+    #_
+    (when-not (zero? (:exit compared))
+      (shell/sh "montage" (str expected-png) (str png-output) (str diff-output) "-tile" "3x1" "-geometry" "+0+0" "/tmp/elso.png"))
     (is (= 0 (:exit compared))
         (format "Error comparing, result: %s \n data: %s"
                 (str pdf-output)

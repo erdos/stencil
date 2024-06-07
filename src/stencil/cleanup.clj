@@ -12,37 +12,36 @@
 
 (set! *warn-on-reflection* true)
 
-(defn- tokens->ast-step [[queue & ss0 :as stack] token]
-  (case (:cmd token)
-    (:if :for) (conj (mod-stack-top-conj stack token) [])
+(defmulti tokens->ast-step (fn [stack token] (:cmd token)))
 
-    :else
-    (if (empty? ss0)
-      (throw (parsing-exception (str open-tag "else" close-tag)
-                                "Unexpected {%else%} tag, it must come right after a condition!"))
-      (conj (mod-stack-top-last ss0 update ::blocks (fnil conj []) {::children queue}) []))
+(defmethod tokens->ast-step :cmd/if [stack token] (conj (mod-stack-top-conj stack token) []))
+(defmethod tokens->ast-step :cmd/for [stack token] (conj (mod-stack-top-conj stack token) []))
+(defmethod tokens->ast-step :cmd/echo [stack token] (mod-stack-top-conj stack token))
+(defmethod tokens->ast-step nil [stack token] (mod-stack-top-conj stack token))
+(defmethod tokens->ast-step :cmd/include [stack token] (mod-stack-top-conj stack token))
 
-    :else-if
-    (if (empty? ss0)
-      (throw (parsing-exception (str open-tag "else if" close-tag)
-                                "Unexpected {%else if%} tag, it must come right after a condition!"))
-      (-> ss0
-          (mod-stack-top-last update ::blocks (fnil conj []) {::children queue})
-          (conj [(assoc token :cmd :if :r true)])
-          (conj [])))
+(defmethod tokens->ast-step :cmd/else [[queue & rest-stack] _]
+  (-> (not-empty rest-stack)
+      (or (throw (parsing-exception (str open-tag "else" close-tag)
+                                    "Unexpected {%else%} tag, it must come right after a condition!")))
+      (mod-stack-top-last update ::blocks (fnil conj []) {::children queue})
+      (conj [])))
 
-    :end
-    (if (empty? ss0)
-      (throw (parsing-exception (str open-tag "end" close-tag)
-                                "Too many {%end%} tags!"))
-      (loop [[queue & ss0] stack]
-        (let [new-stack (mod-stack-top-last ss0 update ::blocks conj {::children queue})]
-          (if (:r (peek (first new-stack)))
-            (recur (mod-stack-top-last new-stack dissoc :r))
-            new-stack))))
+(defmethod tokens->ast-step :cmd/else-if [[queue & rest-stack] token]
+  (-> (not-empty rest-stack)
+      (or (throw (parsing-exception (str open-tag "else if" close-tag)
+                                    "Unexpected {%else if%} tag, it must come right after a condition!")))
+      (mod-stack-top-last update ::blocks (fnil conj []) {::children queue})
+      (conj [(assoc token :cmd :cmd/if :r true)] [])))
 
-    (:cmd/echo nil :cmd/include)
-    (mod-stack-top-conj stack token)))
+(defmethod tokens->ast-step :cmd/end [stack _]
+  (if (empty? (next stack))
+    (throw (parsing-exception (str open-tag "end" close-tag) "Too many {%end%} tags!"))
+    (loop [[queue & ss0] stack]
+      (let [new-stack (mod-stack-top-last ss0 update ::blocks conj {::children queue})]
+        (if (:r (peek (first new-stack)))
+          (recur (mod-stack-top-last new-stack dissoc :r))
+          new-stack)))))
 
 (defn tokens->ast
   "Flat token listabol nested AST-t csinal (listak listai)"
@@ -111,14 +110,10 @@
 ;; Itt nincsen blokk, amit normalizálni kellene
 (defmethod control-ast-normalize :cmd/echo [echo-command] echo-command)
 
-(defmethod control-ast-normalize :cmd/include [include-command]
-  (if-not (string? (:name include-command))
-    (throw (parsing-exception (pr-str (:name include-command))
-                              "Parameter of include call must be a single string literal!"))
-    include-command))
+(defmethod control-ast-normalize :cmd/include [include-command] include-command)
 
 ;; A feltételes elágazásoknál mindig generálunk egy javított THEN ágat
-(defmethod control-ast-normalize :if [control-ast]
+(defmethod control-ast-normalize :cmd/if [control-ast]
   (case (count (::blocks control-ast))
     2 (let [[then else] (::blocks control-ast)
             then2 (concat (map control-ast-normalize (::children then))
@@ -145,7 +140,7 @@
 ;; - body-run-once: a body resz eloszor fut le, ha a lista legalabb egy elemu
 ;; - body-run-next: a body resz masodik, harmadik, stb. beillesztese, haa lista legalabb 2 elemu.
 ;; Ezekbol az esetekbol kell futtataskor a megfelelo(ket) kivalasztani es behelyettesiteni.
-(defmethod control-ast-normalize :for [control-ast]
+(defmethod control-ast-normalize :cmd/for [control-ast]
   (when-not (= 1 (count (::blocks control-ast)))
     (throw (parsing-exception (str open-tag "else" close-tag)
                               "Unexpected {%else%} in a loop!")))
@@ -189,16 +184,17 @@
           (collect-1 [mapping x]
                      (case (:cmd x)
                        :cmd/echo (expr mapping (:expression x))
+                       :cmd/include (expr mapping (:name x))
 
-                       :if   (concat (expr mapping (:condition x))
-                                     (collect mapping (apply concat (::blocks x))))
+                       :cmd/if   (concat (expr mapping (:condition x))
+                                         (collect mapping (apply concat (::blocks x))))
 
-                       :for  (let [variable (maybe-variable mapping (:expression x))
-                                   exprs    (expr mapping (:expression x))
-                                   mapping  (if variable
-                                              (assoc mapping (:variable x) (str variable "[]"))
-                                              mapping)]
-                               (concat exprs (collect mapping (apply concat (::blocks x)))))
+                       :cmd/for  (let [variable (maybe-variable mapping (:expression x))
+                                       exprs    (expr mapping (:expression x))
+                                       mapping  (if variable
+                                                  (assoc mapping (:variable x) (str variable "[]"))
+                                                  mapping)]
+                                   (concat exprs (collect mapping (apply concat (::blocks x)))))
                        []))]
     (distinct (collect {} control-ast))))
 
@@ -206,7 +202,8 @@
   ;; returns a set of fragment names use in this document
   (set (for [item (tree-seq map? (comp flatten ::blocks) {::blocks [control-ast]})
              :when (map? item)
-             :when (= :cmd/include (:cmd item))]
+             :when (= :cmd/include (:cmd item))
+             :when (string? (:name item))]
          (:name item))))
 
 (defn process [raw-token-seq]

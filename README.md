@@ -1,17 +1,13 @@
 # Stencil Template Engine
 
-Stencil is a templating engine to produce Office Open XML (mostly Microsoft
-Office's Word `.docx` files) from Java programs. It has a simple syntax and no
-programming is needed to write or modify document templates.
-
-The aim of this project is to provide an easy-to-use and freely available tool
-for generating office documents.
+Stencil is an open source templating engine that transforms Office Open XML documents (mostly Microsoft
+Office's Word `.docx` files) from Java programs. It has a simple syntax and no programming is needed to write document templates.
 
 <p align="center"><img src="https://raw.githubusercontent.com/erdos/stencil/master/docs/graphics.svg?sanitize=true" alt="stencil flow"/></p>
 
 You can use either Microsoft Word or LibreOffice to edit the document templates.
-The template expressions are just simple texts, and you can even colour-code
-them to make the template more readable.
+The template expressions are just simple textual expressions, and you can even colour-code
+them to make your template more readable.
 
 [![Clojars Project](https://img.shields.io/clojars/v/io.github.erdos/stencil-core.svg)](https://clojars.org/io.github.erdos/stencil-core)
 ![CI](https://github.com/erdos/stencil/actions/workflows/flow.yml/badge.svg)
@@ -25,17 +21,16 @@ them to make the template more readable.
 ## Features
 
 - Works with `docx` and `pptx` files
-- Simple value substitution
+- Simple value substitution, conditional and repeating blocks
 - Substituting HTML text for dynamic text formatting
-- Conditional and repeating blocks in the template
+- Dynamically replace images and links in the template
 - Show/hide rows and columns in tables
-- Dynamically replace images in the template
 
 ## Getting Started with the Library
 
 - See the [Example templates](examples)
-- Read the [Documentation](docs/index.md)
-- Read about the [Java API](docs/GettingStarted.md#java-api) and the [Clojure API](docs/GettingStarted.md#clojure-api) or see the [Technical Documentation](https://cljdoc.org/d/io.github.erdos/stencil-core/)
+- Read the [Documentation](https://stencil.erdos.dev)
+- Read about the [Java API](docs/GettingStarted.md#java-api) and the [Clojure API](docs/GettingStarted.md#clojure-api).
 
 
 ## Getting Started with the Service
@@ -45,9 +40,9 @@ The project has a simple [service implementation](https://github.com/erdos/stenc
 
 ## Version
 
-**Latest stable** version is `0.5.6`
+**Latest stable** version is `0.5.8`
 
-**Latest snapshot** version is `0.5.7-SNAPSHOT`
+**Latest snapshot** version is `0.5.9-SNAPSHOT`
 
 If you are using Maven, add the followings to your `pom.xml`:
 
@@ -57,7 +52,7 @@ The dependency:
 <dependency>
   <groupId>io.github.erdos</groupId>
   <artifactId>stencil-core</artifactId>
-  <version>0.5.6</version>
+  <version>0.5.8</version>
 </dependency>
 ```
 
@@ -72,7 +67,7 @@ And the [Clojars](https://clojars.org) repository:
 
 Alternatively, if you are using Leiningen, add the following to
 the `:dependencies` section of your `project.clj`
-file: `[io.github.erdos/stencil-core "0.5.6"]`
+file: `[io.github.erdos/stencil-core "0.5.8"]`
 
 Previous versions are available on the [Stencil Clojars](https://clojars.org/io.github.erdos/stencil-core) page.
 

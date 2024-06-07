@@ -9,6 +9,7 @@
 
 (set! *warn-on-reflection* true)
 
+#_{:clj-kondo/ignore [:unused-binding]}
 (defmulti eval-step (fn [function data item] (:cmd item)))
 
 (defmethod eval-step :default [_ _ item] [item])
@@ -24,7 +25,7 @@
        (catch Exception e
               (throw (eval-exception (str "Error evaluating expression: " raw-expr) e)))))
 
-(defmethod eval-step :if [function data item]
+(defmethod eval-step :cmd/if [function data item]
   (let [condition (eval-rpn* data function (:condition item) (:raw item))]
     (log/trace "Condition {} evaluated to {}" (:condition item) condition)
     (->> (if condition (:branch/then item) (:branch/else item))
@@ -35,7 +36,7 @@
     (log/trace "Echoing {} as {}" (:expression item) value)
     [{:text (if (control? value) value (str value))}]))
 
-(defmethod eval-step :for [function data item]
+(defmethod eval-step :cmd/for [function data item]
   (let [items (eval-rpn* data function (:expression item) (:raw item))]
     (log/trace "Loop on {} will repeat {} times" (:expression item) (count items))
     (if (not-empty items)

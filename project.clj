@@ -1,4 +1,4 @@
-(defproject io.github.erdos/stencil-core "0.5.6"
+(defproject io.github.erdos/stencil-core "0.5.9-SNAPSHOT"
   :url "https://github.com/erdos/stencil"
   :description       "Templating engine for office documents."
   :license {:name "Eclipse Public License - v 2.0"
@@ -6,14 +6,13 @@
   :min-lein-version  "2.0.0"
   :java-source-paths ["java-src"]
   :javac-options     ["-target" "8" "-source" "8"]
-  :dependencies [[org.clojure/clojure "1.9.0"]
-                 [org.clojure/data.xml "0.2.0-alpha6"]
-                 [org.slf4j/slf4j-api "1.7.32"]]
+  :dependencies [[org.clojure/clojure "1.11.1"]
+                 [org.clojure/data.xml "0.2.0-alpha8"]
+                 [org.slf4j/slf4j-api "2.0.9"]]
   :pom-addition ([:properties ["maven.compiler.source" "8"] ["maven.compiler.target" "8"]])
   :pom-plugins [[org.apache.maven.plugins/maven-surefire-plugin "2.20"]]
   :main io.github.erdos.stencil.Main
-  :aliases      {"junit" ["with-profile" "+test" "test-out" "junit" "junit.xml"]
-                 "coverage" ["with-profile" "+ci" "cloverage" "--codecov"
+  :aliases      {"coverage" ["with-profile" "+ci" "cloverage" "--codecov"
                              "--exclude-call" "clojure.core/assert"
                              "--exclude-call" "stencil.util/trace"
                              "--exclude-call" "stencil.util/fail"
@@ -38,7 +37,7 @@
                     :dependencies [[junit/junit "4.13.2"]
                                    [org.xmlunit/xmlunit-core "2.5.1"]
                                    [hiccup "1.0.5"]]
-                    :plugins      [[lein-test-out "0.3.1"]]
+                    :plugins      [[lein-test-report-junit-xml "0.2.0"]]
                     :resource-paths    ["test-resources"]
                     :test-paths ["java-test"]
                     :injections [(require 'stencil.spec)

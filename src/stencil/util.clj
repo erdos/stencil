@@ -39,7 +39,7 @@
 (defn iterations [f elem] (eduction (take-while some?) (iterate f elem)))
 
 ;; same as (first (filter pred xs))
-(defn find-first [pred xs] (reduce (fn [_ x] (if (pred x) (reduced x))) nil xs))
+(defn find-first [pred xs] (reduce (fn [_ x] (when (pred x) (reduced x))) nil xs))
 (defn find-last [pred xs] (reduce (fn [a x] (if (pred x) x a)) nil xs))
 
 (def xml-zip
@@ -134,7 +134,7 @@
 (defn whitespace? [c] (whitespace?? c))
 
 ;; like clojure.string/trim but supports a wider range of whitespace characters
-(defn ^String trim [^CharSequence s]
+(defn trim ^String [^CharSequence s]
   (loop [right-idx (.length s)]
     (if (zero? right-idx)
       ""
