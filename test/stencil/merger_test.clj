@@ -73,6 +73,14 @@
             [{:text "{%=1%}"}]
             [{:action {:cmd :cmd/echo, :expression 1 :raw "{%=1%}"}}]
 
+            [{:text "{{%=1%}"}]
+            [{:text "{{%=1%}"}]
+            [{:text "{"} {:action {:cmd :cmd/echo, :expression 1, :raw "{%=1%}"}}]
+
+            [{:text "{%=x%2%}"}]
+            [{:text "{%=x%2%}"}]
+            [{:action {:cmd :cmd/echo, :expression '(:mod x 2), :raw "{%=x%2%}"}}]
+
             [{:text "abc{%=1%}b"}]
             [{:text "abc{%=1%}b"}]
             [{:text "abc"} {:action {:cmd :cmd/echo, :expression 1 :raw "{%=1%}"}} {:text "b"}]
@@ -95,5 +103,4 @@
 
             [O1 {:text "{%if p"} O2 O3 {:text "%}one{%end%}"} O4]
             [O1 {:text "{%if p"} O2 O3 {:text "%}one{%end%}"} O4]
-            [O1 {:action {:cmd :cmd/if, :condition 'p :raw "{%if p%}"}} O2 O3 {:text "one"} {:action {:cmd :cmd/end :raw "{%end%}"}} O4]
-            ))))
+            [O1 {:action {:cmd :cmd/if, :condition 'p :raw "{%if p%}"}} O2 O3 {:text "one"} {:action {:cmd :cmd/end :raw "{%end%}"}} O4]))))
