@@ -8,7 +8,7 @@
 (set! *warn-on-reflection* true)
 
 (defn- text->cmd-impl [^String text]
-  (assert (string? text))
+  (assert (string? text) (str "Not string: " (pr-str text)))
   (let [text (trim text)
         pattern-elseif #"^(else\s*if|elif|elsif)(\(|\s+)"]
     (cond
