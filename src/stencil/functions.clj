@@ -2,7 +2,7 @@
   "Function definitions"
   (:require [clojure.string]
             [stencil.ooxml :as ooxml]
-            [stencil.types :refer [->HideTableColumnMarker ->HideTableRowMarker ->FragmentInvoke]]
+            [stencil.types :refer [->FragmentInvoke]]
             [stencil.util :refer [fail find-first]]))
 
 (set! *warn-on-reflection* true)
@@ -73,17 +73,6 @@
   (reduce + items))
 
 (defmethod call-fn "list" [_ & elements] (vec elements))
-
-(defmethod call-fn "hideColumn" [_ & args]
-  (case (first args)
-    ("cut") (->HideTableColumnMarker :cut)
-    ("resize-last" "resizeLast" "resize_last") (->HideTableColumnMarker :resize-last)
-    ("resize-first" "resizeFirst resize_first") (->HideTableColumnMarker :resize-first)
-    ("rational")                 (->HideTableColumnMarker :rational)
-    ;; default
-    (->HideTableColumnMarker)))
-
-(defmethod call-fn "hideRow" [_] (->HideTableRowMarker))
 
 (defn- lookup [column data]
   (second (or (find data column)

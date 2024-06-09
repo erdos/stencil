@@ -1,7 +1,7 @@
 (ns stencil.infix-test
   (:import [clojure.lang ExceptionInfo])
   (:require [stencil.infix :as infix]
-            [stencil.types :refer [hide-table-column-marker?]]
+            [stencil.postprocess.table :refer [hide-table-column-marker?]]
             [clojure.test :refer [deftest testing is are]]))
 
 (defn- run

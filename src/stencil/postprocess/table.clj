@@ -1,13 +1,41 @@
 (ns stencil.postprocess.table
   "XML fa utofeldolgozasat vegzo kod."
   (:require [clojure.zip :as zip]
+            [stencil.functions :refer [call-fn]]
             [stencil.ooxml :as ooxml]
-            [stencil.types :refer :all]
-            [stencil.util :refer :all]))
+            [stencil.types :refer [ControlMarker]]
+            [stencil.util :refer [find-first find-last fixpt iterations ->int find-first-in-tree xml-zip zipper?]]))
 
 (set! *warn-on-reflection* true)
 
-;; az ennel keskenyebb oszlopokat kidobjuk!
+(def column-resize-modes #{:resize-first :resize-last :rational :cut})
+
+;; Tells if a table column should be hidden in a postprocess step.
+(defrecord HideTableColumnMarker [columns-resize] ControlMarker)
+(defn hide-table-column-marker? [x] (instance? HideTableColumnMarker x))
+
+#_{:clj-kondo/ignore [:redefined-var]}
+(defn ->HideTableColumnMarker
+  ([] (HideTableColumnMarker. :cut))
+  ([x] (assert (column-resize-modes x))
+       (HideTableColumnMarker. x)))
+
+;; Tells if a table row should be hidden in a postprocess step.
+(defrecord HideTableRowMarker [] ControlMarker)
+(defn hide-table-row-marker? [x] (instance? HideTableRowMarker x))
+
+(defmethod call-fn "hideColumn" [_ & args]
+  (case (first args)
+    ("cut") (->HideTableColumnMarker :cut)
+    ("resize-last" "resizeLast" "resize_last") (->HideTableColumnMarker :resize-last)
+    ("resize-first" "resizeFirst resize_first") (->HideTableColumnMarker :resize-first)
+    ("rational")                 (->HideTableColumnMarker :rational)
+    ;; default
+    (->HideTableColumnMarker)))
+
+(defmethod call-fn "hideRow" [_] (->HideTableRowMarker))
+
+;; columns narrower that this are goig to be removed
 (def min-col-width 20)
 
 (defn- loc-cell?  [loc] (some-> loc zip/node :tag name #{"tc"}))
