@@ -1,5 +1,5 @@
 (ns stencil.merger
-  "Token listaban a text tokenekbol kiszedi a parancsokat es action tokenekbe teszi."
+  "Given a seq of tokens, parses Stencil expressions and creates :action tokens."
   (:require [clojure.data.xml :as xml]
             [stencil.postprocess.ignored-tag :as ignored-tag]
             [stencil
@@ -9,7 +9,7 @@
 
 (set! *warn-on-reflection* true)
 
-;; only fragment includes are evaluated
+;; When true, only fragment includes are parsed and evaluated
 (def ^:dynamic *only-includes* false)
 
 (defn map-action-token [{:keys [action]}]
@@ -22,12 +22,13 @@
       {:action parsed})))
 
 ;; Transducer that unwraps {:text .} objects. eg.: [1 2 {:text ab} 3] => [1 2 \a \b 3]
-(defn- map-text-nodes [rf]
-  (fn ([acc] (rf acc))
-    ([acc x]
-     (if (:text x)
-       (reduce rf acc (:text x))
-       (rf acc x)))))
+(defn- map-text-nodes []
+  (fn [rf]
+    (fn ([acc] (rf acc))
+        ([acc x]
+         (if (:text x)
+           (reduce rf acc (:text x))
+           (rf acc x))))))
 
 (declare parse-upto-open-tag)
 
@@ -92,16 +93,16 @@
              (do (.add buffer token)
                  self))))))))
 
-(defn- parser-trampoline []
+;; Constructs a transducer that uses the trampoline function to process elements
+(defn- parser-trampoline [initial-trampoline]
   (fn [rf]
-    (let [parser (volatile! (parse-upto-open-tag []))]
-      (fn
-        ([acc] (rf (reduce rf acc (@parser))))
-        ([acc token]
-         (let [result (@parser token)]
-           (if (fn? result)
-             (do (vreset! parser result) acc)
-             (reduce rf acc result))))))))
+    (let [trampoline (volatile! initial-trampoline)]
+      (fn ([acc] (rf (reduce rf acc (@trampoline))))
+          ([acc token]
+           (let [result (@trampoline token)]
+             (if (fn? result)
+               (do (vreset! trampoline result) acc)
+               (reduce rf acc result))))))))
 
 ;; Transducer that merges consecutive characters into a text token, eg.: (1 \a \b \c 2) to (1 {:text "abc"} 2)
 (defn- unmap-text-nodes []
@@ -110,7 +111,10 @@
           (map (fn [x] (if (char? (first x)) {:text (apply str x)} (first x)))))))
 
 (defn cleanup-runs [tokens-seq]
-  (eduction (comp map-text-nodes (parser-trampoline) (unmap-text-nodes)) tokens-seq))
+  (eduction (comp (map-text-nodes)
+                  (parser-trampoline (parse-upto-open-tag []))
+                  (unmap-text-nodes))
+            tokens-seq))
 
 (defn- map-token [token] (:action token token))
 
