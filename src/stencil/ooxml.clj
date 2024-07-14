@@ -73,6 +73,8 @@
 
 (def attr-ilvl  :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/ilvl)
 
+(def tag-imagedata :xmlns.urn%3Aschemas-microsoft-com%3Avml/imagedata)
+
 (def default-aliases
   {;default namespace aliases from a LibreOffice 6.4 OOXML Text document
    "http://schemas.openxmlformats.org/markup-compatibility/2006" "mc"

@@ -35,19 +35,26 @@
     {:mime-type (.toLowerCase (.substring data-uri-str 5 end-of-mimetype))
      :bytes     (.decode (java.util.Base64/getDecoder) (.getBytes (.substring data-uri-str start-of-data)))}))
 
+
+;; mapping of tag name to attribute for nodes that represent an image and have an attribute for relation id.
+(def ^:private img-tag-attr
+  {ooxml/blip ooxml/r-embed
+   ooxml/tag-imagedata ooxml/r-id})
+
 (defn- update-image [img-node, ^ReplaceImage data]
-  (assert (= ooxml/blip (:tag img-node)))
+  (assert (img-tag-attr (:tag img-node)))
   (assert (instance? ReplaceImage data))
-  (let [current-rel (-> img-node :attrs ooxml/r-embed)
+  (let [attr-key    (img-tag-attr (:tag img-node))
+        current-rel (-> img-node :attrs attr-key)
         new-val     (-> data .relation)]
     (assert new-val)
     (log/debug "Replacing image relation {} by {}" current-rel new-val)
-    (assoc-in img-node [:attrs ooxml/r-embed] new-val)))
+    (assoc-in img-node [:attrs attr-key] new-val)))
 
 (defn- replace-image [marker-loc]
   (if-let [img-loc (->> (zip/remove marker-loc)
                         (iterations zip/prev)
-                        (find-first (comp #{ooxml/blip} :tag zip/node)))]
+                        (find-first (comp img-tag-attr :tag zip/node)))]
     (zip/edit img-loc update-image (zip/node marker-loc))
     (fail "Did not find image to replace. The location of target image must precede the replaceImage() function call location." {})))
 
