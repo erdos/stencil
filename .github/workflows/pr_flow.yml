@@ -17,11 +17,11 @@ jobs:
       with:
         cli: latest
     - name: Install dependencies
-      run: clj -P
+      run: clojure -P
     - name: Compile Java
-      run: clj -T:build compile-java
+      run: clojure -T:build compile-java
     - name: Coverage
-      run: clj -M:coverage
+      run: clojure -M:coverage
     - name: Codecov
       uses: codecov/codecov-action@v2
       with:
@@ -30,7 +30,7 @@ jobs:
     #- name: Run Java Tests
     #  run: lein pom && mvn test --batch-mode --fail-at-end
     - name: Unit tests in Clojure
-      run: clj -M:test
+      run: clojure -M:test
     - name: Test Report
       uses: dorny/test-reporter@v1
       if: success() || failure()
