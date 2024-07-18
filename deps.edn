@@ -16,7 +16,7 @@
 
   :coverage
   {:extra-deps {cloverage/cloverage {:mvn/version "1.2.4"}}
-   :extra-paths ["test"]
+   :extra-paths ["test" "test-resources"]
    :main-opts ["-m" "cloverage.coverage"
                "--codecov"
                "-p" "src" "-s" "test"]}
