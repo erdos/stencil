@@ -1,0 +1,21 @@
+{:deps {org.clojure/clojure {:mvn/version "1.11.1"}
+        org.clojure/data.xml {:mvn/version "0.2.0-alpha8"}
+        org.slf4j/slf4j-api {:mvn/version "2.0.9"}}
+ :paths ["src" "target/classes"]
+ :deps/prep-lib
+ {:ensure "target/classes"
+  :alias :build
+  :fn compile-java}
+ :aliases
+ {:build {:deps {io.github.clojure/tools.build {:git/tag "v0.8.1" :git/sha "7d40500"}}
+          :ns-default build}
+
+  :lint/clj-kondo
+  {:extra-deps {clj-kondo/clj-kondo {:mvn/version "2024.05.24"}}
+   :main-opts  ["-m" "clj-kondo.main" "--lint" "src"]}
+
+  :test {:extra-paths ["test" "test-resources"]
+         :extra-deps {lambdaisland/kaocha {:mvn/version "1.87.1366"}
+                      org.slf4j/slf4j-simple {:mvn/version "1.7.32"}}
+         :main-opts ["-m" "kaocha.runner"]
+         :jvm-opts  ["-Dorg.slf4j.simpleLogger.defaultLogLevel=debug"]}}}
