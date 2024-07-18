@@ -14,6 +14,8 @@ jobs:
     - uses: actions/checkout@v2
     - name: Install Clojure tools
       uses: DeLaGuardo/setup-clojure@10.3
+      with:
+        cli: latest
     - name: Install dependencies
       run: clj -P
     - name: Compile Java
