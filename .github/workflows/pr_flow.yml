@@ -13,20 +13,20 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Install dependencies
-      run: lein deps
+      run: clj -P
     - name: Compile Java
-      run: lein javac
-    - name: Coverage
-      run: lein coverage
-    - name: Codecov
-      uses: codecov/codecov-action@v2
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        files: ./target/coverage/codecov.json
-    - name: Run Java Tests
-      run: lein pom && mvn test --batch-mode --fail-at-end
+      run: clj -T:build compile-java
+    #- name: Coverage
+    #  run: lein coverage
+    #- name: Codecov
+    #  uses: codecov/codecov-action@v2
+    #  with:
+    #    token: ${{ secrets.CODECOV_TOKEN }}
+    #    files: ./target/coverage/codecov.json
+    #- name: Run Java Tests
+    #  run: lein pom && mvn test --batch-mode --fail-at-end
     - name: Unit tests in Clojure
-      run: lein test
+      run: clj -M:test
     - name: Test Report
       uses: dorny/test-reporter@v1
       if: success() || failure()
