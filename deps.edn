@@ -2,12 +2,9 @@
         org.clojure/data.xml {:mvn/version "0.2.0-alpha8"}
         org.slf4j/slf4j-api {:mvn/version "2.0.9"}}
  :paths ["src" "target/classes"]
- :deps/prep-lib
- {:ensure "target/classes"
-  :alias :build
-  :fn compile-java}
  :aliases
- {:build {:deps {io.github.clojure/tools.build {:git/tag "v0.8.1" :git/sha "7d40500"}}
+ {:build {:deps {org.clojure/clojure {:mvn/version "1.12.0-beta1"}
+                 io.github.clojure/tools.build {:git/tag "v0.8.1" :git/sha "7d40500"}}
           :ns-default build}
 
   :lint/clj-kondo

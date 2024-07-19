@@ -5,14 +5,13 @@
 (def jar-content (str build-folder "/classes"))
 
 (def basis (b/create-basis {:project "deps.edn"}))
-(def version "0.0.1")
+(def version "0.5.10-SNAPSHOT")
 (def app-name "stencil-core")
 (def uber-file-name (format "%s/%s-%s-standalone.jar" build-folder app-name version)) ; path for result uber file
 
 (defn clean [_]
   (b/delete {:path build-folder})
   (println (format "Build folder \"%s\" removed" build-folder)))
-
 
 (defn compile-java [_]
   (clean nil)
@@ -29,7 +28,6 @@
                   :src-dirs  ["src"]
                   :class-dir jar-content})
   (println "jar done?"))
-
 
 (defn uber [_]
   (clean nil)

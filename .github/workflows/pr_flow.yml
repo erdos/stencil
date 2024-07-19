@@ -27,8 +27,8 @@ jobs:
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         files: ./target/coverage/codecov.json
-    #- name: Run Java Tests
-    #  run: lein pom && mvn test --batch-mode --fail-at-end
+    - name: Run Java Tests
+      run: clojure -T:pom && mvn test --batch-mode --fail-at-end
     - name: Unit tests in Clojure
       run: clojure -M:test
     - name: Test Report
