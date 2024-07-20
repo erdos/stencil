@@ -132,13 +132,15 @@
   (let [data {"image" "data:image/png;base64,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"}
         f    (java.io.File/createTempFile "stencil" ".docx")]
     (with-open [template (prepare "test-resources/test-image-1.docx")]
-      (render! template data :output f :overwrite? true))))
+      (render! template data :output f :overwrite? true))
+    (is true)))
 
 (deftest test-link
   (let [data {"url" "https://stencil.erdos.dev/?data=1&data2=2"}
         f    (java.io.File/createTempFile "stencil" ".docx")]
     (with-open [template (prepare "test-resources/test-link-1.docx")]
-      (render! template data :output f :overwrite? true))))
+      (render! template data :output f :overwrite? true))
+    (is true)))
 
 (deftest test-multipart
   (let [template (prepare "test-resources/multipart/main.docx")
@@ -152,7 +154,8 @@
                          "header" header
                          "footer" footer}
              :output "/tmp/out-multipart.docx"
-             :overwrite? true)))
+             :overwrite? true)
+    (is true)))
 
 (deftest test-custom-function
   (with-open [template (prepare "test-resources/test-custom-function.docx")]
