@@ -1,4 +1,4 @@
-(ns stencil.errors
+(ns stencil.errors-test
   (:import [io.github.erdos.stencil.exceptions ParsingException EvalException])
   (:require [stencil.types :refer :all]
             [stencil.integration :refer [test-fails]]

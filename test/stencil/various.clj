@@ -1,8 +1,6 @@
 (ns stencil.various
   "Not used yet."
-  (:require [clojure.data.xml.pu-map :as pu-map]
-            [clojure.string :as s]
-            [stencil.postprocess.ignored-tag :refer :all]))
+  (:require [stencil.postprocess.ignored-tag :refer :all]))
 
 (defn- url-decode [s] (java.net.URLDecoder/decode (str s) "UTF-8"))
 

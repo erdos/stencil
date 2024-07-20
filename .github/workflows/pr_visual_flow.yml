@@ -26,7 +26,7 @@ jobs:
     - name: Compile Java
       run: clojure -T:build compile-java
     - name: Test Clojure
-      run: clojure -M:test --focus stencil.visual # TODO: double-check
+      run: clojure -M:test --focus stencil.visual-test
     - name: Archive diff png
       uses: actions/upload-artifact@v3
       if: failure()
