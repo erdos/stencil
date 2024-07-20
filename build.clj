@@ -13,12 +13,13 @@
   (b/delete {:path build-folder})
   (println (format "Build folder \"%s\" removed" build-folder)))
 
+
 (defn compile-java [_]
   (clean nil)
   (println :should-compile-java-here)
   (b/javac {:src-dirs  ["java-src"]
             :basis basis
-            :class-dir "target/classes"
+            :class-dir jar-content
             :javac-opts ["-source" "8" "-target" "8"]}))
 
 (defn jar [_]
@@ -28,6 +29,45 @@
                   :src-dirs  ["src"]
                   :class-dir jar-content})
   (println "jar done?"))
+
+(defn pom [_]
+  (println "Generating pom.xml file")
+  (b/write-pom
+   {:basis basis
+    :version version
+    :lib 'io.github.erdos/stencil-core
+    :target "."
+    :src-pom "scripts/pom.template.xml"
+    #_:pom-data
+    #_[[:licenses
+        [:license
+         [:name "Eclipse Public License - v 2.0"]
+         [:url "https://www.eclipse.org/legal/epl-2.0/"]
+         [:distribution "repo"]]]]}))
+
+(defn java-test [_]
+  (def basis (b/create-basis {:project "deps.edn" :aliases [:junit]}))
+
+  (println "Running Java test cases")
+  (println "- compiling java sources")
+  (b/javac {:src-dirs  ["java-src" "java-test"]
+            :basis basis
+            :class-dir jar-content
+            :javac-opts ["-source" "8" "-target" "8"]})
+  (println "- compiling clj sources")
+  (b/compile-clj {:basis     basis
+                  :src-dirs  ["src"]
+                  :class-dir jar-content})
+  (-> {:basis basis
+       :main "org.junit.platform.console.ConsoleLauncher"
+       :main-args ["-p" "io.github.erdos.stencil"
+                   "--fail-if-no-tests"
+                   "--reports-dir=target/reports"]}
+      (b/java-command)
+      (b/process)
+      :exit
+      (#(when-not (zero? %) (System/exit %))))
+  (println "Done"))
 
 (defn uber [_]
   (clean nil)
@@ -51,5 +91,4 @@
   (compile-java nil)
   ;(compile-clj nil)
 ; run test cases?
-  
   )
