@@ -17,12 +17,16 @@ jobs:
       run: sudo apt-get update && sudo apt-get install -y libreoffice-core libreoffice-writer libreoffice-java-common imagemagick ghostscript --no-install-recommends
     - name: Set PDF Policy
       run: sudo sed -i '/disable ghostscript format types/,+6d' /etc/ImageMagick-6/policy.xml
+    - name: Install Clojure tools
+      uses: DeLaGuardo/setup-clojure@10.3
+      with:
+        cli: latest
     - name: Install dependencies
-      run: lein deps
+      run: clojure -P
     - name: Compile Java
-      run: lein javac
+      run: clojure -T:build compile-java
     - name: Test Clojure
-      run: lein test stencil.visual
+      run: clojure -M:test stencil.visual # TODO: double-check
     - name: Archive diff png
       uses: actions/upload-artifact@v3
       if: failure()
