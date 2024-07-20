@@ -1,4 +1,4 @@
-(ns stencil.visual
+(ns stencil.visual-test
   (:require [clojure.java.shell]
             [clojure.string :as str]
             [clojure.test :refer [deftest testing use-fixtures]]

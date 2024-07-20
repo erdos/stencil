@@ -22,7 +22,7 @@ jobs:
     - name: Compile Java
       run: lein javac
     - name: Test Clojure
-      run: lein test stencil.visual
+      run: lein test stencil.visual-test
     - name: Archive diff png
       uses: actions/upload-artifact@v3
       if: failure()
