@@ -5,6 +5,8 @@
             [stencil.model.relations :as relations]
             [stencil.process]))
 
+(defn instrument []
+  ((requiring-resolve 'clojure.spec.test.alpha/instrument)))
 
 ;; TODO
 (s/def :stencil.model/mode #{"External"})
