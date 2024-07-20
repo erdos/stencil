@@ -62,11 +62,10 @@
        :main "org.junit.platform.console.ConsoleLauncher"
        :main-args ["-p" "io.github.erdos.stencil"
                    "--fail-if-no-tests"
-                   "--reports-dir=target/reports"]}
+                   "--reports-dir=target/surefire-reports"]}
       (b/java-command)
       (b/process)
-      :exit
-      (#(when-not (zero? %) (System/exit %))))
+      (#(when-not (zero? (:exit %)) (throw (ex-info "junit error" %)))))
   (println "Done"))
 
 (defn uber [_]

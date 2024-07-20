@@ -27,10 +27,10 @@ jobs:
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         files: ./target/coverage/codecov.json
-    - name: Run Java Tests
-      run: clojure -T:pom && mvn test --batch-mode --fail-at-end
     - name: Unit tests in Clojure
       run: clojure -M:test
+    - name: Run Java Tests
+      run:  clj -T:build java-test
     - name: Test Report
       uses: dorny/test-reporter@v1
       if: success() || failure()
