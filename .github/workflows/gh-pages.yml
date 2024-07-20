@@ -26,7 +26,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
       - name: Compile uberjar
-        run: lein uberjar
+        run: clj -T:build uber
       - name: Run javadoc tool
         run: mkdir -p _site/javadoc && javadoc -d _site/javadoc --source-path ./java-src -cp target/stencil-core-*-standalone.jar -subpackages io.github.erdos.stencil
       - name: Setup Pages

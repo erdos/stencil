@@ -5,7 +5,7 @@ It may also be easier if your application's architecture is not written in java.
 
 ## Building
 
-Build the project with the `lein uberjar` command to get a standalone application. The built output will be found in the `target` directory.
+Build the project with the `clj -T:build uber` command to get a standalone application. The built output will be found in the `target` directory.
 
 Run the file with the `java -jar *-standalone.jar` command.
 
