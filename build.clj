@@ -10,15 +10,18 @@
 (def version "0.5.10-SNAPSHOT")
 (def lib 'io.github.erdos/stencil-core)
 (def app-name "stencil-core")
-(def uber-file-name (format "%s/%s-%s-standalone.jar" build-folder app-name version)) ; path for result uber file
 
-(defn clean [_]
+(def jar-file-name (format "%s/%s-%s.jar" build-folder app-name version))
+(def uber-file-name (format "%s/%s-%s-standalone.jar" build-folder app-name version))
+
+(defn clean [opts]
   (b/delete {:path build-folder})
-  (println (format "Build folder \"%s\" removed" build-folder)))
+  (println (format "Build folder \"%s\" removed" build-folder))
+  opts)
 
 
-(defn compile-java [_]
-  (clean nil)
+(defn compile-java [opts]
+  (clean opts)
   (println :should-compile-java-here)
   (b/javac {:src-dirs  ["java-src"]
             :basis basis
@@ -26,7 +29,8 @@
             :javac-opts ["-source" "8" "-target" "8"]})
   (b/copy-file {:src "java-src/io/github/erdos/stencil/standalone/help.txt"
                 :target "target/classes/io/github/erdos/stencil/standalone/help.txt"})
-  (spit (str jar-content "/stencil-version") version))
+  (spit (str jar-content "/stencil-version") version)
+  opts)
 
 (defn javadoc [opts]
   (file/ensure-dir javadoc-dir)
@@ -61,7 +65,7 @@
   (pom opts)
   (b/copy-dir {:src-dirs ["src"] :target-dir jar-content})
   (b/jar      {:class-dir jar-content
-               :jar-file (format "%s/%s-%s.jar" build-folder app-name version)})
+               :jar-file jar-file-name})
   (println "Built JAR file")
   opts)
 
@@ -95,4 +99,14 @@
            :uber-file uber-file-name
            :basis     basis
            :main      'io.github.erdos.stencil.Main})
-  (println (format "Uber file created: \"%s\"" uber-file-name)))
+  (println (format "Uber file created: \"%s\"" uber-file-name))
+  opts)
+
+(defn install [opts]
+  (jar opts)
+  (b/install {:basis basis
+              :lib lib
+              :version version
+              :class-dir jar-content
+              :jar-file jar-file-name})
+  opts)
