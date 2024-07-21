@@ -8,6 +8,7 @@
 
 (def basis (b/create-basis {:project "deps.edn"}))
 (def version "0.5.10-SNAPSHOT")
+(def lib 'io.github.erdos/stencil-core)
 (def app-name "stencil-core")
 (def uber-file-name (format "%s/%s-%s-standalone.jar" build-folder app-name version)) ; path for result uber file
 
@@ -22,7 +23,10 @@
   (b/javac {:src-dirs  ["java-src"]
             :basis basis
             :class-dir jar-content
-            :javac-opts ["-source" "8" "-target" "8"]}))
+            :javac-opts ["-source" "8" "-target" "8"]})
+  (b/copy-file {:src "java-src/io/github/erdos/stencil/standalone/help.txt"
+                :target "target/classes/io/github/erdos/stencil/standalone/help.txt"})
+  (spit (str jar-content "/stencil-version") version))
 
 (defn javadoc [opts]
   (file/ensure-dir javadoc-dir)
@@ -36,28 +40,30 @@
       opts
       (throw (ex-info "Javadoc command error" {:exit exit})))))
 
-(defn jar [_]
-  (clean nil)
-  (compile-java nil)
-  (b/compile-clj {:basis     basis               ; compile clojure code
-                  :src-dirs  ["src"]
-                  :class-dir jar-content})
-  (println "jar done?"))
-
-(defn pom [_]
+(defn pom [opts]
   (println "Generating pom.xml file")
   (b/write-pom
-   {:basis basis
+   {:class-dir jar-content
+    :basis basis
     :version version
-    :lib 'io.github.erdos/stencil-core
-    :target "."
-    :src-pom "scripts/pom.template.xml"
-    #_:pom-data
-    #_[[:licenses
-        [:license
-         [:name "Eclipse Public License - v 2.0"]
-         [:url "https://www.eclipse.org/legal/epl-2.0/"]
-         [:distribution "repo"]]]]}))
+    :lib lib
+    :pom-data
+    [[:licenses
+      [:license
+       [:name "Eclipse Public License - v 2.0"]
+       [:url "https://www.eclipse.org/legal/epl-2.0/"]
+       [:distribution "repo"]]]]})
+  opts)
+
+(defn jar [opts]
+  (clean opts)
+  (compile-java opts)
+  (pom opts)
+  (b/copy-dir {:src-dirs ["src"] :target-dir jar-content})
+  (b/jar      {:class-dir jar-content
+               :jar-file (format "%s/%s-%s.jar" build-folder app-name version)})
+  (println "Built JAR file")
+  opts)
 
 (defn java-test [_]
   (def basis (b/create-basis {:project "deps.edn" :aliases [:junit]}))
@@ -71,7 +77,8 @@
   (println "- compiling clj sources")
   (b/compile-clj {:basis     basis
                   :src-dirs  ["src"]
-                  :class-dir jar-content})
+                  :class-dir jar-content
+                  :bindings {#'*warn-on-reflection* true}})
   (-> {:basis basis
        :main "org.junit.platform.console.ConsoleLauncher"
        :main-args ["-p" "io.github.erdos.stencil"
@@ -82,26 +89,10 @@
       (#(when-not (zero? (:exit %)) (throw (ex-info "junit error" %)))))
   (println "Done"))
 
-(defn uber [_]
-  (clean nil)
-
-  ;(b/copy-dir {:src-dirs   ["resources"]         ; copy resources
-  ;             :target-dir jar-content})
-
-  (b/compile-clj {:basis     basis               ; compile clojure code
-                  :src-dirs  ["src"]
-                  :class-dir jar-content})
-
-  (b/uber {:class-dir jar-content                ; create uber file
+(defn uber [opts]
+  (jar opts) 
+  (b/uber {:class-dir jar-content
            :uber-file uber-file-name
            :basis     basis
-           :main      'dev.core})                ; here we specify the entry point for uberjar
-
+           :main      'io.github.erdos.stencil.Main})
   (println (format "Uber file created: \"%s\"" uber-file-name)))
-
-(defn test [_]
-  (clean nil)
-  (compile-java nil)
-  ;(compile-clj nil)
-; run test cases?
-  )
