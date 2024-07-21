@@ -11,16 +11,14 @@
 (def version (-> basis :aliases :stencil/version (doto assert)))
 
 (def lib 'io.github.erdos/stencil-core)
-(def app-name "stencil-core")
 
-(def jar-file-name (format "%s/%s-%s.jar" build-folder app-name version))
-(def uber-file-name (format "%s/%s-%s-standalone.jar" build-folder app-name version))
+(def jar-file-name (format "%s/%s-%s.jar" build-folder (name lib) version))
+(def uber-file-name (format "%s/%s-%s-standalone.jar" build-folder (name lib) version))
 
 (defn clean [opts]
   (b/delete {:path build-folder})
   (println (format "Build folder \"%s\" removed" build-folder))
   opts)
-
 
 (defn compile-java [opts]
   (clean opts)

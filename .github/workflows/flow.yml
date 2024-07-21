@@ -45,13 +45,17 @@ jobs:
       uses: DeLaGuardo/setup-clojure@10.3
       with:
         cli: latest
-    - name: Install dependencies
-      run: clojure -P
+    - name: Create jar and pom files
+      run: /
+        clojure -P
+        clojure -T:build jar
+        cp ./target/classes/META-INF/maven/io.github.erdos/stencil-core/pom.xml ./pom.xml
+        cp ./target/stencil-core-*.jar ./stencil-core.jar
     - name: Release Clojars
       env:
         CLOJARS_USERNAME: ${{ secrets.CLOJARS_USER }}
         CLOJARS_PASSWORD: ${{ secrets.CLOJARS_PASS }}
-      run: lein deploy snapshots || echo skipping
+      run: clojure -X:deploy || echo skipping
   docker_push:
     needs: clojars_push
     runs-on: ubuntu-latest

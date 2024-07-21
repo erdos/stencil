@@ -39,11 +39,9 @@
                "--junit-xml-file" "target/surefire-reports/kaocha.xml"]
    :jvm-opts  ["-Dorg.slf4j.simpleLogger.defaultLogLevel=debug"]}
 
-  
-  #_
   :deploy
-  #_{:extra-deps {slipset/deps-deploy {:mvn/version "0.2.2"}}
-           :exec-fn deps-deploy.deps-deploy/deploy
-           :exec-args {:installer :remote
-                       :sign-releases? false ;; TODO for later
-                       :artifact "deps-deploy.jar"}}}}
+  {:extra-deps {slipset/deps-deploy {:mvn/version "0.2.2"}}
+   :exec-fn deps-deploy.deps-deploy/deploy
+   :exec-args {:installer :remote
+               :sign-releases? false ;; TODO for later
+               :artifact "stencil-core.jar"}}}}
