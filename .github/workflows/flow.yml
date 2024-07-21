@@ -15,11 +15,11 @@ jobs:
       with:
         cli: latest
     - name: Install dependencies
-      run: clojure -P
+      run: make prepare
     - name: Run Clojure Tests
-      run: clojure -M:test
+      run: make clj-test
     - name: Run Java Tests
-      run: clojure -T:build java-test
+      run: make java-test
   coverage:
     needs: build
     runs-on: ubuntu-latest
@@ -30,7 +30,7 @@ jobs:
        with:
          cli: latest
      - name: Coverage
-       run: clojure -M:coverage
+       run: make coverage
      - name: Codecov
        uses: codecov/codecov-action@v2
        with:
@@ -47,8 +47,7 @@ jobs:
         cli: latest
     - name: Create jar and pom files
       run: /
-        clojure -P
-        clojure -T:build jar
+        make prepare jar
         cp ./target/classes/META-INF/maven/io.github.erdos/stencil-core/pom.xml ./pom.xml
         cp ./target/stencil-core-*.jar ./stencil-core.jar
     - name: Release Clojars

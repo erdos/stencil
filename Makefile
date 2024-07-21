@@ -26,10 +26,10 @@ compile: clean prepare
 	clojure -T:build compile-java
 
 clj-test: clean compile
-    clojure -M:test
+	clojure -M:test
 
 java-test: clean
-    clojure -T:build java-test
+	clojure -T:build java-test
 
 visual-test: clean compile
 	clojure -M:test --focus stencil.visual-test
