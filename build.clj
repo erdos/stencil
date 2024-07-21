@@ -1,8 +1,10 @@
 (ns build
-  (:require [clojure.tools.build.api :as b]))
+  (:require [clojure.tools.build.api :as b]
+            [clojure.tools.build.util.file :as file]))
 
 (def build-folder "target")
 (def jar-content (str build-folder "/classes"))
+(def javadoc-dir "target/javadoc")
 
 (def basis (b/create-basis {:project "deps.edn"}))
 (def version "0.5.10-SNAPSHOT")
@@ -21,6 +23,18 @@
             :basis basis
             :class-dir jar-content
             :javac-opts ["-source" "8" "-target" "8"]}))
+
+(defn javadoc [opts]
+  (file/ensure-dir javadoc-dir)
+  (let [src-dirs ["java-src"]
+        args ["-d" javadoc-dir]
+        java-files (mapcat #(file/collect-files (b/resolve-path %) :collect (file/suffixes ".java")) src-dirs)
+        args (into args (map str) java-files)
+        tool  (javax.tools.ToolProvider/getSystemDocumentationTool)
+        exit (.run tool nil nil nil (into-array String args))]
+    (if (zero? exit)
+      opts
+      (throw (ex-info "Javadoc command error" {:exit exit})))))
 
 (defn jar [_]
   (clean nil)
