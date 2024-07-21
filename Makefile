@@ -28,12 +28,15 @@ compile: clean prepare
 clj-test: clean compile
     clojure -M:test
 
-java-test: clean compile
+java-test: clean
     clojure -T:build java-test
+
+visual-test: clean compile
+	clojure -M:test --focus stencil.visual-test
 
 coverage: clean prepare compile
 	clojure -M:coverage
 
-test: clean prepare compile clj-test java-test
+test: clean prepare compile clj-test java-test visual-test
 
 all: clean compile lint test
