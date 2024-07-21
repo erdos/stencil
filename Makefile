@@ -1,4 +1,4 @@
-.PHONY: clean compile lint test all
+.PHONY: clean prepare lint pom jar uberjar javadoc compile clj-test java-test visual-test coverage test all
 .DEFAULT_GOAL := all
 
 clean:
@@ -39,4 +39,4 @@ coverage: clean prepare compile
 
 test: clean prepare compile clj-test java-test visual-test
 
-all: clean compile lint test
+all: clean compile lint test javadoc uberjar
