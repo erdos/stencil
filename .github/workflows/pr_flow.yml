@@ -16,21 +16,17 @@ jobs:
       uses: DeLaGuardo/setup-clojure@10.3
       with:
         cli: latest
-    - name: Install dependencies
-      run: clojure -P
-    - name: Compile Java
-      run: clojure -T:build compile-java
     - name: Coverage
-      run: clojure -M:coverage
+      run: make coverage
     - name: Codecov
       uses: codecov/codecov-action@v2
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         files: ./target/coverage/codecov.json
     - name: Unit tests in Clojure
-      run: clojure -M:test
-    - name: Run Java Tests
-      run:  clojure -T:build java-test
+      run: make clj-test
+    - name: Unit tests in Java
+      run:  make java-test
     - name: Test Report
       uses: dorny/test-reporter@v1
       if: success() || failure()
