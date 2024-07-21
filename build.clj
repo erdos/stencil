@@ -7,7 +7,9 @@
 (def javadoc-dir "target/javadoc")
 
 (def basis (b/create-basis {:project "deps.edn"}))
-(def version "0.5.10-SNAPSHOT")
+
+(def version (-> basis :aliases :stencil/version (doto assert)))
+
 (def lib 'io.github.erdos/stencil-core)
 (def app-name "stencil-core")
 

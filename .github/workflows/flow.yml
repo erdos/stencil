@@ -10,19 +10,27 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+    - name: Install Clojure tools
+      uses: DeLaGuardo/setup-clojure@10.3
+      with:
+        cli: latest
     - name: Install dependencies
-      run: lein deps
+      run: clojure -P
     - name: Run Clojure Tests
-      run: lein test
+      run: clojure -M:test
     - name: Run Java Tests
-      run: lein pom && mvn test --batch-mode --fail-at-end
+      run: clojure -T:build java-test
   coverage:
     needs: build
     runs-on: ubuntu-latest
     steps:
      - uses: actions/checkout@v2
+     - name: Install Clojure tools
+       uses: DeLaGuardo/setup-clojure@10.3
+       with:
+         cli: latest
      - name: Coverage
-       run: lein coverage
+       run: clojure -M:coverage
      - name: Codecov
        uses: codecov/codecov-action@v2
        with:
@@ -33,12 +41,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+    - name: Install Clojure tools
+      uses: DeLaGuardo/setup-clojure@10.3
+      with:
+        cli: latest
     - name: Install dependencies
-      run: lein deps
+      run: clojure -P
     - name: Release Clojars
       env:
-        CLOJARS_USER: ${{ secrets.CLOJARS_USER }}
-        CLOJARS_PASS: ${{ secrets.CLOJARS_PASS }}
+        CLOJARS_USERNAME: ${{ secrets.CLOJARS_USER }}
+        CLOJARS_PASSWORD: ${{ secrets.CLOJARS_PASS }}
       run: lein deploy snapshots || echo skipping
   docker_push:
     needs: clojars_push
