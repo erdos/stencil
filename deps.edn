@@ -23,7 +23,7 @@
   :coverage
   {:extra-deps {cloverage/cloverage {:mvn/version "1.2.4"}}
    :extra-paths ["test" "test-resources"]
-   :main-opts ["-e" "((requiring-resolve 'stencil.spec/instrument))"
+   :main-opts ["-e" "(require 'stencil.api) ((requiring-resolve 'stencil.spec/instrument))"
                "-m" "cloverage.coverage"
                "--codecov"
                "-p" "src" "-s" "test"]}
@@ -33,7 +33,7 @@
    :extra-deps {lambdaisland/kaocha {:mvn/version "1.87.1366"}
                 lambdaisland/kaocha-junit-xml {:mvn/version "1.17.101"}
                 org.slf4j/slf4j-simple {:mvn/version "1.7.32"}}
-   :main-opts ["-e" "((requiring-resolve 'stencil.spec/instrument))"
+   :main-opts ["-e" "(require 'stencil.api) ((requiring-resolve 'stencil.spec/instrument))"
                "-m" "kaocha.runner"
                "--plugin" "kaocha.plugin/junit-xml"
                "--junit-xml-file" "target/surefire-reports/kaocha.xml"]
