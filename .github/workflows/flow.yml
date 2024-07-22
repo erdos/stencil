@@ -10,19 +10,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+    - name: Install Clojure tools
+      uses: DeLaGuardo/setup-clojure@10.3
+      with:
+        cli: latest
     - name: Install dependencies
-      run: lein deps
-    - name: Run Clojure Tests
-      run: lein test
-    - name: Run Java Tests
-      run: lein pom && mvn test --batch-mode --fail-at-end
+      run: make prepare
+    - name: Run Tests
+      run: make clj-test java-test
   coverage:
     needs: build
     runs-on: ubuntu-latest
     steps:
      - uses: actions/checkout@v2
+     - name: Install Clojure tools
+       uses: DeLaGuardo/setup-clojure@10.3
+       with:
+         cli: latest
      - name: Coverage
-       run: lein coverage
+       run: make coverage
      - name: Codecov
        uses: codecov/codecov-action@v2
        with:
@@ -33,13 +39,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - name: Install dependencies
-      run: lein deps
+    - name: Install Clojure tools
+      uses: DeLaGuardo/setup-clojure@10.3
+      with:
+        cli: latest
+    - name: Create jar and pom files
+      run: |
+        make prepare jar
+        cp ./target/classes/META-INF/maven/io.github.erdos/stencil-core/pom.xml ./pom.xml
+        cp ./target/stencil-core-*.jar ./stencil-core.jar
     - name: Release Clojars
       env:
-        CLOJARS_USER: ${{ secrets.CLOJARS_USER }}
-        CLOJARS_PASS: ${{ secrets.CLOJARS_PASS }}
-      run: lein deploy snapshots || echo skipping
+        CLOJARS_USERNAME: ${{ secrets.CLOJARS_USER }}
+        CLOJARS_PASSWORD: ${{ secrets.CLOJARS_PASS }}
+      run: clojure -X:deploy || echo skipping
   docker_push:
     needs: clojars_push
     runs-on: ubuntu-latest

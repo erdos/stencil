@@ -22,3 +22,4 @@ junit.xml
 *.jfr
 .clj-kondo/
 /_site/
+.cpcache/

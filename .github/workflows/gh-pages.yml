@@ -25,10 +25,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Compile uberjar
-        run: lein uberjar
+      - name: Install Clojure tools
+        uses: DeLaGuardo/setup-clojure@10.3
+        with:
+          cli: latest
       - name: Run javadoc tool
-        run: mkdir -p _site/javadoc && javadoc -d _site/javadoc --source-path ./java-src -cp target/stencil-core-*-standalone.jar -subpackages io.github.erdos.stencil
+        run: mkdir _site && make javadoc && cp -R target/javadoc _site
       - name: Setup Pages
         uses: actions/configure-pages@v3
       - name: Build with Jekyll
