@@ -25,7 +25,10 @@
    :extra-paths ["test" "test-resources"]
    :main-opts ["-m" "cloverage.coverage"
                "--codecov"
-               "--ns-exclude-regex" "stencil.spec"
+               "--exclude-call" "clojure.core/assert"
+               "--exclude-call" "stencil.util/trace"
+               "--exclude-call" "stencil.util/fail"
+               "--exclude-call" "clojure.spec.alpha/def"
                "-p" "src" "-s" "test"]}
 
   :test
