@@ -23,9 +23,9 @@
   :coverage
   {:extra-deps {cloverage/cloverage {:mvn/version "1.2.4"}}
    :extra-paths ["test" "test-resources"]
-   :main-opts ["-e" "(require 'stencil.api 'stencil.process 'stencil.model) ((requiring-resolve 'stencil.spec/instrument))"
-               "-m" "cloverage.coverage"
+   :main-opts ["-m" "cloverage.coverage"
                "--codecov"
+               "--ns-exclude-regex" "stencil.spec"
                "-p" "src" "-s" "test"]}
 
   :test
