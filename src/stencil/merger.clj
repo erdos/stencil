@@ -35,7 +35,7 @@
 ;; Constructs a function that reads the inside of a stencil expression until close-tag is reached.
 ;; The fn returns a collection when read fully or itself when there are characters left to read.
 (defn- parse-until-close-tag [chars-and-tokens-to-append]
-  (let [expected-close-tag-chars   (volatile! (seq close-tag))
+  (let [expected-close-tag-chars   (volatile! close-tag)
         buffer-nonclose-chars-only (new java.util.ArrayList)
         buffer-all-read            (new java.util.ArrayList)]
     (fn self
@@ -55,35 +55,35 @@
                (parse-upto-open-tag (concat (vec chars-and-tokens-to-append)
                                             (vec buffer-all-read))))))
          (when (char? token)
-           (vreset! expected-close-tag-chars (seq close-tag))
+           (vreset! expected-close-tag-chars close-tag)
            (.clear buffer-nonclose-chars-only)
            (.addAll buffer-nonclose-chars-only (filter char? buffer-all-read))
            self))))))
 
 ;; Similar to the fn above. Consumes tokens up to the first open tag, then returns another parser (trampoline style).
 (defn- parse-upto-open-tag [prepend]
-  (let [expected-open-tag-chars (volatile! (seq open-tag))
+  (let [expected-open-tag-chars (volatile! open-tag)
         buffer                  (new java.util.ArrayList ^java.util.Collection prepend)]
     (fn self
       ([] buffer)
       ([token]
        (if (= token (first @expected-open-tag-chars))
-         (if (= (count open-tag) (count @expected-open-tag-chars))
+         (if (= open-tag @expected-open-tag-chars)
            (let [already-read (vec buffer)]
              (.clear buffer)
              (.add buffer token)
              (vswap! expected-open-tag-chars next)
              already-read)
            (do (.add buffer token)
-               (when-not (vswap! expected-open-tag-chars next)
+               (when-not (vswap! expected-open-tag-chars next) ;; TODO: why is it needed?
                  (parse-until-close-tag buffer))))
-         (if (= (count open-tag) (count @expected-open-tag-chars))
+         (if (= open-tag @expected-open-tag-chars)
            (let [result (concat (vec buffer) [token])]
              (.clear buffer) ;; reading an open-tag from start => we dump the content of buffer
              result)
            (if (char? token)
              (let [out (vec buffer)]
-               (vreset! expected-open-tag-chars (seq open-tag))
+               (vreset! expected-open-tag-chars open-tag)
                (.clear buffer)
                (if (= token (first @expected-open-tag-chars))
                  (do (.add buffer token)
