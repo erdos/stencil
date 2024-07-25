@@ -43,7 +43,7 @@
   nil)
 
 (def current-version-parsed
-  (-> "project.clj" slurp read-string nnext first parse-version))
+  (-> "deps.edn" slurp read-string :aliases :stencil/version parse-version))
 
 (->> (for [[flag version] {:current        current-version-parsed
                            :next           (next-version current-version-parsed)
@@ -57,7 +57,7 @@
      (reduce (fn [a [path val]] (assoc-in a path val)) {})
      (def versions))
 
-(replace-in-file "project.clj"
+(replace-in-file "deps.edn"
                  (-> versions :current :raw)
                  (-> versions :next :raw))
 

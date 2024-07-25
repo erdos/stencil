@@ -1,6 +1,6 @@
 (ns stencil.log-test
-  (:require [stencil.log :as log]
-            [clojure.test :refer [deftest testing]]))
+  (:require [stencil.log]
+            [clojure.test :refer [deftest testing is]]))
 
 (deftest test-logs
   (testing "Test log macros of various arities"
@@ -12,4 +12,5 @@
             c [["message without params"]
                ["message with param: {}" 1]
                ["message with params: {} {}" 1 2]]]
-      (eval (list* x c)))))
+      (eval (list* x c))
+      (is true))))

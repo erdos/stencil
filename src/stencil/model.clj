@@ -7,7 +7,6 @@
             [stencil.eval :as eval]
             [stencil.infix :refer [eval-rpn]]
             [stencil.merger :as merger]
-            [stencil.types :refer [->FragmentInvoke]]
             [stencil.util :refer [unlazy-tree]]
             [stencil.model.common :refer [->xml-writer resource-copier]]
             [stencil.ooxml :as ooxml]
@@ -206,4 +205,4 @@
                           (map (partial style/xml-rename-style-ids style-ids-rename))
                           (doall))]
     (run! relations/add-extra-file! relation-ids-rename)
-    [{:text (->FragmentInvoke {:frag-evaled-parts evaled-parts})}]))
+    [{:text (fragments/->FragmentInvoke {:frag-evaled-parts evaled-parts})}]))

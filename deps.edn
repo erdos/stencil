@@ -1,0 +1,50 @@
+{:deps {org.clojure/clojure {:mvn/version "1.11.1"}
+        org.clojure/data.xml {:mvn/version "0.2.0-alpha8"}
+        org.slf4j/slf4j-api {:mvn/version "2.0.9"}}
+ :paths ["src" "target/classes"]
+ :aliases
+ {:stencil/version "0.5.10-SNAPSHOT"
+
+  :build
+  {:deps {org.clojure/clojure {:mvn/version "1.12.0-beta1"}
+          io.github.clojure/tools.build {:git/tag "v0.10.5" :git/sha "2a21b7a"}}
+   :ns-default build}
+
+  :junit
+  {:extra-deps {junit/junit {:mvn/version "4.13.2"}
+                org.slf4j/slf4j-simple {:mvn/version "1.7.32"}
+                org.junit.platform/junit-platform-console-standalone {:mvn/version "1.10.3"}}
+   :extra-paths ["target/classes" "test-resources"]}
+
+  :lint/clj-kondo
+  {:extra-deps {clj-kondo/clj-kondo {:mvn/version "2024.05.24"}}
+   :main-opts  ["-m" "clj-kondo.main" "--lint" "src"]}
+
+  :coverage
+  {:extra-deps {cloverage/cloverage {:mvn/version "1.2.4"}}
+   :extra-paths ["test" "test-resources"]
+   :main-opts ["-m" "cloverage.coverage"
+               "--codecov"
+               "--exclude-call" "clojure.core/assert"
+               "--exclude-call" "stencil.util/trace"
+               "--exclude-call" "stencil.util/fail"
+               "--exclude-call" "clojure.spec.alpha/def"
+               "-p" "src" "-s" "test"]}
+
+  :test
+  {:extra-paths ["test" "test-resources"]
+   :extra-deps {lambdaisland/kaocha {:mvn/version "1.87.1366"}
+                lambdaisland/kaocha-junit-xml {:mvn/version "1.17.101"}
+                org.slf4j/slf4j-simple {:mvn/version "1.7.32"}}
+   :main-opts ["-e" "(require 'stencil.api 'stencil.process 'stencil.model) ((requiring-resolve 'stencil.spec/instrument))"
+               "-m" "kaocha.runner"
+               "--plugin" "kaocha.plugin/junit-xml"
+               "--junit-xml-file" "target/surefire-reports/kaocha.xml"]
+   :jvm-opts  ["-Dorg.slf4j.simpleLogger.defaultLogLevel=debug"]}
+
+  :deploy
+  {:extra-deps {slipset/deps-deploy {:mvn/version "0.2.2"}}
+   :exec-fn deps-deploy.deps-deploy/deploy
+   :exec-args {:installer :remote
+               :sign-releases? false ;; TODO for later
+               :artifact "stencil-core.jar"}}}}

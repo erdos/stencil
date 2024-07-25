@@ -68,7 +68,7 @@
             dotted      (mapping (all (guarded #{:dot}) iden) (comp name second))
             bracketed   (mapping (all (guarded #{:open-bracket}) expression (guarded #{:close-bracket})) second)
             args        (mapping (optional (chained (all expression) (all (guarded #{:comma}) expression) into))
-                                 (fn [x] (take-nth 2 x)))
+                                 (partial take-nth 2))
             args-suffix      (parenthesed args)
             iden-or-fncall   (mapping (all iden (optional args-suffix))
                                       (fn [[id xs]] (if xs (list* :fncall id xs) id)))

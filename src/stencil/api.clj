@@ -77,5 +77,6 @@
         :else (throw (ex-info "Unexpected object to clean up!" {:template template})))
   template)
 
-(def version (or (some-> (io/resource "stencil-version") slurp)
-                 (System/getProperty "stencil-core.version")))
+(defmacro get-version [] (slurp (io/resource "stencil-version")))
+(def version (doto (get-version) (assert)))
+(ns-unmap *ns* 'get-version)

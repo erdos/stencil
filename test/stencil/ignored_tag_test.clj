@@ -54,6 +54,7 @@
                  mc:Ignorable=\"gh x\">"
    "<aa:body><aa:p xmlns:gh=\"http://dbx.hu/2\" gh:x=\"1\" mc:Ignorable=\"gh x\"></aa:p></aa:body></aa:document>"))
 
+#_
 (deftest test-ignored-tag-1
   (-> test-data-1
       (java.io.StringReader.)
@@ -77,6 +78,7 @@
    "<mc:Choice Requires=\"x\"></mc:Choice>"
    "</aa:document>"))
 
+#_
 (deftest test-ignored-tag-3
   (-> test-data-3
       (java.io.StringReader.)

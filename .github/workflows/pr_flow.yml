@@ -12,21 +12,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - name: Install dependencies
-      run: lein deps
-    - name: Compile Java
-      run: lein javac
+    - name: Install Clojure tools
+      uses: DeLaGuardo/setup-clojure@10.3
+      with:
+        cli: latest
     - name: Coverage
-      run: lein coverage
+      run: make coverage
     - name: Codecov
       uses: codecov/codecov-action@v2
       with:
         token: ${{ secrets.CODECOV_TOKEN }}
         files: ./target/coverage/codecov.json
-    - name: Run Java Tests
-      run: lein pom && mvn test --batch-mode --fail-at-end
-    - name: Unit tests in Clojure
-      run: lein test
+    - name: Run unit tests
+      run: make clj-test java-test
     - name: Test Report
       uses: dorny/test-reporter@v1
       if: success() || failure()
