@@ -121,9 +121,7 @@
   `(let [b# ~body]
      (when (~pred b#) b#)))
 
-(defn ^String string
-  ([values] (apply str values))
-  ([xform coll] (transduce xform (fn ([^Object s] (.toString s)) ([^StringBuilder b v] (.append b v))) (StringBuilder.) coll)))
+(defn string ^String [xform coll] (transduce xform (fn ([^Object s] (.toString s)) ([^StringBuilder b v] (.append b v))) (StringBuilder.) coll))
 
 (defmacro whitespace?? [c]
   `(case ~c (\tab \space \newline
