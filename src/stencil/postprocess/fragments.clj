@@ -1,13 +1,11 @@
 (ns stencil.postprocess.fragments
   "Inserts contents of fragments."
-  (:import [stencil.types FragmentInvoke])
+  (:require [stencil.model.fragments])
+  (:import [stencil.model.fragments FragmentInvoke])
   (:require [clojure.zip :as zip]
-            [clojure.data.xml :as xml]
-            [stencil.types :refer [->FragmentInvoke control?]]
+            [stencil.types :refer [control?]]
             [stencil.ooxml :as ooxml]
-            [stencil.functions :refer [call-fn]]
             [stencil.util :refer :all]))
-
 
 (defn- remove+up
   "Removes current node and moves pointer to parent node."
@@ -167,9 +165,3 @@
   "Walks the tree (Depth First) and evaluates FragmentInvoke objects."
   [xml-tree]
   (dfs-walk-xml-node xml-tree (partial instance? FragmentInvoke) unpack-fragment))
-
-;; custom XML content
-(defmethod call-fn "xml" [_ content]
-  (assert (string? content))
-  (let [content (:content (xml/parse-str (str "<a>" content "</a>")))]
-    (->FragmentInvoke {:frag-evaled-parts content})))

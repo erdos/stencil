@@ -1,5 +1,9 @@
 (ns stencil.model.fragments
-  (:require [stencil.util :refer [eval-exception]]))
+  (:require [stencil.util :refer [eval-exception]]
+            [stencil.functions :refer [call-fn]]
+            [stencil.types :refer [ControlMarker]]
+            [stencil.ooxml :as ooxml]
+            [clojure.data.xml :as xml]))
 
 ;; all insertable fragments. map of id to frag def.
 (def ^:dynamic *all-fragments* nil)
@@ -24,3 +28,17 @@
                                 [~body @*inserted-fragments*])]
      (swap! *inserted-fragments* into fragments#)
      [result# fragments#]))
+
+;; Invocation of a fragment by name
+(defrecord FragmentInvoke [result] ControlMarker)
+
+;; custom XML content
+(defmethod call-fn "xml" [_ content]
+  (assert (string? content))
+  (let [content (:content (xml/parse-str (str "<a>" content "</a>")))]
+    (->FragmentInvoke {:frag-evaled-parts content})))
+
+;; inserts a page break at the current run.
+(let [br {:tag ooxml/br :attrs {ooxml/type "page"}}
+      page-break (->FragmentInvoke {:frag-evaled-parts [br]})]
+  (defmethod call-fn "pageBreak" [_] page-break))

@@ -7,7 +7,4 @@
 
 (defprotocol ControlMarker)
 
-;; Invocation of a fragment by name
-(defrecord FragmentInvoke [result] ControlMarker)
-
 (defn control? [x] (satisfies? ControlMarker x))

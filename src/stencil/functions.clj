@@ -1,8 +1,6 @@
 (ns stencil.functions
   "Function definitions"
   (:require [clojure.string]
-            [stencil.ooxml :as ooxml]
-            [stencil.types :refer [->FragmentInvoke]]
             [stencil.util :refer [fail find-first]]))
 
 (set! *warn-on-reflection* true)
@@ -102,8 +100,3 @@
 
 (defmethod call-fn "replace" [_ text pattern replacement]
   (clojure.string/replace (str text) (str pattern) (str replacement)))
-
-;; inserts a page break at the current run.
-(let [br {:tag ooxml/br :attrs {ooxml/type "page"}}
-      page-break (->FragmentInvoke {:frag-evaled-parts [br]})]
-  (defmethod call-fn "pageBreak" [_] page-break))
