@@ -1,5 +1,5 @@
 (ns stencil.util-test
-  (:require [clojure.test :refer [deftest testing is]]
+  (:require [clojure.test :refer [deftest testing is are]]
             [clojure.zip :as zip]
             [stencil.util :refer :all]))
 
@@ -55,18 +55,6 @@
       (testing "Difference clojure core"
         (is (not (zip/branch? (xml-zip 42))))))))
 
-(deftest test-suffixes
-  (is (= [] (suffixes nil)))
-  (is (= [] (suffixes [])))
-  (is (= [[1]] (suffixes [1])))
-  (is (= [[1 2 3] [2 3] [3]] (suffixes [1 2 3]))))
-
-(deftest test-prefixes
-  (is (= [] (prefixes nil)))
-  (is (= [] (prefixes [])))
-  (is (= [[1]] (prefixes [1])))
-  (is (= [[1 2 3] [1 2] [1]] (prefixes [1 2 3]))))
-
 (deftest test-->int
   (is (= nil (->int nil)))
   (is (= 23 (->int 23)))
@@ -97,10 +85,15 @@
 (deftest fail-test
   (is (thrown? clojure.lang.ExceptionInfo (fail "test error" {}))))
 
-(deftest prefixes-test
-  (is (= [] (prefixes []) (prefixes nil)))
-  (is (= [[1 2 3] [1 2] [1]] (prefixes [1 2 3]))))
+(deftest whitespace?-test
+  (is (= true (whitespace? \space)))
+  (is (= true (whitespace? \tab)))
+  (is (= false (whitespace? " ")))
+  (is (= false (whitespace? \A))))
 
-(deftest suffixes-test
-  (is (= [] (suffixes []) (suffixes nil)))
-  (is (= [[1 2 3] [2 3] [3]] (suffixes [1 2 3]))))
+(deftest trim-test
+  (are [input] (= "" (trim input))
+    "", " ", "\t\t\n") 
+  (are [input] (= "abc" (trim input))
+    "abc", "    abc", "abc   ", " \t  \n abc \t")
+  (is (= "a b c" (trim "  a b c  \t"))))

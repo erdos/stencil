@@ -1,12 +1,11 @@
 (ns stencil.functions
   "Function definitions"
   (:require [clojure.string]
-            [stencil.ooxml :as ooxml]
-            [stencil.types :refer [->HideTableColumnMarker ->HideTableRowMarker ->FragmentInvoke]]
             [stencil.util :refer [fail find-first]]))
 
 (set! *warn-on-reflection* true)
 
+#_{:clj-kondo/ignore [:unused-binding]}
 (defmulti call-fn
   "Extend this multimethod to make additional functions available from the template files.
    The first argument is the lowercase function name which is used for dispatching the calls.
@@ -73,17 +72,6 @@
 
 (defmethod call-fn "list" [_ & elements] (vec elements))
 
-(defmethod call-fn "hideColumn" [_ & args]
-  (case (first args)
-    ("cut") (->HideTableColumnMarker :cut)
-    ("resize-last" "resizeLast" "resize_last") (->HideTableColumnMarker :resize-last)
-    ("resize-first" "resizeFirst resize_first") (->HideTableColumnMarker :resize-first)
-    ("rational")                 (->HideTableColumnMarker :rational)
-    ;; default
-    (->HideTableColumnMarker)))
-
-(defmethod call-fn "hideRow" [_] (->HideTableRowMarker))
-
 (defn- lookup [column data]
   (second (or (find data column)
               (find data (keyword column)))))
@@ -112,8 +100,3 @@
 
 (defmethod call-fn "replace" [_ text pattern replacement]
   (clojure.string/replace (str text) (str pattern) (str replacement)))
-
-;; inserts a page break at the current run.
-(let [br {:tag ooxml/br :attrs {ooxml/type "page"}}
-      page-break (->FragmentInvoke {:frag-evaled-parts [br]})]
-  (defmethod call-fn "pageBreak" [_] page-break))

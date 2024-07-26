@@ -3,7 +3,9 @@
             [clojure.test :refer [deftest testing is]]))
 
 (defn- run [s]
-  (m/parse-to-tokens-seq (java.io.ByteArrayInputStream. (.getBytes (str s)))))
+  (->> (java.io.ByteArrayInputStream. (.getBytes (str s)))
+       (m/parse-to-tokens-seq)
+       (map #(dissoc % :raw))))
 
 (deftest read-tokens-nested
   (testing "Read a list of nested tokens"
@@ -28,18 +30,18 @@
     (is (= (run "<a>elotte {%=a%} utana</a>")
            [{:open :a}
             {:text "elotte "}
-            {:cmd :echo :expression '(a)}
+            {:cmd :cmd/echo :expression 'a}
             {:text " utana"}
             {:close :a}]))))
 
 (deftest read-tokens-if-then
   (testing "Simple conditional with THEN branch only"
-    (is (= (run "<a>elotte {% if x%} akkor {% end %} utana</a>")
+    (is (= (run "<a>elotte {% if x%} akkor {% end %} utana</a>")
            [{:open :a}
             {:text "elotte "}
-            {:cmd :if :condition '(x)}
+            {:cmd :cmd/if :condition 'x}
             {:text " akkor "}
-            {:cmd :end}
+            {:cmd :cmd/end}
             {:text " utana"}
             {:close :a}]))))
 
@@ -48,11 +50,11 @@
     (is (= (run "<a>elotte {% if x%} akkor {% else %} egyebkent {% end %} utana</a>")
            [{:open :a}
             {:text "elotte "}
-            {:cmd :if :condition '(x)}
+            {:cmd :cmd/if :condition 'x}
             {:text " akkor "}
-            {:cmd :else}
+            {:cmd :cmd/else}
             {:text " egyebkent "}
-            {:cmd :end}
+            {:cmd :cmd/end}
             {:text " utana"}
             {:close :a}]))))
 
@@ -61,11 +63,11 @@
     (is (= (run "<a>elotte{%if x%}akkor{%else if y%}de{%end%}utana</a>")
            '[{:open :a}
              {:text "elotte"}
-             {:cmd :if :condition [x]}
+             {:cmd :cmd/if :condition x}
              {:text "akkor"}
-             {:cmd :else-if :condition [y]}
+             {:cmd :cmd/else-if :condition y}
              {:text "de"}
-             {:cmd :end}
+             {:cmd :cmd/end}
              {:text "utana"}
              {:close :a}]))))
 
@@ -74,31 +76,31 @@
     (is (= (run "<a>elotte{%if x%}akkor{%else if y%}de{%else%}egyebkent{%end%}utana</a>")
            '[{:open :a}
              {:text "elotte"}
-             {:cmd :if :condition [x]}
+             {:cmd :cmd/if :condition x}
              {:text "akkor"}
-             {:cmd :else-if :condition [y]}
+             {:cmd :cmd/else-if :condition y}
              {:text "de"}
-             {:cmd :else}
+             {:cmd :cmd/else}
              {:text "egyebkent"}
-             {:cmd :end}
+             {:cmd :cmd/end}
              {:text "utana"}
              {:close :a}]))))
 
 (deftest read-tokens-unless-then
   (testing "Simple conditional with THEN branch only"
     (is (= (run "<a>{%unless x%} akkor {% end %}</a>")
-           [{:open :a} {:cmd :if :condition '(x :not)} {:text " akkor "} {:cmd :end} {:close :a}]))))
+           [{:open :a} {:cmd :cmd/if :condition '(:not x)} {:text " akkor "} {:cmd :cmd/end} {:close :a}]))))
 
 (deftest read-tokens-unless-then-else
   (testing "Simple conditional with THEN branch only"
     (is (= (run "<a>{%unless x%} akkor {%else%} egyebkent {%end %}</a>")
-           [{:open :a} {:cmd :if :condition '(x :not)} {:text " akkor "} {:cmd :else} {:text " egyebkent "} {:cmd :end} {:close :a}]))))
+           [{:open :a} {:cmd :cmd/if :condition '(:not x)} {:text " akkor "} {:cmd :cmd/else} {:text " egyebkent "} {:cmd :cmd/end} {:close :a}]))))
 
 (deftest read-tokens-if-elif-then-else
   (testing "If-else if-then-else branching"
-    (is (= '({:open :a} {:text "Hello "} {:cmd :if, :condition [x]} {:text "iksz"}
-             {:cmd :else-if, :condition [y]} {:text "ipszilon"} {:cmd :else}
-             {:text "egyebkent"} {:cmd :end} {:text  " Hola"} {:close :a})
+    (is (= '({:open :a} {:text "Hello "} {:cmd :cmd/if, :condition x} {:text "iksz"}
+             {:cmd :cmd/else-if, :condition y} {:text "ipszilon"} {:cmd :cmd/else}
+             {:text "egyebkent"} {:cmd :cmd/end} {:text  " Hola"} {:close :a})
            (run "<a>Hello {%if x%}iksz{%else if y%}ipszilon{%else%}egyebkent{%end%} Hola</a>")
            (run "<a>Hello {%if x%}iksz{%elseif y%}ipszilon{%else%}egyebkent{%end%} Hola</a>")
            (run "<a>Hello {%if x%}iksz{%elsif y%}ipszilon{%else%}egyebkent{%end%} Hola</a>")
@@ -106,12 +108,12 @@
 
 (deftest read-tokens-for
   (testing "Indexed loop"
-    (is (= '[{:open :a} {:cmd :for, :expression [xs], :variable x :index-var idx}
-             {:text "item"} {:cmd :end} {:close :a}]
+    (is (= '[{:open :a} {:cmd :cmd/for, :expression xs, :variable x :index-var idx}
+             {:text "item"} {:cmd :cmd/end} {:close :a}]
            (run "<a>{%for idx, x in xs%}item{% end %}</a>"))))
   (testing "Simple loop"
-    (is (= '[{:open :a} {:cmd :for, :expression [xs], :variable x :index-var $}
-             {:text "item"} {:cmd :end} {:close :a}]
+    (is (= '[{:open :a} {:cmd :cmd/for, :expression xs, :variable x :index-var $}
+             {:text "item"} {:cmd :cmd/end} {:close :a}]
            (run "<a>{%for x in xs%}item{% end %}</a>")))))
 
 :OK

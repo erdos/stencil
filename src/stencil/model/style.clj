@@ -1,7 +1,7 @@
 (ns stencil.model.style
-  (:import [java.io File])
   (:require [clojure.data.xml :as xml]
             [clojure.java.io :as io]
+            [stencil.fs :as fs]
             [stencil.ooxml :as ooxml]
             [stencil.model.common :refer :all]
             [stencil.util :refer :all]))
@@ -16,6 +16,14 @@
 ;; style definitions of the main document
 (def ^:dynamic *current-styles* nil)
 
+(declare file-writer)
+
+(defmacro with-styles-context [template-model body]
+  (assert (symbol? template-model))
+  `(binding [*current-styles* (atom (:parsed (:style (:main ~template-model))))]
+     (-> ~body
+         (cond-> (-> ~template-model :main :style)
+           (assoc-in [:main :style :result] (file-writer ~template-model))))))
 
 ;; throws error when not invoked from inside fragment context
 (defmacro expect-fragment-context! [& bodies] `(do (assert *current-styles*) ~@bodies))
@@ -35,7 +43,7 @@
 (defn file-writer [template]
   (expect-fragment-context!
    (let [original-style-file (:source-file (:style (:main template)))
-         _ (assert (.exists ^File original-style-file))
+         _ (assert (fs/exists? original-style-file))
          extended-tree (with-open [r (io/input-stream original-style-file)]
                          (let [tree (xml/parse r)
                                all-ids (set (keep (comp ooxml/style-id :attrs) (:content tree)))
@@ -70,7 +78,7 @@
 
 
 (defn insert-styles!
-  "Returns a map of all style definitions where key is style id and value is style xml."
+  "Returns a map of all style definitions where key is style id from style-defs and value is new style id."
   [style-defs]
   (assert (map? style-defs) (str "Not map: " (pr-str style-defs) (type style-defs)))
   (assert (every? string? (keys style-defs)))
@@ -80,20 +88,29 @@
           {} style-defs))
 
 
-(defn xml-rename-style-ids [style-id-renames xml-tree]
+(defn xml-rename-style-ids
+  "Recursively renames occurrences of old style ids to new ids based on rename map."
+  [style-id-renames xml-tree]
   (if (map? xml-tree)
+    ;; pStyle, rStyle, tblStyle, cnfStyle, ...
+    ;; also: numStyleLink, styleLink in numbering definitions!!!
     (if (-> xml-tree :tag name (.endsWith "Style"))
       (update-some xml-tree [:attrs ooxml/val] style-id-renames)
-      (update xml-tree :content (partial map (partial xml-rename-style-ids style-id-renames))))
+      (update xml-tree :content (partial mapv (partial xml-rename-style-ids style-id-renames))))
     xml-tree))
 
 
-(defn main-style-item [^File dir main-document main-document-rels]
+(defn- main-style-item [dir main-document main-document-rels]
   (when-let [main-style (find-first #(= rel-type (:stencil.model/type %))
                               (vals (:parsed main-document-rels)))]
-    (let [main-style-file (io/file (.getParentFile (io/file main-document))
+    (let [main-style-file (io/file (fs/parent-file (io/file main-document))
                                    (:stencil.model/target main-style))
           main-style-abs  (io/file dir main-style-file)]
-      {:stencil.model/path (unix-path main-style-file)
+      {:stencil.model/path (fs/unix-path main-style-file)
        :source-file        main-style-abs
        :parsed             (parse main-style-abs)})))
+
+
+(defn assoc-style [model dir]
+  (->> (main-style-item dir (:stencil.model/path model) (:relations model))
+       (assoc-if-val model :style)))

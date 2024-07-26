@@ -1,7 +1,7 @@
 (ns stencil.model-test
   (:require [stencil.model :refer :all]
             [stencil.api :as api]
-            [clojure.java.io :refer [file resource]]
+            [clojure.datafy :refer [datafy]]
             [clojure.test :refer [deftest is are testing]]))
 
 
@@ -12,8 +12,7 @@
 
 
 (deftest test-load-template-model
-  (let [model (.getSecretObject (api/prepare "test-resources/multipart/main.docx"))]
-
+  (let [model (datafy (api/prepare "test-resources/multipart/main.docx"))]
     (is (contains? model :main))
     (is (contains? model :content-types))
 
@@ -30,6 +29,13 @@
         (is (.isFile ^java.io.File (:source-file item)))))
 
     ))
+
+(deftest test-load-template-model-presentation
+  (with-open [template (api/prepare "test-resources/presentation/presentation.pptx")]
+    (let [model (datafy template)
+          slide-layouts (:stencil.model/slide-layouts (:main model))]
+      (is (seq slide-layouts))
+      (is (= 26 (count slide-layouts))))))
 
 (defn- debug-model [model]
   (-> model

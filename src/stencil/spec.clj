@@ -1,10 +1,12 @@
 (ns stencil.spec
-  (:import [java.io File])
   (:require [clojure.spec.alpha :as s]
+            [stencil.fs :as fs]
             [stencil.model :as m]
+            [stencil.model.relations :as relations]
             [stencil.process]))
 
-
+(defn instrument []
+  ((requiring-resolve 'clojure.spec.test.alpha/instrument)))
 
 ;; TODO
 (s/def :stencil.model/mode #{"External"})
@@ -13,12 +15,16 @@
 (s/def ::data map?)
 
 ;; other types are also possible
-(s/def :stencil.model/type #{stencil.model/rel-type-footer
-                             stencil.model/rel-type-header
-                             stencil.model/rel-type-main
-                             stencil.model/rel-type-slide})
+(s/def :stencil.model/type #{relations/rel-type-footer
+                             relations/rel-type-header
+                             relations/rel-type-main
+                             relations/rel-type-slide})
 
-(s/def :stencil.model/path (s/and string? not-empty #(not (.startsWith ^String % "/"))))
+(s/def :stencil.model/path (s/and string?
+                                  not-empty
+                                  #(not (.startsWith (str %) "/"))
+                                  #(not (.endsWith (str %) "/"))
+                                  #(not (.contains (str %) ".."))))
 
 ;; relationship file
 (s/def ::relations (s/keys :req    [:stencil.model/path]
@@ -32,17 +38,16 @@
 (s/def ::style (s/keys :req [:stencil.model/path]
                        :opt-un [::result]))
 
-(s/def :stencil.model/headers+footers (s/* (s/keys :req [:stencil.model/path]
-                                        :req-un [::source-file :stencil.model/executable :?/relations]
-                                        :opt-un [::result])))
+(s/def :stencil.model/headers+footers
+  (s/* (s/keys :req [:stencil.model/path]
+               :req-un [::source-file :stencil.model/executable :?/relations]
+               :opt-un [::result])))
 
-(s/def ::source-folder (s/and (partial instance? java.io.File)
-                              #(.isDirectory ^File %)
-                              #(.exists ^File %)))
+(s/def ::source-folder (s/and fs/directory? fs/exists?))
 
 (s/def ::source-file (s/and (partial instance? java.io.File)
-                            #(.isFile ^File %)
-                            #(.exists ^File %)))
+                            (complement fs/directory?)
+                            fs/exists?))
 
 (s/def ::main (s/keys :req [:stencil.model/path]
                       :opt-un [:stencil.model/headers+footers ::result] ;; not present in fragments
@@ -55,7 +60,7 @@
 
 (s/def :stencil.model/content-types
   (s/keys :req [:stencil.model/path]
-          :req-un [::source-file]))
+          :opt-un [::source-file]))
 
 (s/def :stencil.model/model
   (s/keys :req []
@@ -63,8 +68,9 @@
 
 (s/def ::parsed any?)
 
-(s/def :stencil.model/numbering (s/nilable (s/keys :req [:stencil.model/path]
-                                        :req-un [::source-file ::parsed])))
+(s/def :stencil.model/numbering
+  (s/nilable (s/keys :req [:stencil.model/path]
+                     :req-un [::source-file ::parsed])))
 
 (s/fdef stencil.model/load-template-model
   :args (s/cat :dir ::source-folder, :opts map?)

@@ -125,11 +125,11 @@
   (is (= "a1a1" (call-fn "replace" "a.a." "." "1")))
   (is (= "123456" (call-fn "replace" "   12 34   56 " " " ""))))
 
-(import '[stencil.types ReplaceImage])
+(import '[stencil.postprocess.images ReplaceImage])
 (def data-uri "data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==")
 
 (deftest test-replace-image
-  (binding [stencil.model/*extra-files* (atom #{})]
+  (stencil.model.relations/with-extra-files-context
     (is (instance? ReplaceImage (call-fn "replaceImage" data-uri))))
   (testing "Parsing errors"
     (is (thrown? ExceptionInfo (call-fn "replaceImage" nil)))

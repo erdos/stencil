@@ -2,8 +2,9 @@
   (:require [clojure.data.xml :as xml]
             [clojure.data.xml.pu-map :as pu]
             [clojure.java.io :as io :refer [file]]
+            [stencil.fs :as fs :refer [unix-path]]
             [stencil.ooxml :as ooxml]
-            [stencil.util :refer :all]
+            [stencil.util :refer [update-some]]
             [stencil.model.common :refer [->xml-writer]]))
 
 (def tag-relationships
@@ -20,7 +21,40 @@
   "Relationship type of image files in .rels files."
   "http://schemas.openxmlformats.org/officeDocument/2006/relationships/image")
 
-(defn parse [rel-file]
+(def rel-type-main
+  "Relationship type of main document in _rels/.rels file."
+  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument")
+
+(def rel-type-footer
+  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/footer")
+
+(def rel-type-header
+  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/header")
+
+;; PPTX
+
+(def rel-type-slide
+  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide")
+
+(def rel-type-slide-master
+  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideMaster")
+
+(def rel-type-slide-layout
+  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/slideLayout")
+
+(def rel-type-theme
+  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/theme")
+
+(def rel-type-notes-slide
+  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesSlide")
+
+(def rel-type-notes-master
+  "http://schemas.openxmlformats.org/officeDocument/2006/relationships/notesMaster")
+
+(def extra-relations
+  #{rel-type-footer rel-type-header rel-type-slide rel-type-slide-master rel-type-notes-master})
+
+(defn- parse [rel-file]
   (with-open [reader (io/input-stream (file rel-file))]
     (let [parsed (xml/parse reader)]
       (assert (= tag-relationships (:tag parsed))
@@ -33,6 +67,23 @@
                                  :stencil.model/target (doto (:Target (:attrs d)) assert)
                                  :stencil.model/mode   (:TargetMode (:attrs d))}])))))
 
+(defn ->rels [^java.io.File dir f]
+  (let [rels-path (if f
+                    (unix-path (fs/unroll (file (fs/parent-file (file f)) "_rels" (str (.getName (file f)) ".rels"))))
+                    (unix-path (file "_rels" ".rels"))) 
+        rels-file (file dir rels-path)]
+    (when (fs/exists? rels-file)
+      {:stencil.model/path rels-path
+       :source-file rels-file
+       :parsed (parse rels-file)})))
+
+(defn targets-by-type
+  "Returns seq of paths from relations definition where relation type matches the predicate."
+  [relations type-pred]
+  (assert (map? (:parsed relations)))
+  (for [v (vals (:parsed relations))
+        :when (type-pred (:stencil.model/type v))]
+    (:stencil.model/target v)))
 
 (defn writer [relation-map]
   (assert (map? relation-map))
@@ -83,5 +134,38 @@
       :fragment-name fragment-name
       :new-id      new-id
       :old-id      old-rel-id
-      :source-file (file (-> model :main :source-file file .getParentFile) (:stencil.model/target m))
+      :source-file (file (-> model :main :source-file file fs/parent-file) (:stencil.model/target m))
       :stencil.model/path       new-path})))
+
+;; set of extra relations to be added after evaluating document
+(def ^:dynamic *extra-files* nil)
+
+(defmacro with-extra-files-context [body]
+  `(binding [*extra-files* (atom #{})] ~body))
+
+(defn add-extra-file! [m]
+  (assert (:new-id m))
+  (swap! *extra-files* conj m) m)
+
+(defn model-assoc-extra-files [m fragment-names]
+  (assert *extra-files*)
+  (assert (set? fragment-names))
+  (cond-> m
+    ;; create a rels file for the current xml
+    (and (seq @*extra-files*) (nil? (:stencil.model/path (:relations m))))
+    (assoc-in [:relations :stencil.model/path]
+              (unix-path (file (fs/parent-file (file (:stencil.model/path m)))
+                          "_rels"
+                          (str (.getName (file (:stencil.model/path m))) ".rels"))))
+
+    ;; add relations if any
+    (seq @*extra-files*)
+    (update-in [:relations :parsed] (fnil into {})
+                (for [relation @*extra-files*
+                      :when (or (not (contains? relation :fragment-name))
+                                (contains? fragment-names (:fragment-name relation)))]
+                  [(:new-id relation) relation]))
+
+    ;; relation file will be rendered instead of copied
+    (seq @*extra-files*)
+    (update-in [:relations] dissoc :source-file)))

@@ -7,6 +7,8 @@ import java.nio.file.Path;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
+import static java.lang.System.getProperty;
+
 /**
  * File handling utilities.
  * Some methods may be called from Clojure core.
@@ -14,7 +16,7 @@ import java.util.regex.Pattern;
 @SuppressWarnings("WeakerAccess")
 public final class FileHelper {
 
-    private final static File TEMP_DIRECTORY = new File(System.getProperty("java.io.tmpdir"));
+    private final static File TEMP_DIRECTORY = new File(requireNonNullElse(getProperty("stencil.tmpdir"), getProperty("java.io.tmpdir")));
 
     private FileHelper() {}
 
@@ -51,7 +53,11 @@ public final class FileHelper {
      * @return a new file object pointing to a non-existing file in temp directory.
      */
     public static File createNonexistentTempFile(String prefix, String suffix) {
-        return new File(TEMP_DIRECTORY, prefix + UUID.randomUUID().toString() + suffix);
+        return createNonexistentTempFile(null, prefix, suffix);
+    }
+
+    public static File createNonexistentTempFile(File parent, String prefix, String suffix) {
+        return new File(requireNonNullElse(parent, TEMP_DIRECTORY), prefix + UUID.randomUUID() + suffix);
     }
 
     /**
@@ -96,24 +102,8 @@ public final class FileHelper {
     }
 
     /**
-     * Recursively marks a directory or a file for deletion on exit.
-     *
-     * @param file to delete, not null
-     * @throws NullPointerException on null or invalid file
-     */
-    @SuppressWarnings({"ResultOfMethodCallIgnored", "ConstantConditions"})
-    public static void forceDeleteOnExit(final File file) {
-        file.deleteOnExit();
-        if (file.isDirectory()) {
-            for (File child : file.listFiles()) {
-                forceDeleteOnExit(child);
-            }
-        }
-    }
-
-    /**
      * Returns a string representation of path with unix separators ("/") instead of the
-     * system-dependent separators (which is backslash on windows.)
+     * system-dependent separators (which is backslash on Windows).
      *
      * @param path not null path object
      * @return string of path with slash separators
@@ -128,9 +118,13 @@ public final class FileHelper {
                 // on unix systems
                 return path.toString();
             } else {
-                // on windows systems we replace backslash with slashes
+                // on Windows systems we replace backslash with slashes
                 return path.toString().replaceAll(Pattern.quote(separator), "/");
             }
         }
+    }
+
+    private static <T> T requireNonNullElse(T first, T second) {
+        return first == null ? second : first;
     }
 }

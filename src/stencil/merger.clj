@@ -1,141 +1,120 @@
 (ns stencil.merger
-  "Token listaban a text tokenekbol kiszedi a parancsokat es action tokenekbe teszi."
+  "Given a seq of tokens, parses Stencil expressions and creates :action tokens."
   (:require [clojure.data.xml :as xml]
-            [clojure.string :refer [index-of ends-with?]]
             [stencil.postprocess.ignored-tag :as ignored-tag]
             [stencil
              [types :refer [open-tag close-tag]]
-             [tokenizer :as tokenizer]
-             [util :refer [prefixes suffixes subs-last string]]]))
+             [util :refer [parsing-exception]]
+             [tokenizer :as tokenizer]]))
 
 (set! *warn-on-reflection* true)
 
-;; only fragment includes are evaluated
+;; When true, only fragment includes are parsed and evaluated
 (def ^:dynamic *only-includes* false)
 
-(defn peek-next-text
-  "Returns a lazy seq of text content characters from the token list."
-  [tokens]
-  ((fn f [stack tokens]
-     (when-let [[t & ts] (seq tokens)]
-       (if-let [text (:text t)]
-         (concat (for [[t & trs] (suffixes text)]
-                   {:char  t
-                    :stack stack
-                    :text-rest trs
-                    :rest  ts})
-                 (lazy-seq (f stack ts)))
-         (recur (cons t stack) ts))))
-   nil tokens))
+(defn map-action-token [{:keys [action]}]
+  (let [parsed (tokenizer/text->cmd action)
+        source (str open-tag action close-tag)
+        parsed (assoc parsed :raw source)]
+    (if (and *only-includes*
+             (not= :cmd/include (:cmd parsed)))
+      {:text source}
+      {:action parsed})))
 
-(defn find-first-code [^String s]
-  (assert (string? s))
-  (when-let [ind (index-of s (str open-tag))]
-    (if-let [after-idx (index-of s (str close-tag) ind)]
-      (cond-> {:action (subs s (+ ind (count open-tag)) after-idx)}
-        (pos? ind) (assoc :before (subs s 0 ind))
-        (not= (+ (count close-tag) after-idx) (count s))
-        (assoc :after (subs s (+ (count close-tag) after-idx))))
-      (cond-> {:action-part (subs s (+ ind (count open-tag)))}
-        (not (zero? ind)) (assoc :before (subs s 0 ind))))))
+;; Transducer that unwraps {:text .} objects. eg.: [1 2 {:text ab} 3] => [1 2 \a \b 3]
+(defn- map-text-nodes []
+  (fn [rf]
+    (fn ([acc] (rf acc))
+        ([acc x]
+         (if (:text x)
+           (reduce rf acc (:text x))
+           (rf acc x))))))
 
-(defn text-split-tokens [^String s]
-  (assert (string? s))
-  (loop [s      s
-         output []]
-    (if-let [x (some-> s find-first-code)]
-      (if (:action-part x)
-        {:tokens (if-let [b (:before x)] (conj output {:text b}) output)
-         :action-part (:action-part x)}
-        (recur (:after x)
-               (if (seq (:before x))
-                 (conj output {:text (:before x)} {:action (:action x)})
-                 (conj output {:action (:action x)}))))
-      (if (seq s)
-        {:tokens (conj output {:text s})}
-        {:tokens output}))))
+(declare parse-upto-open-tag)
 
-;; returns a map of {:char :stack :text-rest :rest}
-(defn -find-open-tag [last-chars-count next-token-list]
-  (assert (integer? last-chars-count))
-  (assert (pos? last-chars-count))
-  (assert (sequential? next-token-list))
-  (let [next-text (peek-next-text next-token-list)
-        n         (- (count open-tag) last-chars-count)]
-    (when (= (drop last-chars-count open-tag)
-             (take n (map :char next-text)))
-      (nth next-text (dec n)))))
+;; Constructs a function that reads the inside of a stencil expression until close-tag is reached.
+;; The fn returns a collection when read fully or itself when there are characters left to read.
+(defn- parse-until-close-tag [chars-and-tokens-to-append]
+  (let [expected-close-tag-chars   (volatile! close-tag)
+        buffer-nonclose-chars-only (new java.util.ArrayList)
+        buffer-all-read            (new java.util.ArrayList)]
+    (fn self
+      ([]
+       (when (seq buffer-all-read)
+         (throw (parsing-exception
+                 "" (apply str "Stencil tag is not closed. Reading " open-tag buffer-nonclose-chars-only)))))
+      ([token]
+       (.add buffer-all-read token)
+       (if (= token (first @expected-close-tag-chars))
+         (when-not (vswap! expected-close-tag-chars next)
+           (let [action (map-action-token {:action (apply str buffer-nonclose-chars-only)})]
+             (if (:action action)
+               (parse-upto-open-tag (concat [action]
+                                            (remove char? chars-and-tokens-to-append)
+                                            (remove char? buffer-all-read)))
+               (parse-upto-open-tag (concat (vec chars-and-tokens-to-append)
+                                            (vec buffer-all-read))))))
+         (when (char? token)
+           (vreset! expected-close-tag-chars close-tag)
+           (.clear buffer-nonclose-chars-only)
+           (.addAll buffer-nonclose-chars-only (filter char? buffer-all-read))
+           self))))))
 
-(defn -last-chars-count [sts-tokens]
-  (assert (sequential? sts-tokens))
-  (when-let [last-text (some-> sts-tokens last :text string)]
-    (some #(when (ends-with? last-text (string %))
-             (count %))
-          (prefixes open-tag))))
+;; Similar to the fn above. Consumes tokens up to the first open tag, then returns another parser (trampoline style).
+(defn- parse-upto-open-tag [prepend]
+  (let [expected-open-tag-chars (volatile! open-tag)
+        buffer                  (new java.util.ArrayList ^java.util.Collection prepend)]
+    (fn self
+      ([] buffer)
+      ([token]
+       (if (= token (first @expected-open-tag-chars))
+         (if (= open-tag @expected-open-tag-chars)
+           (let [already-read (vec buffer)]
+             (.clear buffer)
+             (.add buffer token)
+             (vswap! expected-open-tag-chars next)
+             already-read)
+           (do (.add buffer token)
+               (when-not (vswap! expected-open-tag-chars next) ; for cases when |open-tag|>2
+                 (parse-until-close-tag buffer))))
+         (if (= open-tag @expected-open-tag-chars)
+           (let [result (concat (vec buffer) [token])]
+             (.clear buffer) ;; reading an open-tag from start => we dump the content of buffer
+             result)
+           (if (char? token)
+             (let [out (vec buffer)]
+               (vreset! expected-open-tag-chars open-tag)
+               (.clear buffer)
+               (if (= token (first @expected-open-tag-chars))
+                 (do (.add buffer token)
+                     (vswap! expected-open-tag-chars next)
+                     out)
+                 (concat out [token])))
+             (do (.add buffer token)
+                 self))))))))
 
-(defn map-action-token [token]
-  (if-let [action (:action token)]
-    (let [parsed (tokenizer/text->cmd action)]
-      (if (and *only-includes*
-               (not= :cmd/include (:cmd parsed)))
-        {:text (str open-tag action close-tag)}
-        {:action parsed}))
-    token))
+;; Constructs a transducer that uses the trampoline function to process elements
+(defn- parser-trampoline [initial-trampoline]
+  (fn [rf]
+    (let [trampoline (volatile! initial-trampoline)]
+      (fn ([acc] (rf (reduce rf acc (@trampoline))))
+          ([acc token]
+           (let [result (@trampoline token)]
+             (if (fn? result)
+               (do (vreset! trampoline result) acc)
+               (reduce rf acc result))))))))
 
-(declare cleanup-runs)
+;; Transducer that merges consecutive characters into a text token, eg.: (1 \a \b \c 2) to (1 {:text "abc"} 2)
+(defn- unmap-text-nodes []
+  (let [state (volatile! true)]
+    (comp (partition-by (fn [x] (when-not (char? x) (vswap! state not))))
+          (map (fn [x] (if (char? (first x)) {:text (apply str x)} (first x)))))))
 
-(defn cleanup-runs-1 [[first-token & rest-tokens]]
-  (assert (:text first-token))
-  (let [sts (text-split-tokens (:text first-token))]
-
-    (if (:action-part sts)
-      ;; Ha van olyan akcio resz, amit elkezdtunk de nem irtunk vegig...
-      (let [next-token-list (cons {:text (:action-part sts)} rest-tokens)
-            [this that] (split-with #(not= (seq close-tag)
-                                           (take (count close-tag) (map :char %)))
-                                    (suffixes (peek-next-text next-token-list)))
-            that        (if (empty? that)
-                          (throw (ex-info "Tag is not closed? " {:read (first this)}))
-                          (first (nth that (dec (count close-tag)))))
-            ; action-content (apply str (map (comp :char first) this))
-            ]
-        (concat
-         (map map-action-token (:tokens sts))
-         (let [ap (map-action-token {:action (string (map (comp :char first)) this)})]
-           (if (:action ap)
-             (concat
-              [ap]
-              (reverse (:stack that))
-              (if (seq (:text-rest that))
-                (lazy-seq (cleanup-runs-1 (cons {:text (string (:text-rest that))} (:rest that))))
-                (lazy-seq (cleanup-runs (:rest that)))))
-             (list* {:text (str open-tag (:action-part sts))}
-                    (lazy-seq (cleanup-runs rest-tokens)))))))
-
-      ;; If the current :text node ends with a prefix of open-tag:
-      (if-let [last-chars-count (-last-chars-count (:tokens sts))]
-        (if-let [this (-find-open-tag last-chars-count rest-tokens)]
-          (concat
-           (map map-action-token (butlast (:tokens sts)))
-           (when-let [s (seq (drop-last last-chars-count (:text (last (:tokens sts)))))]
-             [{:text (apply str s)}])
-
-           (let [tail (cleanup-runs-1
-                       (concat [{:text (apply str open-tag (:text-rest this))}]
-                               (reverse (:stack this))
-                               (:rest this)))]
-             (if (:action (first tail))
-               tail
-               (cons {:text (subs-last (:text (last (:tokens sts))) last-chars-count)}
-                     (lazy-seq (cleanup-runs rest-tokens))))))
-          (concat (map map-action-token (:tokens sts)) (cleanup-runs rest-tokens)))
-        (concat (map map-action-token (:tokens sts)) (cleanup-runs rest-tokens))))))
-
-(defn cleanup-runs [token-list]
-  (when-let [[t & ts] (seq token-list)]
-    (if (:text t)
-      (cleanup-runs-1 token-list)
-      (cons t (lazy-seq (cleanup-runs ts))))))
+(defn cleanup-runs [tokens-seq]
+  (eduction (comp (map-text-nodes)
+                  (parser-trampoline (parse-upto-open-tag []))
+                  (unmap-text-nodes))
+            tokens-seq))
 
 (defn- map-token [token] (:action token token))
 
@@ -147,6 +126,6 @@
        (ignored-tag/map-ignored-attr)
        (tokenizer/structure->seq)
        (cleanup-runs)
-       (map map-token)))
+       (eduction (map map-token))))
 
 :OK

@@ -4,10 +4,12 @@
             [stencil.infix :refer [eval-rpn]]
             [stencil.types :refer [control?]]
             [stencil.tokenizer :as tokenizer]
+            [stencil.util :refer [eval-exception]]
             [stencil.tree-postprocess :as tree-postprocess]))
 
 (set! *warn-on-reflection* true)
 
+#_{:clj-kondo/ignore [:unused-binding]}
 (defmulti eval-step (fn [function data item] (:cmd item)))
 
 (defmethod eval-step :default [_ _ item] [item])
@@ -18,19 +20,24 @@
   (assert (or (nil? items) (sequential? items)))
   (eduction (mapcat (partial eval-step function data)) items))
 
-(defmethod eval-step :if [function data item]
-  (let [condition (eval-rpn data function (:condition item))]
+(defn- eval-rpn* [data function expr raw-expr]
+  (try (eval-rpn data function expr)
+       (catch Exception e
+              (throw (eval-exception (str "Error evaluating expression: " raw-expr) e)))))
+
+(defmethod eval-step :cmd/if [function data item]
+  (let [condition (eval-rpn* data function (:condition item) (:raw item))]
     (log/trace "Condition {} evaluated to {}" (:condition item) condition)
-    (->> (if condition (:then item) (:else item))
+    (->> (if condition (:branch/then item) (:branch/else item))
          (normal-control-ast->evaled-seq data function))))
 
-(defmethod eval-step :echo [function data item]
-  (let [value (eval-rpn data function (:expression item))]
+(defmethod eval-step :cmd/echo [function data item]
+  (let [value (eval-rpn* data function (:expression item) (:raw item))]
     (log/trace "Echoing {} as {}" (:expression item) value)
     [{:text (if (control? value) value (str value))}]))
 
-(defmethod eval-step :for [function data item]
-  (let [items (eval-rpn data function (:expression item))]
+(defmethod eval-step :cmd/for [function data item]
+  (let [items (eval-rpn* data function (:expression item) (:raw item))]
     (log/trace "Loop on {} will repeat {} times" (:expression item) (count items))
     (if (not-empty items)
       (let [index-var-name (name (:index-var item))
@@ -39,9 +46,9 @@
             datas          (if (or (instance? java.util.Map items) (map? items))
                              (map datamapper (keys items) (vals items))
                              (map-indexed datamapper items))
-            bodies (cons (:body-run-once item) (repeat (:body-run-next item)))]
+            bodies (cons (:branch/body-run-once item) (repeat (:branch/body-run-next item)))]
         (mapcat (fn [data body] (normal-control-ast->evaled-seq data function body)) datas bodies))
-      (:body-run-none item))))
+      (:branch/body-run-none item))))
 
 (defn eval-executable [part data functions]
   (->> (:executable part)

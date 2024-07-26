@@ -58,7 +58,7 @@ public enum StringFunctions implements Function {
             StringBuilder builder = new StringBuilder();
             for (Object argument : arguments) {
                 if (argument != null)
-                    builder.append(argument.toString());
+                    builder.append(argument);
             }
             return builder.toString();
         }

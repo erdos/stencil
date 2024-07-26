@@ -4,6 +4,7 @@
             [stencil.postprocess.whitespaces :refer :all]
             [stencil.postprocess.ignored-tag :refer :all]
             [stencil.postprocess.images :refer :all]
+            [stencil.postprocess.links :refer :all]
             [stencil.postprocess.list-ref :refer :all]
             [stencil.postprocess.fragments :refer :all]
             [stencil.postprocess.html :refer :all]))
@@ -27,6 +28,8 @@
    #'fix-list-dirty-refs
 
    #'replace-images
+
+   #'replace-links
 
    ;; call this first. includes fragments and evaluates them too.
    #'unpack-fragments))

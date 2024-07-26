@@ -2,39 +2,34 @@
   "A simple public API for document generation from templates."
   (:require [clojure.walk :refer [stringify-keys]]
             [clojure.java.io :as io]
-            [clojure.pprint :refer [simple-dispatch]]
+            [stencil.fs :as fs]
             [stencil.types])
   (:import [io.github.erdos.stencil API PreparedFragment PreparedTemplate TemplateData]
-           [stencil.types OpenTag CloseTag TextTag]
            [java.util Map]))
 
 
 (set! *warn-on-reflection* true)
 (set! *unchecked-math* :warn-on-boxed)
 
-(defmethod simple-dispatch OpenTag [t] (print (str "<" (:open t) ">")))
-(defmethod simple-dispatch CloseTag [t] (print (str "</" (:close t) ">")))
-(defmethod simple-dispatch TextTag [t] (print (str "'" (:text t) "'")))
-
-(defn ^PreparedTemplate prepare
+(defn prepare
   "Creates a prepared template instance from an input document."
-  [input]
+  ^PreparedTemplate [input]
   (cond
     (instance? PreparedTemplate input) input
     (nil? input)  (throw (ex-info "Template is missing!" {}))
     :else         (API/prepare (io/file input))))
 
 
-(defn- ^TemplateData make-template-data [x]
+(defn- make-template-data ^TemplateData [x]
   (if (map? x)
     (TemplateData/fromMap ^Map (stringify-keys x))
     (throw (ex-info (str "Unsupported template data type " (type x) "!")
                     {:template-data x}))))
 
 
-(defn ^PreparedFragment fragment
+(defn fragment
   "Converts input to a fragment instance"
-  [f]
+  ^PreparedFragment [f]
   (cond
     (instance? PreparedFragment f) f
     (nil? f)   (throw (ex-info "Fragment can not be null!" {}))
@@ -61,11 +56,11 @@
       (.toInputStream result clojure.lang.Agent/soloExecutor)
 
       (instance? java.io.OutputStream (:output opts))
-      (.writeToStream result (:output opts))
+      (.write result (:output opts))
 
       (:output opts)
       (let [f (io/file (:output opts))]
-        (when (.exists f)
+        (when (fs/exists? f)
           (if (:overwrite? opts)
             (.delete f)
             (throw (ex-info "File already exists! " {:file f}))))
@@ -77,10 +72,11 @@
 
 
 (defn cleanup! [template]
-  (cond (instance? PreparedTemplate template) (.cleanup ^PreparedTemplate template)
-        (instance? PreparedFragment template) (.cleanup ^PreparedFragment template)
+  (cond (instance? PreparedTemplate template) (.close ^PreparedTemplate template)
+        (instance? PreparedFragment template) (.close ^PreparedFragment template)
         :else (throw (ex-info "Unexpected object to clean up!" {:template template})))
   template)
 
-(def version (or (some-> (io/resource "stencil-version") slurp)
-                 (System/getProperty "stencil-core.version")))
+(defmacro get-version [] (slurp (io/resource "stencil-version")))
+(def version (doto (get-version) (assert)))
+(ns-unmap *ns* 'get-version)

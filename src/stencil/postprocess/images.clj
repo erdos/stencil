@@ -1,13 +1,17 @@
 (ns stencil.postprocess.images
   (:require [clojure.java.io :as io]
             [clojure.zip :as zip]
+            [stencil.functions :refer [call-fn]]
             [stencil.log :as log]
             [stencil.ooxml :as ooxml]
-            [stencil.model.relations :refer [rel-type-image]]
-            [stencil.util :refer [fail find-first iterations dfs-walk-xml-node]])
-  (:import [stencil.types ReplaceImage]))
+            [stencil.model.relations :as relations]
+            [stencil.types :refer [ControlMarker]]
+            [stencil.util :refer [fail find-first iterations dfs-walk-xml-node]]))
 
 (set! *warn-on-reflection* true)
+
+;; Tells if the reference of an adjacent image node should be replaced in postprocess step.
+(defrecord ReplaceImage [relation] ControlMarker)
 
 (def mime-type->extension
   {"image/png"  "png"
@@ -31,19 +35,26 @@
     {:mime-type (.toLowerCase (.substring data-uri-str 5 end-of-mimetype))
      :bytes     (.decode (java.util.Base64/getDecoder) (.getBytes (.substring data-uri-str start-of-data)))}))
 
+
+;; mapping of tag name to attribute for nodes that represent an image and have an attribute for relation id.
+(def ^:private img-tag-attr
+  {ooxml/blip ooxml/r-embed
+   ooxml/tag-imagedata ooxml/r-id})
+
 (defn- update-image [img-node, ^ReplaceImage data]
-  (assert (= ooxml/blip (:tag img-node)))
+  (assert (img-tag-attr (:tag img-node)))
   (assert (instance? ReplaceImage data))
-  (let [current-rel (-> img-node :attrs ooxml/r-embed)
+  (let [attr-key    (img-tag-attr (:tag img-node))
+        current-rel (-> img-node :attrs attr-key)
         new-val     (-> data .relation)]
     (assert new-val)
     (log/debug "Replacing image relation {} by {}" current-rel new-val)
-    (assoc-in img-node [:attrs ooxml/r-embed] new-val)))
+    (assoc-in img-node [:attrs attr-key] new-val)))
 
 (defn- replace-image [marker-loc]
   (if-let [img-loc (->> (zip/remove marker-loc)
                         (iterations zip/prev)
-                        (find-first (comp #{ooxml/blip} :tag zip/node)))]
+                        (find-first (comp img-tag-attr :tag zip/node)))]
     (zip/edit img-loc update-image (zip/node marker-loc))
     (fail "Did not find image to replace. The location of target image must precede the replaceImage() function call location." {})))
 
@@ -67,10 +78,16 @@
     (str "media/" rel-id "." extension)
     (fail "Unexpected mime-type for image!" {:mime-type mime-type})))
 
-(defn img-data->extrafile [data-uri]
+(defn- img-data->extrafile [data-uri]
   (let [new-rel                   (->relation-id)
         {:keys [mime-type bytes]} (parse-data-uri data-uri)]
     {:new-id               new-rel
-     :stencil.model/type   rel-type-image
+     :stencil.model/type   relations/rel-type-image
      :stencil.model/target (image-path new-rel mime-type)
      :writer               (bytes->writer bytes)}))
+
+;; replaces the nearest image with the content
+(defmethod call-fn "replaceImage" [_ data]
+  (let [extra-file (img-data->extrafile data)]
+    (relations/add-extra-file! extra-file)
+    (->ReplaceImage (:new-id extra-file))))

@@ -1,7 +1,6 @@
 package io.github.erdos.stencil.impl;
 
 import clojure.lang.IFn;
-import clojure.lang.Keyword;
 import clojure.lang.RT;
 import clojure.lang.Symbol;
 
@@ -33,7 +32,6 @@ public final class ClojureHelper {
 
     //Do not require namespace which is already loaded.
     private static final Set<Symbol> ALREADY_REQUIRED_NAMESPACES;
-
 
     // requires stencil.process namespace so stencil is loaded.
     static {

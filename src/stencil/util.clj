@@ -1,6 +1,6 @@
 (ns stencil.util
   (:require [clojure.zip])
-  (:import [io.github.erdos.stencil.exceptions ParsingException]))
+  (:import [io.github.erdos.stencil.exceptions ParsingException EvalException]))
 
 (set! *warn-on-reflection* true)
 
@@ -39,7 +39,7 @@
 (defn iterations [f elem] (eduction (take-while some?) (iterate f elem)))
 
 ;; same as (first (filter pred xs))
-(defn find-first [pred xs] (reduce (fn [_ x] (if (pred x) (reduced x))) nil xs))
+(defn find-first [pred xs] (reduce (fn [_ x] (when (pred x) (reduced x))) nil xs))
 (defn find-last [pred xs] (reduce (fn [a x] (if (pred x) x a)) nil xs))
 
 (def xml-zip
@@ -52,9 +52,6 @@
 (defn assoc-if-val [m k v]
   (if (some? v) (assoc m k v) m))
 
-(defn suffixes [xs] (take-while seq (iterate next xs)))
-(defn prefixes [xs] (take-while seq (iterate butlast xs)))
-
 (defmacro fail [msg obj]
   (assert (string? msg))
   (assert (map? obj))
@@ -66,10 +63,12 @@
         (number? x) (int x)
         :else       (fail "Unexpected type of input" {:type (:type x) :input x})))
 
-(defn subs-last [^String s ^long n] (.substring s (- (.length s) n)))
-
 (defn parsing-exception [expression message]
   (ParsingException/fromMessage (str expression) (str message)))
+
+(defn eval-exception [message expression]
+  (assert (string? message))
+  (EvalException. message expression))
 
 ;; return xml zipper of location that matches predicate or nil
 (defn find-first-in-tree [predicate tree-loc]
@@ -122,8 +121,26 @@
   `(let [b# ~body]
      (when (~pred b#) b#)))
 
-(defn ^String string
-  ([values] (apply str values))
-  ([xform coll] (transduce xform (fn ([^Object s] (.toString s)) ([^StringBuilder b v] (.append b v))) (StringBuilder.) coll)))
+(defn string ^String [xform coll] (transduce xform (fn ([^Object s] (.toString s)) ([^StringBuilder b v] (.append b v))) (StringBuilder.) coll))
+
+(defmacro whitespace?? [c]
+  `(case ~c (\tab \space \newline
+                  \u00A0 \u2007 \u202F ;; non-breaking spaces
+                  \u000B \u000C \u000D \u001C \u001D \u001E \u001F)
+         true false))
+
+(defn whitespace? [c] (whitespace?? c))
+
+;; like clojure.string/trim but supports a wider range of whitespace characters
+(defn trim ^String [^CharSequence s]
+  (loop [right-idx (.length s)]
+    (if (zero? right-idx)
+      ""
+      (if (whitespace?? (.charAt s (dec right-idx)))
+        (recur (dec right-idx))
+        (loop [left-idx 0]
+          (if (whitespace?? (.charAt s left-idx))
+            (recur (inc left-idx))
+            (.toString (.subSequence s left-idx right-idx))))))))
 
 :OK

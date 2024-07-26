@@ -1,0 +1,39 @@
+name: PR Visual Flow
+
+on:
+  pull_request:
+    branches: [ master ]
+
+env:
+  STENCIL_TEST_VISUAL: true
+  TEST_REPORT_JUNIT_XML_OUTPUT_DIR: target/visual-reports
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install Libreoffice for tests
+      run: sudo apt-get update && sudo apt-get install -y libreoffice-core libreoffice-writer libreoffice-java-common imagemagick ghostscript --no-install-recommends
+    - name: Set PDF Policy
+      run: sudo sed -i '/disable ghostscript format types/,+6d' /etc/ImageMagick-6/policy.xml
+    - name: Install Clojure tools
+      uses: DeLaGuardo/setup-clojure@10.3
+      with:
+        cli: latest
+    - name: Test Clojure
+      run: make visual-test
+    - name: Archive diff png
+      uses: actions/upload-artifact@v3
+      if: failure()
+      with:
+        name: test-visual-images
+        path: |
+          /home/runner/work/_temp/**/*.png
+    - name: Test Report
+      uses: dorny/test-reporter@v1
+      if: success() || failure()
+      with:
+        name: Visual Tests
+        path: target/surefire-reports/*.xml
+        reporter: java-junit

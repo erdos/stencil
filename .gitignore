@@ -20,3 +20,6 @@ junit.xml
 .DS_Store
 .lsp/
 *.jfr
+.clj-kondo/
+/_site/
+.cpcache/

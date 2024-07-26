@@ -1,58 +1,57 @@
 (ns stencil.tokenizer
   "Fog egy XML dokumentumot es tokenekre bontja"
   (:require [clojure.data.xml :as xml]
-            [clojure.string :refer [includes? split trim]]
+            [clojure.string :refer [includes? split]]
             [stencil.infix :as infix]
-            [stencil.types :refer [open-tag close-tag]]
-            [stencil.util :refer [assoc-if-val mod-stack-top-conj mod-stack-top-last parsing-exception]]))
+            [stencil.util :refer [assoc-if-val mod-stack-top-conj mod-stack-top-last parsing-exception trim]]))
 
 (set! *warn-on-reflection* true)
 
 (defn- text->cmd-impl [^String text]
-  (assert (string? text))
-  (let [text (.trim text)
+  (assert (string? text) (str "Not string: " (pr-str text)))
+  (let [text (trim text)
         pattern-elseif #"^(else\s*if|elif|elsif)(\(|\s+)"]
     (cond
-      (#{"end" "endfor" "endif"} text) {:cmd :end}
-      (= text "else") {:cmd :else}
+      (#{"end" "endfor" "endif"} text) {:cmd :cmd/end}
+      (= text "else") {:cmd :cmd/else}
 
       (.startsWith text "if ")
-      {:cmd       :if
+      {:cmd       :cmd/if
        :condition (infix/parse (.substring text 3))}
 
       (.startsWith text "unless ")
-      {:cmd       :if
-       :condition (conj (vec (infix/parse (.substring text 7))) :not)}
+      {:cmd       :cmd/if
+       :condition (list :not (infix/parse (.substring text 7)))}
 
       (.startsWith text "for ")
       (let [[v expr] (split (subs text 4) #" in " 2)
              [idx v] (if (includes? v ",") (split v #",") ["$" v])]
-        {:cmd        :for
+        {:cmd        :cmd/for
          :variable   (symbol (trim v))
          :index-var  (symbol (trim idx))
          :expression (infix/parse expr)})
 
       (.startsWith text "=")
-      {:cmd        :echo
+      {:cmd        :cmd/echo
        :expression (infix/parse (.substring text 1))}
 
       ;; fragment inclusion
       (.startsWith text "include ")
       {:cmd :cmd/include
-       :name (first (infix/parse (.substring text 8)))}
+       :name (infix/parse (.substring text 8))}
 
       ;; `else if` expression
       (seq (re-seq pattern-elseif text))
       (let [prefix-len (count (ffirst (re-seq pattern-elseif text)))]
-        {:cmd :else-if
+        {:cmd :cmd/else-if
          :condition (infix/parse (.substring text prefix-len))})
 
-      :else (throw (ex-info "Unexpected command" {:command text})))))
+      :else (throw (ex-info (str "Unexpected command: " text) {})))))
 
 (defn text->cmd [text]
   (try (text->cmd-impl text)
-    (catch clojure.lang.ExceptionInfo e
-      (throw (parsing-exception (str open-tag text close-tag) (.getMessage e))))))
+       (catch clojure.lang.ExceptionInfo e
+         (throw (parsing-exception text (.getMessage e))))))
 
 (defn structure->seq [parsed]
   (cond
@@ -66,8 +65,7 @@
      [{:close (:tag parsed)}])
 
     :else
-    [(cond-> {:open+close (:tag parsed)}
-       (seq (:attrs parsed)) (assoc :attrs (:attrs parsed)))]))
+    [(assoc-if-val {:open+close (:tag parsed)} :attrs (not-empty (:attrs parsed)))]))
 
 (defn- tokens-seq-reducer [stack token]
   (cond

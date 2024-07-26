@@ -8,18 +8,19 @@ document templates.
 
 You can find the project on [Stencil's GitHub](https://github.com/erdos/stencil) page.
 
-## For Users
+## Writing Templates
 
-- Read about basic [Syntax](Syntax.md)
+- Read about the basic [Syntax](Syntax.md)
 - Read about [Math and Logical Expressions](Math.md)
-- Read about built-in [Functions](Functions.md) you can use in the templates
+- Read about the built-in [Functions](Functions.md) you can use in the templates
 - Find out how to use [Dynamic Tables](Tables.md)
 - Reuse parts of templates with [Fragments](Fragments.md)
 - Run it in [Standalone Mode](Standalone.md) for batch processing
 - [Dynamic images](Images.md)
+- [Dynamic links](Links.md)
 
 
-## For Programmers
+## Calling Stencil from Code
 
 - First of all, read the [Getting Started](GettingStarted.md) manual
 - Try out the [Dockerized Stencil](https://github.com/erdos/stencil/blob/master/service/README.md) example application.

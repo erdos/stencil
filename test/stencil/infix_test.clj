@@ -1,23 +1,31 @@
 (ns stencil.infix-test
   (:import [clojure.lang ExceptionInfo])
-  (:require [stencil.infix :as infix :refer :all]
-            [stencil.types :refer [hide-table-column-marker?]]
+  (:require [stencil.infix :as infix]
+            [stencil.postprocess.table :refer [hide-table-column-marker?]]
             [clojure.test :refer [deftest testing is are]]))
 
 (defn- run
   ([xs] (run xs {}))
   ([xs args] (infix/eval-rpn args (infix/parse xs))))
 
+
 (deftest tokenize-test
   (testing "simple fn call"
-    (is (= [(->FnCall "sin") 1 :plus 2 :close] (infix/tokenize "   sin(1+2)"))))
+    (is (= ['sin :open 1 :plus 2 :close] (infix/tokenize "   sin(1+2)"))))
 
   (testing "comma"
-    (is (= [:open 1 :comma 2 :comma 3 :close] (infix/tokenize "  (1,2   ,3)   ")))))
+    (is (= [:open 1 :comma 2 :comma 3 :close] (infix/tokenize "  (1,2   ,3)   "))))
+
+  (testing "Unexpected end of string"
+    (try (dorun (infix/tokenize "1 + 2 ##"))
+         (assert false "should have thrown")
+         (catch ExceptionInfo e
+           (is (= "Unexpected end of string" (.getMessage e)))
+           (is (= {:index 6} (ex-data e)))))))
 
 (deftest test-read-string-literal
   (testing "Incomplete string"
-    (is (thrown? ExceptionInfo (read-string-literal "'alaba")))))
+    (is (thrown? ExceptionInfo (infix/read-string-literal "'alaba")))))
 
 (deftest tokenize-string-literal
   (testing "spaces are kept"
@@ -34,9 +42,9 @@
 
 (deftest tokenize-string-fun-eq
   (testing "tricky"
-    (is (= ["1" :eq #stencil.infix.FnCall{:fn-name "str"} 1 :close]
+    (is (= ["1" :eq 'str :open 1 :close]
            (infix/tokenize "\"1\" = str(1)")))
-    (is (= ["1" 1 {:fn "str" :args 1} :eq]
+    (is (= [:eq "1" [:fncall 'str 1]]
            (infix/parse "\"1\" = str(1)")))))
 
 (deftest parse-simple
@@ -45,20 +53,20 @@
     (is (thrown? ExceptionInfo (infix/parse ""))))
 
   (testing "Simple values"
-    (is (= [12] (infix/parse "  12 ") (infix/parse "12")))
-    (is (= '[ax.y] (infix/parse "   ax.y  "))))
+    (is (= 12 (infix/parse "  12 ") (infix/parse "12")))
+    (is (= '[:get ax "y"] (infix/parse "   ax.y  "))))
 
   (testing "Simple operations"
-    (is (= [1 2 :plus]
+    (is (= [:plus 1 2]
            (infix/parse "1 + 2")
            (infix/parse "1+2    ")
            (infix/parse "1+2")))
-    (is (= [3 2 :times] (infix/parse "3*2"))))
+    (is (= [:times 3 2] (infix/parse "3*2"))))
 
   (testing "Parentheses"
-    (is (= [3 2 :plus 4 :times]
+    (is (= [:times [:plus 3 2] 4]
            (infix/parse "(3+2)*4")))
-    (is (= [3 2 :plus 4 1 :minus :times]
+    (is (= [:times [:plus 3 2] [:minus 4 1]]
            (infix/parse "(3+2)*(4 - 1)")))))
 
 (deftest all-ops-supported
@@ -66,9 +74,8 @@
     (let [ops (-> #{}
                   (into (vals infix/ops))
                   (into (vals infix/ops2))
-                  (into (keys infix/operation-tokens))
-                  (disj :open :close :comma :open-bracket :close-bracket))
-          known-ops (set (filter keyword? (keys (methods @#'infix/reduce-step))))]
+                  (disj :open :close :comma :open-bracket :close-bracket :dot))
+          known-ops (set (filter keyword? (keys (methods @#'infix/eval-tree))))]
       (is (every? known-ops ops)))))
 
 (deftest basic-arithmetic
@@ -132,9 +139,18 @@
     (is (= 7 (run "a[a[1]+4]" {"a" {"1" 2 "6" 7}})))
     (is (= 8 (run "a[1][2]" {"a" {"1" {"2" 8}}}))))
 
+  (testing "negation"
+    (is (= 6 (run "a[1]-2" {"a" {"1" 8}}))))
+
+  (testing "mixed lookup"
+    (is (= 7 (run "a['x'].y" {"a" {"x" {"y" 7}}})))
+    (is (= 8 (run "a.x['y']" {"a" {"x" {"y" 8}}}))))
+
   (testing "syntax error"
     (is (thrown? ExceptionInfo (run "[3]" {})))
     (is (thrown? ExceptionInfo (run "a[[3]]" {})))
+    (is (thrown? ExceptionInfo (run "a.[1]b" {}))) 
+    (is (thrown? ExceptionInfo (run "a..b" {})))
     (is (thrown? ExceptionInfo (run "a[1,2]" {}))))
 
   (testing "key is missing from input"
@@ -185,6 +201,8 @@
       (is (= 1 (run "a || b" {"a" 1 "b" nil})))
       (is (= 2 (run "a || b" {"b" 2})))
       (is (nil? (run "a || b" {"a" false}))))))
+
+
 
 (deftest operator-precedeces
   (testing "Operator precedencia"
@@ -277,13 +295,11 @@
            (run "sum(map(\"x\", vals))"
                 {"vals" [{"x" 1} {"x" 2} {"x" 3}]})))))
 
-
-
 (deftest test-colhide-expr
   (is (hide-table-column-marker? (run "hideColumn()"))))
 
 (deftest test-unexpected
-  (is (thrown? ExceptionInfo (parse "aaaa:bbbb"))))
+  (is (thrown? ExceptionInfo (infix/parse "aaaa:bbbb"))))
 
 (deftest tokenize-wrong-tokens
   (testing "Misplaced operators and operands"

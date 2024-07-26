@@ -58,15 +58,22 @@
 
 (def tag-num  :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/num)
 
+;; root element in numbering definitions
+(def tag-numbering  :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/numbering)
+
 (def tag-lvl  :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/lvl)
 
+;; matches both tag and attribute. If attribute, value must match \d+
 (def xml-abstract-num-id  :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/abstractNumId)
 
 (def tag-abstract-num  :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/abstractNum)
 
+;; Attribute value must match \d+
 (def attr-numId  :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/numId)
 
 (def attr-ilvl  :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/ilvl)
+
+(def tag-imagedata :xmlns.urn%3Aschemas-microsoft-com%3Avml/imagedata)
 
 (def default-aliases
   {;default namespace aliases from a LibreOffice 6.4 OOXML Text document
@@ -113,7 +120,15 @@
    "http://schemas.microsoft.com/office/spreadsheetml/2015/revision2" "xr2"
    "http://schemas.microsoft.com/office/spreadsheetml/2016/revision3" "xr3"
    "http://schemas.microsoft.com/office/spreadsheetml/2016/revision6" "xr6"
-   "http://schemas.microsoft.com/office/spreadsheetml/2016/revision10" "xr10"})
+   "http://schemas.microsoft.com/office/spreadsheetml/2016/revision10" "xr10"
+   ;additional aliases from PowerPoint
+   "http://schemas.openxmlformats.org/drawingml/2006/main"               "a"
+   "http://schemas.openxmlformats.org/presentationml/2006/main"          "p"
+   "http://schemas.microsoft.com/office/powerpoint/2010/main"            "p14" 
+   "http://schemas.microsoft.com/office/powerpoint/2012/main"            "p15"
+   })
 
 ;; drawing, binary large image or picture
 (def blip :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fdrawingml%2F2006%2Fmain/blip)
+;; hyperlinks
+(def hyperlink :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/hyperlink)
