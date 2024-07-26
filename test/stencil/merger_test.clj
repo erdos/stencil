@@ -1,5 +1,6 @@
 (ns stencil.merger-test
   (:require [stencil.merger :refer :all]
+            [stencil.types]
             [clojure.test :refer [deftest testing is are use-fixtures]]))
 
 (def map-action-token' map-action-token)
@@ -54,6 +55,13 @@
       [{:text "asdf{"} {:text "{aaa"}]
       [{:text "asdf{{aaa"}])))
 
+(deftest cleanup-runs-test-redefined-tags
+  (with-redefs [stencil.types/open-tag "{{"
+                stencil.types/close-tag "}}"]
+    (are [x expected] (= expected (vec (cleanup-runs x)))
+      [{:text "asdf{{1234}}ghi"}]
+      [{:text "asdf"} {:action "1234"} {:text "ghi"}])))
+
 (defmacro are+ [argv [& exprs] & bodies] (list* 'do (for [e exprs] `(are ~argv ~e ~@bodies))))
 
 (def O1 {:open 1})
@@ -62,7 +70,7 @@
 (def O4 {:open 4})
 (def O5 {:open 5})
 
-(deftest ^:map-action-token cleanup-runs_fragments-only
+(deftest cleanup-runs_fragments-only
   (testing "text token has full expression"
     (with-redefs [map-action-token map-action-token']
       (are+ [x expected-literal expected-parsed]
