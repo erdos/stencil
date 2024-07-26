@@ -1,45 +1,11 @@
 (ns stencil.merger-test
   (:require [stencil.merger :refer :all]
+            [stencil.types]
             [clojure.test :refer [deftest testing is are use-fixtures]]))
 
 (def map-action-token' map-action-token)
 
 (use-fixtures :each (fn [f] (with-redefs [map-action-token identity] (f))))
-
-(deftest peek-next-text-test
-  (testing "Simple case"
-    (is (= nil (peek-next-text nil)))
-    (is (= nil (peek-next-text [])))
-    (is (= nil (peek-next-text [{:open 1} {:open 2} {:close 2}])))
-    (is (= '({:char \a, :stack nil, :text-rest (\b), :rest ({:text "cd"})}
-             {:char \b, :stack nil, :text-rest nil, :rest ({:text "cd"})}
-             {:char \c, :stack nil, :text-rest (\d), :rest nil}
-             {:char \d, :stack nil, :text-rest nil, :rest nil})
-           (peek-next-text [{:text "ab"} {:text "cd"}])))))
-
-(deftest find-first-code-test
-  (testing "Simple cases"
-    (are [x res] (is (= res (find-first-code x)))
-      "asdf{%xy%}gh" {:action "xy" :before "asdf" :after "gh"}
-      "{%xy%}gh"     {:action "xy" :after "gh"}
-      "asdf{%xy%}"   {:action "xy" :before "asdf"}
-      "{%xy%}"       {:action "xy"}
-      "a{%xy"        {:action-part "xy" :before "a"}
-      "a{%x%"        {:action-part "x%" :before "a"}
-      "{%xy"         {:action-part "xy"})))
-
-(deftest text-split-tokens-test
-  (testing "Simple cases"
-    (are [x expected] (is (= expected (text-split-tokens x)))
-
-      "a{%a%}b{%d"
-      {:tokens [{:text "a"} {:action "a"} {:text "b"}] :action-part "d"}
-
-      "{%a%}{%x%}"
-      {:tokens [{:action "a"} {:action "x"}]}
-
-      ""
-      {:tokens []})))
 
 (deftest cleanup-runs-test
   (testing "Simple cases"
@@ -80,14 +46,29 @@
       [{:text "asdf"} {:action "123456"} {:text "ghi"}]))
 
   (testing "Complex case"
-     (are [x expected] (= expected (cleanup-runs x))
+    (are [x expected] (= expected (cleanup-runs x))
       [{:text "a{"} {:text "%"} {:text "="} {:text "1"} {:text "%"} {:text "}b"}]
       [{:text "a"} {:action "=1"} {:text "b"}]))
 
   (testing "Unchanged"
     (are [x expected] (= expected (cleanup-runs x))
       [{:text "asdf{"} {:text "{aaa"}]
-      [{:text "asdf{"} {:text "{aaa"}])))
+      [{:text "asdf{{aaa"}])))
+
+(deftest cleanup-runs-test-redefined-tags
+  (testing "Redefining open-close tags does not affect parsing logic"
+    (testing "Redefined tags consist of repeating characters"
+      (with-redefs [stencil.types/open-tag "{{"
+                    stencil.types/close-tag "}}"]
+        (are [x expected] (= expected (vec (cleanup-runs x)))
+          [{:text "asdf{{1234}}ghi"}]
+          [{:text "asdf"} {:action "1234"} {:text "ghi"}])))
+    (testing "Redefined tags are longer"
+      (with-redefs [stencil.types/open-tag "<%!"
+                    stencil.types/close-tag "!%>"]
+        (are [x expected] (= expected (vec (cleanup-runs x)))
+          [{:text "asdf<%!1234!%>ghi"}]
+          [{:text "asdf"} {:action "1234"} {:text "ghi"}])))))
 
 (defmacro are+ [argv [& exprs] & bodies] (list* 'do (for [e exprs] `(are ~argv ~e ~@bodies))))
 
@@ -97,46 +78,57 @@
 (def O4 {:open 4})
 (def O5 {:open 5})
 
-(deftest ^:map-action-token cleanup-runs_fragments-only
+(deftest cleanup-runs_fragments-only
   (testing "text token has full expression"
     (with-redefs [map-action-token map-action-token']
       (are+ [x expected-literal expected-parsed]
-            [(= expected-literal (binding [*only-includes* true] (doall (cleanup-runs x))))
-             (= expected-parsed (binding [*only-includes* false] (doall (cleanup-runs x))))]
+            [(= expected-literal (binding [*only-includes* true] (vec (cleanup-runs x))))
+             (= expected-parsed (binding [*only-includes* false] (vec (cleanup-runs x))))]
 
             [{:text "{%=1%}"}]
             [{:text "{%=1%}"}]
             [{:action {:cmd :cmd/echo, :expression 1 :raw "{%=1%}"}}]
 
             [{:text "{{%=1%}"}]
-            [{:text "{"} {:text "{%=1%}"}]
+            [{:text "{{%=1%}"}]
             [{:text "{"} {:action {:cmd :cmd/echo, :expression 1, :raw "{%=1%}"}}]
+
+            [{:text "{a{%=1%}"}]
+            [{:text "{a{%=1%}"}]
+            [{:text "{a"} {:action {:cmd :cmd/echo, :expression 1, :raw "{%=1%}"}}]
 
             [{:text "{%=x%2%}"}]
             [{:text "{%=x%2%}"}]
             [{:action {:cmd :cmd/echo, :expression '(:mod x 2), :raw "{%=x%2%}"}}]
 
             [{:text "abc{%=1%}b"}]
-            [{:text "abc"} {:text "{%=1%}"} {:text "b"}]
+            [{:text "abc{%=1%}b"}]
             [{:text "abc"} {:action {:cmd :cmd/echo, :expression 1 :raw "{%=1%}"}} {:text "b"}]
 
             [{:text "abc{%="} O1 O2 {:text "1"} O3 O4 {:text "%}b"}]
-            [{:text "abc"} {:text "{%="} O1 O2 {:text "1"} O3 O4 {:text "%}b"}]
+            [{:text "abc{%="} O1 O2 {:text "1"} O3 O4 {:text "%}b"}]
             [{:text "abc"} {:action {:cmd :cmd/echo, :expression 1 :raw "{%=1%}"}} O1 O2 O3 O4 {:text "b"}]
 
             [{:text "abc{%="} O1 O2 {:text "1%"} O3 O4 {:text "}b"}]
-            [{:text "abc"} {:text "{%="} O1 O2 {:text "1%"} O3 O4 {:text "}b"}]
+            [{:text "abc{%="} O1 O2 {:text "1%"} O3 O4 {:text "}b"}]
             [{:text "abc"} {:action {:cmd :cmd/echo, :expression 1 :raw "{%=1%}"}} O1 O2 O3 O4 {:text "b"}]
 
             [{:text "abcd{%="} O1 {:text "1"} O2 {:text "%"} O3 {:text "}"} O4 {:text "b"}]
-            [{:text "abcd"} {:text "{%="} O1 {:text "1"} O2 {:text "%"} O3 {:text "}"} O4 {:text "b"}]
-            [{:text "abcd"} {:action {:cmd :cmd/echo, :expression 1 :raw "{%=1%}"}} O1 O2 O3 O4{:text "b"}]
+            [{:text "abcd{%="} O1 {:text "1"} O2 {:text "%"} O3 {:text "}"} O4 {:text "b"}]
+            [{:text "abcd"} {:action {:cmd :cmd/echo, :expression 1 :raw "{%=1%}"}} O1 O2 O3 O4 {:text "b"}]
 
             [{:text "abc{"} O1 {:text "%"} O2 {:text "=1"} O3 {:text "2"} O4 {:text "%"} O5 {:text "}"} {:text "b"}]
-            [{:text "abc"} {:text "{"} O1 {:text "%"} O2 {:text "=1"} O3 {:text "2"} O4 {:text "%"} O5 {:text "}"} {:text "b"}]
+            [{:text "abc{"} O1 {:text "%"} O2 {:text "=1"} O3 {:text "2"} O4 {:text "%"} O5 {:text "}b"}]
             [{:text "abc"} {:action {:cmd :cmd/echo, :expression 12 :raw "{%=12%}"}} O1 O2 O3 O4 O5 {:text "b"}]
 
             [O1 {:text "{%if p"} O2 O3 {:text "%}one{%end%}"} O4]
-            [O1 {:text "{%if p"} O2 O3 {:text "%}one"} {:text "{%end%}"} O4]
-            [O1 {:action {:cmd :cmd/if, :condition 'p :raw "{%if p%}"}} O2 O3 {:text "one"} {:action {:cmd :cmd/end :raw "{%end%}"}} O4]           
-            ))))
+            [O1 {:text "{%if p"} O2 O3 {:text "%}one{%end%}"} O4]
+            [O1 {:action {:cmd :cmd/if, :condition 'p :raw "{%if p%}"}} O2 O3 {:text "one"} {:action {:cmd :cmd/end :raw "{%end%}"}} O4]))))
+
+(deftest test-unmap-text-nodes
+  (let [unmap-text-nodes @#'stencil.merger/unmap-text-nodes]
+    (is (= [] (into [] (unmap-text-nodes) [])))
+    (is (= [1 2 3] (into [] (unmap-text-nodes) [1 2 3])))
+    (is (= [{:text "abc"}] (into [] (unmap-text-nodes) "abc")))
+    (is (= [1 2 {:text "bc"} 3 {:text "d"} 4 5 {:text "e"} 6]
+           (into [] (unmap-text-nodes) [1 2 \b \c 3 \d 4 5 \e 6])))))
