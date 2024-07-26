@@ -75,7 +75,7 @@
              (vswap! expected-open-tag-chars next)
              already-read)
            (do (.add buffer token)
-               (when-not (vswap! expected-open-tag-chars next) ;; TODO: why is it needed?
+               (when-not (vswap! expected-open-tag-chars next) ; for cases when |open-tag|>2
                  (parse-until-close-tag buffer))))
          (if (= open-tag @expected-open-tag-chars)
            (let [result (concat (vec buffer) [token])]
