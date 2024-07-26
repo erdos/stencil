@@ -56,11 +56,18 @@
       [{:text "asdf{{aaa"}])))
 
 (deftest cleanup-runs-test-redefined-tags
-  (with-redefs [stencil.types/open-tag "{{"
-                stencil.types/close-tag "}}"]
-    (are [x expected] (= expected (vec (cleanup-runs x)))
-      [{:text "asdf{{1234}}ghi"}]
-      [{:text "asdf"} {:action "1234"} {:text "ghi"}])))
+  (testing "Open-close tags consist of repeating characters"
+    (with-redefs [stencil.types/open-tag "{{"
+                  stencil.types/close-tag "}}"]
+      (are [x expected] (= expected (vec (cleanup-runs x)))
+        [{:text "asdf{{1234}}ghi"}]
+        [{:text "asdf"} {:action "1234"} {:text "ghi"}])))
+  (testing "Open-close tags are more than 2 characters"
+    (with-redefs [stencil.types/open-tag "<%!"
+                  stencil.types/close-tag "!%>"]
+      (are [x expected] (= expected (vec (cleanup-runs x)))
+        [{:text "asdf<%!1234!%>ghi"}]
+        [{:text "asdf"} {:action "1234"} {:text "ghi"}]))))
 
 (defmacro are+ [argv [& exprs] & bodies] (list* 'do (for [e exprs] `(are ~argv ~e ~@bodies))))
 
