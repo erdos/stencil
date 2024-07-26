@@ -77,6 +77,10 @@
             [{:text "{{%=1%}"}]
             [{:text "{"} {:action {:cmd :cmd/echo, :expression 1, :raw "{%=1%}"}}]
 
+            [{:text "{a{%=1%}"}]
+            [{:text "{a{%=1%}"}]
+            [{:text "{a"} {:action {:cmd :cmd/echo, :expression 1, :raw "{%=1%}"}}]
+
             [{:text "{%=x%2%}"}]
             [{:text "{%=x%2%}"}]
             [{:action {:cmd :cmd/echo, :expression '(:mod x 2), :raw "{%=x%2%}"}}]
