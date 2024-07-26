@@ -40,9 +40,9 @@ The project has a simple [service implementation](https://github.com/erdos/stenc
 
 ## Version
 
-**Latest stable** version is `0.5.9`
+**Latest stable** version is `0.6.0`
 
-**Latest snapshot** version is `0.5.10-SNAPSHOT`
+**Latest snapshot** version is `0.6.1-SNAPSHOT`
 
 If you are using Maven, add the followings to your `pom.xml`:
 
@@ -52,7 +52,7 @@ The dependency:
 <dependency>
   <groupId>io.github.erdos</groupId>
   <artifactId>stencil-core</artifactId>
-  <version>0.5.9</version>
+  <version>0.6.0</version>
 </dependency>
 ```
 
@@ -67,7 +67,7 @@ And the [Clojars](https://clojars.org) repository:
 
 Alternatively, if you are using Leiningen, add the following to
 the `:dependencies` section of your `project.clj`
-file: `[io.github.erdos/stencil-core "0.5.9"]`
+file: `[io.github.erdos/stencil-core "0.6.0"]`
 
 Previous versions are available on the [Stencil Clojars](https://clojars.org/io.github.erdos/stencil-core) page.
 

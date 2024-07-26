@@ -3,7 +3,7 @@
         org.slf4j/slf4j-api {:mvn/version "2.0.9"}}
  :paths ["src" "target/classes"]
  :aliases
- {:stencil/version "0.5.10-SNAPSHOT"
+ {:stencil/version "0.6.0"
 
   :build
   {:deps {org.clojure/clojure {:mvn/version "1.12.0-beta1"}
