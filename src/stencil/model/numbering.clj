@@ -28,10 +28,6 @@
 (defn- gen-abstract-numbering-id []
   (str (swap! (:counter2 *numbering*) inc)))
 
-
-(def ^:private ignorable-tag :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fmarkup-compatibility%2F2006/Ignorable)
-
-
 (defn -add-extra-elems [evaluated-model extra-elems]
   (-> evaluated-model
       (update-in [:main :stencil.model/numbering]
@@ -39,7 +35,7 @@
                    (if (:stencil.model/path nr#)
                      (dissoc nr# :source-file)
                      (assoc nr#
-                            :parsed {:tag ooxml/tag-numbering :attrs {ignorable-tag ""} :content []}
+                            :parsed {:tag ooxml/tag-numbering :attrs {ooxml/ignorable ""} :content []}
                             :stencil.model/path  "word/numbering.xml"))))
       ;; TODO: make it conditional
       (assoc-in [:content-types :parsed :stencil.model.content-types/override "/word/numbering.xml"]

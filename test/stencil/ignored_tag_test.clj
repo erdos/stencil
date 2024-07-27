@@ -1,10 +1,9 @@
 (ns stencil.ignored-tag-test
   (:require [clojure.data.xml :as xml]
-            [clojure.java.io :as io]
-            [clojure.walk :as walk]
-            [clojure.test :refer [deftest is are testing]]
+            [clojure.test :refer [deftest is testing]]
             [stencil.tokenizer :as tokenizer]
             [stencil.merger :as merger]
+            [stencil.ooxml :as ooxml]
             [stencil.postprocess.ignored-tag :refer :all]))
 
 ;; make all private maps public!
@@ -36,9 +35,7 @@
         (java.io.StringReader.) (merger/parse-to-tokens-seq) (tokenizer/tokens-seq->document)
         (clear-all-metas) (unmap-ignored-attr) (xml/emit-str) (xml/parse-str)
         (as-> *
-              (let [ignorable-value
-                    (-> * :content first :attrs
-                        :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fmarkup-compatibility%2F2006/Ignorable)
+              (let [ignorable-value (-> * :content first :attrs ooxml/ignorable)
                     ignorable-ns (-> * meta :clojure.data.xml/nss :p->u (get ignorable-value))]
                 (is (not (empty? ignorable-value)))
                 (is (= "ns2" ignorable-ns)))))))

@@ -132,3 +132,9 @@
 (def blip :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fdrawingml%2F2006%2Fmain/blip)
 ;; hyperlinks
 (def hyperlink :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/hyperlink)
+
+;; OOXML attribute holds list of ns aliases
+(def ignorable :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fmarkup-compatibility%2F2006/Ignorable)
+
+;; OOXML tag, has Requires attribute which holds list of ns aliases
+(def choice :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fmarkup-compatibility%2F2006/Choice)

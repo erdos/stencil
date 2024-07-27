@@ -6,8 +6,6 @@
             [clojure.string :as s]
             [stencil.ooxml :as ooxml]))
 
-(def ^:private ignorable-tag :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fmarkup-compatibility%2F2006/Ignorable)
-(def ^:private choice-tag :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fmarkup-compatibility%2F2006/Choice)
 
 ;; like clojure.walk/postwalk but keeps metadata and calls fn only on nodes
 (defn- postwalk-xml [f xml-tree]
@@ -27,7 +25,7 @@
   "Updates the Requires attribute of a Choice tag with the fn"
   [elem f]
   (assert (ifn? f))
-  (if (= (:tag elem) choice-tag)
+  (if (= (:tag elem) ooxml/choice)
     (update-in elem [:attrs :Requires] f)
     elem))
 
@@ -40,14 +38,14 @@
 
 ;; first call this
 (defn map-ignored-attr
-  "Replaces values in ignorable-tag and requires-tag attributes to
+  "Replaces values in Ignorable and Requires attributes to
    the namespace names they are aliased by."
   [xml-tree]
   (postwalk-xml
    (fn [form]
      (let [p->url (get-in (meta form) [:clojure.data.xml/nss :p->u])]
        (-> form
-           (update-if-present [:attrs ignorable-tag] (partial map-str p->url))
+           (update-if-present [:attrs ooxml/ignorable] (partial map-str p->url))
            (update-choice-requires (partial map-str p->url)))))
    xml-tree))
 
@@ -67,7 +65,7 @@
            (when (contains? ooxml/default-aliases ns)
              (find! ns)))
          (-> form
-             (update-if-present [:attrs ignorable-tag] (partial map-str find!))
+             (update-if-present [:attrs ooxml/ignorable] (partial map-str find!))
              (update-choice-requires (partial map-str find!))))
        xml-tree)
       @found)))
