@@ -52,11 +52,18 @@
     :version version
     :lib lib
     :pom-data
-    [[:licenses
+    [[:description "Templating engine for OOXML DOCX and PPTX files"]
+     [:url "https://github.com/erdos/stencil"]
+     [:licenses
       [:license
        [:name "Eclipse Public License - v 2.0"]
        [:url "https://www.eclipse.org/legal/epl-2.0/"]
-       [:distribution "repo"]]]]})
+       [:distribution "repo"]]]
+     [:scm
+      [:url "https://github.com/erdos/stencil"]
+      [:connection "scm:git:https://github.com/erdos/stencil.git"]
+      [:developerConnection "scm:git:ssh:git@github.com:erdos/stencil.git"]
+      [:tag (str "v" version)]]]})
   opts)
 
 (defn jar [opts]
