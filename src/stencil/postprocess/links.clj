@@ -1,6 +1,6 @@
 (ns stencil.postprocess.links
   (:require [clojure.zip :as zip]
-            [stencil.functions :refer [call-fn]]
+            [stencil.functions :refer [def-stencil-fn]]
             [stencil.log :as log]
             [stencil.ooxml :as ooxml]
             [stencil.model.relations :as relations]
@@ -47,7 +47,10 @@
      :stencil.model/mode   "External"}))
 
 ;; replaces the nearest link's URK with the parameter value
-(defmethod call-fn "replaceLink" [_ url]
+(def-stencil-fn "replaceLink"
+  "Replaces the link URL in the hyperlink preceding this expression.
+   It should be placed immediately after the link we want to modify."
+  [url]
   (let [new-relation (link-url->relation (str url))]
     (relations/add-extra-file! new-relation)
     (->ReplaceLink (:new-id new-relation))))
