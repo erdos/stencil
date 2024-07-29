@@ -6,21 +6,27 @@ import java.util.Map;
 import java.util.ServiceLoader;
 
 public final class FunctionEvaluator {
+    private final static Map<String, Function> preloaded;
 
-    private final Map<String, Function> functions = new HashMap<>();
-
-    private static final ServiceLoader<FunctionsProvider> providers = ServiceLoader.load(FunctionsProvider.class);
-
-    {
-        for (FunctionsProvider provider : providers) {
-            registerFunctions(provider);
+    static {
+        preloaded = new HashMap<>();
+        for (FunctionsProvider provider : ServiceLoader.load(FunctionsProvider.class)) {
+            for (Function fn : provider.functions()) {
+                registerFunction(preloaded, fn);
+            }
         }
     }
 
-    private void registerFunction(Function function) {
+    private final Map<String, Function> functions;
+
+    {
+        this.functions = new HashMap<>(preloaded);
+    }
+
+    private static void registerFunction(Map<String, Function> map, Function function) {
         if (function == null)
             throw new IllegalArgumentException("Registered function must not be null.");
-        Function present = functions.put(function.getName().toLowerCase(), function);
+        Function present = map.put(function.getName().toLowerCase(), function);
         if (present != null)
             throw new IllegalArgumentException("Function with name has already been registered.");
     }
@@ -29,13 +35,13 @@ public final class FunctionEvaluator {
      * Registers a function to this evaluator engine.
      * Registered functions can be invoked from inside template files.
      *
-     * @param provider contains list of functions to register
+     * @param functions list of functions to register
      */
 
     @SuppressWarnings("WeakerAccess")
-    public void registerFunctions(FunctionsProvider provider) {
-        for (Function function : provider.functions()) {
-            registerFunction(function);
+    public void registerFunctions(Function... functions) {
+        for (Function function : functions) {
+            registerFunction(this.functions, function);
         }
     }
 
