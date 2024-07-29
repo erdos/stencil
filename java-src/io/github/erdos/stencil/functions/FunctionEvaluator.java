@@ -3,37 +3,42 @@ package io.github.erdos.stencil.functions;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.ServiceLoader;
 
 public final class FunctionEvaluator {
 
     private final Map<String, Function> functions = new HashMap<>();
 
+    private static final ServiceLoader<FunctionsProvider> providers = ServiceLoader.load(FunctionsProvider.class);
+
     {
-        registerFunctions(BasicFunctions.values());
-        registerFunctions(StringFunctions.values());
-        registerFunctions(NumberFunctions.values());
-        registerFunctions(DateFunctions.values());
-        registerFunctions(LocaleFunctions.values());
+        for (FunctionsProvider provider : providers) {
+            registerFunctions(provider);
+        }
     }
 
     private void registerFunction(Function function) {
         if (function == null)
             throw new IllegalArgumentException("Registered function must not be null.");
-        functions.put(function.getName().toLowerCase(), function);
+        Function present = functions.put(function.getName().toLowerCase(), function);
+        if (present != null)
+            throw new IllegalArgumentException("Function with name has already been registered.");
     }
 
     /**
      * Registers a function to this evaluator engine.
      * Registered functions can be invoked from inside template files.
      *
-     * @param functions any number of function instances.
+     * @param provider contains list of functions to register
      */
+
     @SuppressWarnings("WeakerAccess")
-    public void registerFunctions(Function... functions) {
-        for (Function function : functions) {
+    public void registerFunctions(FunctionsProvider provider) {
+        for (Function function : provider.functions()) {
             registerFunction(function);
         }
     }
+
 
     /**
      * Calls a function by name.

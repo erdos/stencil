@@ -8,10 +8,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
+import java.util.*;
 
 import static java.util.Arrays.asList;
 import static java.util.Locale.forLanguageTag;
@@ -135,5 +132,12 @@ public enum DateFunctions implements Function {
     @Override
     public String getName() {
         return name().toLowerCase();
+    }
+
+    public static class Provider implements FunctionsProvider {
+        @Override
+        public Iterable<Function> functions() {
+            return Arrays.asList(values());
+        }
     }
 }

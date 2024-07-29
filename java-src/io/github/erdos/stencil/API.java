@@ -6,6 +6,7 @@ import io.github.erdos.stencil.impl.NativeTemplateFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 
@@ -59,7 +60,7 @@ public final class API {
     public static EvaluatedDocument render(PreparedTemplate template, Map<String, PreparedFragment> fragments, TemplateData data, Collection<Function> customFunctions) {
         FunctionEvaluator function = new FunctionEvaluator();
         if (customFunctions != null) {
-            function.registerFunctions(customFunctions.toArray(new Function[0]));
+            function.registerFunctions(() -> new ArrayList<>(customFunctions));
         }
         return template.render(fragments, function, data);
     }
