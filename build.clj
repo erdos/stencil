@@ -85,6 +85,15 @@
   (println "Built JAR file")
   opts)
 
+(defn install [opts]
+  (jar opts)
+  (b/install {:basis basis
+              :lib lib
+              :version version
+              :jar-file jar-file-name
+              :class-dir jar-content})
+  opts)
+
 (defn java-test [_]
   (def basis (b/create-basis {:project "deps.edn" :aliases [:junit]}))
 
