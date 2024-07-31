@@ -9,6 +9,7 @@
             [stencil.slf4j :as slf4j]
             [clojure.data :refer [diff]]
             [clojure.java.io :as io :refer [file]]
+            [clojure.string]
             [ring.middleware.json :refer [wrap-json-body]]))
 
 (set! *warn-on-reflection* true)
@@ -64,8 +65,8 @@
       (prepared template)
       (throw (ex-info "Template file does not exist!" {:status 404})))))
 
-(defn- exception->str [e]
-  (clojure.string/join "\n" (for [e (iterate #(.getCause %) e) :while e] (.getMessage e))))
+(defn- exception->str [^Exception e]
+  (clojure.string/join "\n" (for [^Exception e (iterate #(.getCause ^Exception %) e) :while e] (.getMessage e))))
 
 (defn wrap-err [handler]
   (fn [request]
