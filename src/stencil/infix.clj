@@ -3,7 +3,7 @@
 
   https://en.wikipedia.org/wiki/Shunting-yard_algorithm"
   (:require [stencil.util :refer [->int string whitespace?]]
-            [stencil.functions :refer [call-fn]]
+            [stencil.functions :refer [call-fn def-stencil-fn]]
             [stencil.grammar :as grammar]))
 
 (set! *warn-on-reflection* true)
@@ -147,7 +147,9 @@
 
 ;; Gives access to whole input payload. Useful when top level keys contain strange characters.
 ;; Example: you can write data()['key1']['key2'] instead of key1.key2.
-(defmethod call-fn "data" [_] *calc-vars*)
+(def-stencil-fn "data"
+  "The function returns the original whole template data object."
+  [] *calc-vars*)
 
 (defmethod eval-tree :fncall [[_ f & args]]
   (let [args (mapv eval-tree args)]

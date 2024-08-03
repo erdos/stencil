@@ -2,7 +2,7 @@
   "Replaces results of html() calls with external part relationships."
   (:require [clojure.zip :as zip]
             [clojure.data.xml :as xml]
-            [stencil.functions :refer [call-fn]]
+            [stencil.functions :refer [def-stencil-fn]]
             [stencil.postprocess.fragments :as fragments]
             [stencil.types :refer [ControlMarker]]
             [stencil.util :refer [find-first dfs-walk-xml dfs-walk-xml-node]]
@@ -12,7 +12,23 @@
 
 (defrecord HtmlChunk [content] ControlMarker)
 
-(defmethod call-fn "html" [_ content] (->HtmlChunk content))
+(def-stencil-fn "html"
+  "It is possible to embed text with basic dynamic formatting using HTML notation.
+   The HTML code will be converted to OOXML and inserted in the document.
+
+   Stencil uses a simple parsing algorithm to convert between the formats. At the moment only a limited set of basic formatting is implemented. You can use the following HTML tags:
+   - b, em, strong for bold text.
+   - i for italics.
+   - u for underlined text.
+   - s for strikethrough text.
+   - sup for superscript and sub for subscript.
+   - span elements have no effects.
+   - br tags can be used to insert line breaks.
+
+   The rendering throws an exception on invalid HTML input or unexpected HTML tags.
+
+   **Usage:** `{%=html(x) %}`"
+  [content] (->HtmlChunk content))
 
 (def legal-tags
   "Set of supported HTML tags"
