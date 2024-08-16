@@ -75,7 +75,7 @@ public class StandaloneApplication {
     private void processJobs(Iterator<String> rest) throws IOException {
         while (rest.hasNext()) {
             final File templateFile = new File(rest.next()).getAbsoluteFile();
-            final PreparedTemplate template = prepare(templateFile, prepareOptions);
+            final PreparedTemplate template = prepare(templateFile.toPath(), prepareOptions);
 
             while (rest.hasNext()) {
                 final File dataFile = new File(rest.next()).getAbsoluteFile();

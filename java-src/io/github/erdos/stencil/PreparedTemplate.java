@@ -2,7 +2,7 @@ package io.github.erdos.stencil;
 
 import io.github.erdos.stencil.functions.FunctionEvaluator;
 
-import java.io.File;
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.Map;
 
@@ -19,7 +19,7 @@ public interface PreparedTemplate extends AutoCloseable {
      *
      * @return original template file
      */
-    File getTemplateFile();
+    Path getTemplateFile();
 
     /**
      * Format of template file. Tries to guess from file name by default.
