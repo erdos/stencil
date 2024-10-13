@@ -143,4 +143,8 @@
 
 (deftest test-xml
   (is (stencil.types/control? (call-fn "xml" "<t>text</t>")))
-  #_ (is (thrown? ExceptionInfo (call-fn "xml" "<a>invalid xml</b>"))))
+  #_(is (thrown? ExceptionInfo (call-fn "xml" "<a>invalid xml</b>"))))
+
+(deftest test-html
+  (is (stencil.types/control? (call-fn "html" "<B>bold text</B>")))
+  (is (stencil.types/control? (call-fn "html" "one <B>two</B> <i>three</i> <b><u>four</u></b>"))))
