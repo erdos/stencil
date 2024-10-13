@@ -140,3 +140,7 @@
 
 (deftest test-pageBreak
   (is (stencil.types/control? (call-fn "pageBreak"))))
+
+(deftest test-xml
+  (is (stencil.types/control? (call-fn "xml" "<t>text</t>")))
+  #_ (is (thrown? ExceptionInfo (call-fn "xml" "<a>invalid xml</b>"))))
