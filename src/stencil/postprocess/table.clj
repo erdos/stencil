@@ -1,7 +1,7 @@
 (ns stencil.postprocess.table
   "XML fa utofeldolgozasat vegzo kod."
   (:require [clojure.zip :as zip]
-            [stencil.functions :refer [call-fn]]
+            [stencil.functions :refer [def-stencil-fn]]
             [stencil.ooxml :as ooxml]
             [stencil.types :refer [ControlMarker]]
             [stencil.util :refer [find-first find-last fixpt iterations ->int find-first-in-tree xml-zip zipper?]]))
@@ -24,7 +24,9 @@
 (defrecord HideTableRowMarker [] ControlMarker)
 (defn hide-table-row-marker? [x] (instance? HideTableRowMarker x))
 
-(defmethod call-fn "hideColumn" [_ & args]
+(def-stencil-fn "hideColumn"
+  "Stencil will remove the column of the table where the value produced by this function call is inserted."
+  [& args]
   (case (first args)
     ("cut") (->HideTableColumnMarker :cut)
     ("resize-last" "resizeLast" "resize_last") (->HideTableColumnMarker :resize-last)
@@ -33,7 +35,9 @@
     ;; default
     (->HideTableColumnMarker)))
 
-(defmethod call-fn "hideRow" [_] (->HideTableRowMarker))
+(def-stencil-fn "hideRow"
+  "Stencil will remove the row of the table where the value produced by this function call is inserted."
+  [] (->HideTableRowMarker))
 
 ;; columns narrower that this are goig to be removed
 (def min-col-width 20)
