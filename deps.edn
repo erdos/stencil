@@ -29,6 +29,7 @@
                "--exclude-call" "stencil.util/trace"
                "--exclude-call" "stencil.util/fail"
                "--exclude-call" "clojure.spec.alpha/def"
+               "--exclude-call" "stencil.functions/def-stencil-fn"
                "-p" "src" "-s" "test"]}
 
   :test
