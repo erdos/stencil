@@ -5,9 +5,20 @@ test ; set -e && cd "$(dirname "$0")/.." && clojure -M -i scripts/generate-fun-d
 
 ;; file is a regular CLJ script from now on
 
-(println "HALI")
-
 (require 'stencil.functions)
+
+(defn get-java-functions []
+  (for [f (.listFunctions (new io.github.erdos.stencil.functions.FunctionEvaluator))]
+    {:name (.getName f)
+     :docs (.getDocumentation f)}))
+
+(defn get-clj-functions []
+  (for [[k v] (methods stencil.functions/call-fn)]
+    {:name k
+     :docs (:stencil.functions/docs (meta v))}))
+
+(def all-functions
+  (sort-by :name (concat (get-java-functions) (get-clj-functions))))
 
 (println "# Functions")
 (println)
@@ -15,14 +26,13 @@ test ; set -e && cd "$(dirname "$0")/.." && clojure -M -i scripts/generate-fun-d
 (println "This page contains a short description of the functions implemented in Stencil.")
 (println)
 
-(doseq [k (sort (keys (methods stencil.functions/call-fn)))]
-  (printf "- [%s](#%s)\n" k k))
+;; Table of Contents
+(doseq [f all-functions]
+  (printf "- [%s](#%s)\n" (:name f) (:name f)))
 
 (println)
 
-(doseq [[k f] (sort (methods stencil.functions/call-fn))]
-  (printf "## %s\n\n" k)
-  (when-let [docs (:stencil.functions/docs (meta f))]
-    (println docs)
-    (println))
+(doseq [f all-functions]
+  (printf "## %s\n\n" (:name f))
+  (println (:docs f))
   (println))
