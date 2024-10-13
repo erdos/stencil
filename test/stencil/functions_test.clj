@@ -137,3 +137,6 @@
     (is (thrown? ExceptionInfo (call-fn "replaceImage" "data:image/unknown;base64,XXXXXXX")))
     (is (thrown? ExceptionInfo (call-fn "replaceImage" "data:image/png;lalala")))
     (is (thrown? ExceptionInfo (call-fn "replaceImage" "data:image/png;lalala,XXXXXXX")))))
+
+(deftest test-pageBreak
+  (is (stencil.types/control? (call-fn "pageBreak"))))
