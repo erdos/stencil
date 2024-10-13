@@ -1,5 +1,6 @@
 package io.github.erdos.stencil.functions;
 
+import java.util.Arrays;
 import java.util.Collection;
 
 /**
@@ -71,5 +72,12 @@ public enum BasicFunctions implements Function {
     @Override
     public String getName() {
         return name().toLowerCase();
+    }
+
+    public static class Provider implements FunctionsProvider {
+        @Override
+        public Iterable<Function> functions() {
+            return Arrays.asList(values());
+        }
     }
 }

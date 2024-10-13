@@ -1,5 +1,7 @@
 package io.github.erdos.stencil.functions;
 
+import java.util.Arrays;
+
 /**
  * Common numeric functions.
  */
@@ -71,6 +73,13 @@ public enum NumberFunctions implements Function {
             throw new IllegalArgumentException("The function expects a number argument!");
         } else {
             return (Number) arguments[0];
+        }
+    }
+
+    public static class Provider implements FunctionsProvider {
+        @Override
+        public Iterable<Function> functions() {
+            return Arrays.asList(values());
         }
     }
 }

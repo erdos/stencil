@@ -1,4 +1,4 @@
-.PHONY: clean prepare lint pom jar uberjar javadoc compile clj-test java-test visual-test coverage test all
+.PHONY: clean prepare lint pom install jar uberjar javadoc compile clj-test java-test visual-test coverage test all
 .DEFAULT_GOAL := all
 
 clean:
@@ -12,6 +12,9 @@ lint: clean
 
 pom: clean
 	clojure -T:build pom
+
+install: clean
+	clojure -T:build install
 
 jar: clean
 	clojure -T:build jar

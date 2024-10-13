@@ -3,37 +3,48 @@ package io.github.erdos.stencil.functions;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.ServiceLoader;
 
 public final class FunctionEvaluator {
+    private final static Map<String, Function> preloaded;
 
-    private final Map<String, Function> functions = new HashMap<>();
-
-    {
-        registerFunctions(BasicFunctions.values());
-        registerFunctions(StringFunctions.values());
-        registerFunctions(NumberFunctions.values());
-        registerFunctions(DateFunctions.values());
-        registerFunctions(LocaleFunctions.values());
+    static {
+        preloaded = new HashMap<>();
+        for (FunctionsProvider provider : ServiceLoader.load(FunctionsProvider.class)) {
+            for (Function fn : provider.functions()) {
+                registerFunction(preloaded, fn);
+            }
+        }
     }
 
-    private void registerFunction(Function function) {
+    private final Map<String, Function> functions;
+
+    {
+        this.functions = new HashMap<>(preloaded);
+    }
+
+    private static void registerFunction(Map<String, Function> map, Function function) {
         if (function == null)
             throw new IllegalArgumentException("Registered function must not be null.");
-        functions.put(function.getName().toLowerCase(), function);
+        Function present = map.put(function.getName().toLowerCase(), function);
+        if (present != null)
+            throw new IllegalArgumentException("Function with name has already been registered.");
     }
 
     /**
      * Registers a function to this evaluator engine.
      * Registered functions can be invoked from inside template files.
      *
-     * @param functions any number of function instances.
+     * @param functions list of functions to register
      */
+
     @SuppressWarnings("WeakerAccess")
     public void registerFunctions(Function... functions) {
         for (Function function : functions) {
-            registerFunction(function);
+            registerFunction(this.functions, function);
         }
     }
+
 
     /**
      * Calls a function by name.

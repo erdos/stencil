@@ -136,4 +136,11 @@ public enum DateFunctions implements Function {
     public String getName() {
         return name().toLowerCase();
     }
+
+    public static class Provider implements FunctionsProvider {
+        @Override
+        public Iterable<Function> functions() {
+            return asList(values());
+        }
+    }
 }

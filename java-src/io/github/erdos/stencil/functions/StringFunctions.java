@@ -112,4 +112,11 @@ public enum StringFunctions implements Function {
     public String getName() {
         return name().toLowerCase();
     }
+
+    public static class Provider implements FunctionsProvider {
+        @Override
+        public Iterable<Function> functions() {
+            return Arrays.asList(values());
+        }
+    }
 }

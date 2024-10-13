@@ -1,5 +1,6 @@
 (ns build
-  (:require [clojure.tools.build.api :as b]
+  (:require [clojure.java.io :as io]
+            [clojure.tools.build.api :as b]
             [clojure.tools.build.util.file :as file]))
 
 (def build-folder "target")
@@ -29,6 +30,14 @@
             :javac-opts ["-source" "8" "-target" "8"]})
   (b/copy-file {:src "java-src/io/github/erdos/stencil/standalone/help.txt"
                 :target "target/classes/io/github/erdos/stencil/standalone/help.txt"})
+
+  ;; generate service provider config for function providers
+  (let [services (io/file "target/classes/META-INF/services/io.github.erdos.stencil.functions.FunctionsProvider")]
+    (io/make-parents services)
+    (doseq [f (file-seq (clojure.java.io/file jar-content))
+            [_ a] (re-seq #"^target/classes/(.*\$Provider).class$" (str f))
+            :let [clazz (str (.replace a "/" ".") "\n")]]
+      (spit services, clazz :append true)))
   (spit (str jar-content "/stencil-version") version)
   opts)
 
@@ -74,6 +83,15 @@
   (b/jar      {:class-dir jar-content
                :jar-file jar-file-name})
   (println "Built JAR file")
+  opts)
+
+(defn install [opts]
+  (jar opts)
+  (b/install {:basis basis
+              :lib lib
+              :version version
+              :jar-file jar-file-name
+              :class-dir jar-content})
   opts)
 
 (defn java-test [_]
