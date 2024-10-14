@@ -1,6 +1,7 @@
 (ns stencil.process
   "These functions are called from Java."
   (:import [java.util.zip ZipEntry ZipOutputStream]
+           [java.nio.file Path]
            [io.github.erdos.stencil EvaluatedDocument PrepareOptions PreparedFragment PreparedTemplate TemplateVariables]
            [io.github.erdos.stencil.impl FileHelper ZipHelper LifecycleLock])
   (:require [clojure.core.protocols :refer [Datafiable]]
@@ -26,13 +27,16 @@
       (into (for [x (:headers+footers (:main model))
                   v (:variables (:executable x))] v))))
 
+(defn- path->input-stream ^java.io.InputStream [^Path path]
+  (java.nio.file.Files/newInputStream path (into-array java.nio.file.OpenOption [])))
+
 ;; Called  from Java API
-(defn prepare-template [template-file, ^PrepareOptions options]
+(defn prepare-template [^Path template-file, ^PrepareOptions options]
   (let [zip-dir   (FileHelper/createNonexistentTempFile
                    (.getTemporaryDirectoryOverride options)
                    "stencil-" ".zip.contents")
         options   {:only-includes (.isOnlyIncludes options)}
-        _         (with-open [zip-stream (io/input-stream template-file)]
+        _         (with-open [zip-stream (path->input-stream template-file)]
                     (ZipHelper/unzipStreamIntoDirectory zip-stream zip-dir))
         model     (model/load-template-model zip-dir options)
         variables (TemplateVariables/fromPaths (get-variable-names model) (get-fragment-names model))
@@ -64,7 +68,7 @@
                  (.getTemporaryDirectoryOverride options)
                  "stencil-fragment-" ".zip.contents")
         options {:only-includes (.isOnlyIncludes options)}
-        _       (with-open [zip-stream (io/input-stream fragment-file)]
+        _       (with-open [zip-stream (path->input-stream fragment-file)] ;;; TODO
                   (ZipHelper/unzipStreamIntoDirectory zip-stream zip-dir))
         lock    (new LifecycleLock #(FileHelper/forceDelete zip-dir))
         model   (-> (model/load-fragment-model zip-dir options)

@@ -25,6 +25,6 @@ public class SyntaxErrorsTest {
         assertTrue(testFile.exists());
 
         // this should throw an error.
-        API.prepare(testFile);
+        API.prepare(testFile.toPath());
     }
 }

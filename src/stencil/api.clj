@@ -5,6 +5,7 @@
             [stencil.fs :as fs]
             [stencil.types])
   (:import [io.github.erdos.stencil API PreparedFragment PreparedTemplate TemplateData]
+           [java.nio.file Path]
            [java.util Map]))
 
 
@@ -17,7 +18,8 @@
   (cond
     (instance? PreparedTemplate input) input
     (nil? input)  (throw (ex-info "Template is missing!" {}))
-    :else         (API/prepare (io/file input))))
+    (instance? Path input) (API/prepare ^Path input)
+    :else         (-> input io/file .toPath API/prepare)))
 
 
 (defn- make-template-data ^TemplateData [x]
@@ -33,7 +35,8 @@
   (cond
     (instance? PreparedFragment f) f
     (nil? f)   (throw (ex-info "Fragment can not be null!" {}))
-    :else      (API/fragment (io/file f))))
+    (instance? Path f) (API/fragment ^Path f)
+    :else      (API/fragment (-> f io/file .toPath))))
 
 
 (defn render!

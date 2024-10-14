@@ -3,7 +3,7 @@ package io.github.erdos.stencil.impl;
 import io.github.erdos.stencil.*;
 import io.github.erdos.stencil.exceptions.ParsingException;
 
-import java.io.File;
+import java.nio.file.Path;
 import java.util.Optional;
 
 import static io.github.erdos.stencil.TemplateDocumentFormats.ofExtension;
@@ -12,11 +12,11 @@ import static io.github.erdos.stencil.TemplateDocumentFormats.ofExtension;
 public final class NativeTemplateFactory implements TemplateFactory {
 
     @Override
-    public PreparedTemplate prepareTemplateFile(final File inputTemplateFile, PrepareOptions options) {
-        final Optional<TemplateDocumentFormats> templateDocFormat = ofExtension(inputTemplateFile.getName());
+    public PreparedTemplate prepareTemplateFile(final Path inputTemplateFile, PrepareOptions options) {
+        final Optional<TemplateDocumentFormats> templateDocFormat = ofExtension(inputTemplateFile.toString());
 
         if (!templateDocFormat.isPresent()) {
-            throw new IllegalArgumentException("Unexpected type of file: " + inputTemplateFile.getName());
+            throw new IllegalArgumentException("Unexpected type of file: " + inputTemplateFile);
         }
 
         if (options == null) {
@@ -32,9 +32,9 @@ public final class NativeTemplateFactory implements TemplateFactory {
         }
     }
 
-    public PreparedFragment prepareFragmentFile(final File fragmentFile, PrepareOptions options) {
-        if (fragmentFile == null) {
-            throw new IllegalArgumentException("Fragment file parameter is null!");
+    public PreparedFragment prepareFragmentFile(final Path fragmentSource, PrepareOptions options) {
+        if (fragmentSource == null) {
+            throw new IllegalArgumentException("Fragment source parameter is null!");
         }
 
         if (options == null) {
@@ -42,7 +42,7 @@ public final class NativeTemplateFactory implements TemplateFactory {
         }
 
         try {
-            return (PreparedFragment) ClojureHelper.findFunction("prepare-fragment").invoke(fragmentFile, options);
+            return (PreparedFragment) ClojureHelper.findFunction("prepare-fragment").invoke(fragmentSource, options);
         } catch (ParsingException e) {
             throw e;
         } catch (Exception e) {

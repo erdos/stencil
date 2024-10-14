@@ -147,7 +147,7 @@ public class TableColumnsTest {
             final File testFile = Paths.get(testFileUrl.toURI()).toFile();
             assertTrue(testFile.exists());
 
-            final PreparedTemplate prepared = API.prepare(testFile);
+            final PreparedTemplate prepared = API.prepare(testFile.toPath());
             final EvaluatedDocument result = API.render(prepared, TemplateData.fromMap(data));
 
             final File temporaryDocx = File.createTempFile("sdf", ".docx");
