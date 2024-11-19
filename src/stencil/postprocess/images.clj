@@ -1,7 +1,7 @@
 (ns stencil.postprocess.images
   (:require [clojure.java.io :as io]
             [clojure.zip :as zip]
-            [stencil.functions :refer [call-fn]]
+            [stencil.functions :refer [def-stencil-fn]]
             [stencil.log :as log]
             [stencil.ooxml :as ooxml]
             [stencil.model.relations :as relations]
@@ -87,7 +87,9 @@
      :writer               (bytes->writer bytes)}))
 
 ;; replaces the nearest image with the content
-(defmethod call-fn "replaceImage" [_ data]
+(def-stencil-fn "replaceImage"
+  ""
+  [data]
   (let [extra-file (img-data->extrafile data)]
     (relations/add-extra-file! extra-file)
     (->ReplaceImage (:new-id extra-file))))

@@ -26,4 +26,8 @@ public interface Function {
      * @return function identifier
      */
     String getName();
+    
+    default String getDocumentation() {
+        return "Documentation is not available";
+    }
 }

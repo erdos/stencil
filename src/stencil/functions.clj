@@ -12,13 +12,27 @@
    The rest of the arguments are the function call parameters."
   (fn [function-name & args-seq] function-name))
 
-(defmethod call-fn "range"
-  ([_ x] (range x))
-  ([_ x y] (range x y))
-  ([_ x y z] (range x y z)))
+(defmacro def-stencil-fn [name docs & bodies]
+  (assert (string? name))
+  (assert (string? docs))
+  `(.addMethod ^clojure.lang.MultiFn call-fn ~name
+               ~(with-meta `(fn [_# & args#] (apply (fn ~@bodies) args#)) {::docs docs})))
 
-(defmethod call-fn "integer" [_ n] (some-> n biginteger))
-(defmethod call-fn "decimal" [_ f] (with-precision 8 (some-> f bigdec)))
+(def-stencil-fn "range"
+  "Creates an array of numbers between bounds, for use in iteration forms.
+    Parameters are start value (default 0), upper bound, step size (default 1).
+   Eg.: range(4) = [0, 1, 2, 3], range(2,4) = [2, 3], range(2, 10, 2) = [2, 4, 8]"
+  ([x] (range x))
+  ([x y] (range x y))
+  ([x y z] (range x y z)))
+
+(def-stencil-fn "integer"
+  "Converts parameter to integer number. Returns null for missing value."
+  [n] (some-> n biginteger))
+
+(def-stencil-fn "decimal"
+  "Converts parameter to decimal number. Returns null for missing value."
+  [f] (with-precision 8 (some-> f bigdec)))
 
 ;; The format() function calls java.lang.String.format()
 ;; but it predicts the argument types from the format string and
@@ -36,7 +50,14 @@
       get-types (fn [p] (or (some (fn [[k v]] (when (= k p) v)) @cache)
                             (doto (get-types p)
                               (->> (swap! cache (fn [c t] (take cache-size (cons [p t] c))))))))]
-  (defmethod call-fn "formatWithLocale" [_ locale pattern-str & args]
+  (def-stencil-fn "formatWithLocale"
+    "Similar to `format()` but first parameter is an IETF Language Tag.
+
+     **Usage:** `formatWithLocale('hu', '%,.2f', number)`
+
+     **Example:**
+     To format the value of price as a price string: {%=format('$ %(,.2f', price) %}. It may output $ (6,217.58)."
+    [locale pattern-str & args]
     (when-not (string? pattern-str)
       (fail "Format pattern must be a string!" {:pattern pattern-str}))
     (when (empty? args)
@@ -55,28 +76,57 @@
            (to-array)
            (String/format locale pattern-str)))))
 
-(defmethod call-fn "format" [_ pattern-str & args]
+(def-stencil-fn "format"
+  "Calls String.format function."
+  [pattern-str & args]
   (apply call-fn "formatWithLocale" (java.util.Locale/getDefault) pattern-str args))
 
 ;; finds first nonempy argument
-(defmethod call-fn "coalesce" [_ & args-seq]
+(def-stencil-fn "coalesce"
+  "Accepts any number of arguments, returns the first not-empty value."
+  [& args-seq]
   (find-first (some-fn number? true? false? not-empty) args-seq))
 
-(defmethod call-fn "length" [_ items] (count items))
+(def-stencil-fn "length"
+  "The `length(x)` function returns the length of the value in `x`:
+- Returns the number of characters when `x` is a string.
+- Returns the number of elements the `x` is a list/array.
+- Returns the number of key/value pairs when `x` is an object/map.
+- Returns zero when `x` is `null`."
+  [items] (count items))
 
-(defmethod call-fn "contains" [_ item items]
-  (boolean (some #{(str item)} (map str items))))
+(def-stencil-fn "contains"
+  "Expects two arguments: a value and a list. Checks if list contains the value.
+   Usage: contains('myValue', myList)"
+  [item items] (boolean (some #{(str item)} (map str items))))
 
-(defmethod call-fn "sum" [_ items]
-  (reduce + items))
+(def-stencil-fn "sum"
+  "Expects one number argument containing a list with numbers. Sums up the numbers and returns result.
+   Usage: sum(myList)"
+  [items] (reduce + items))
 
-(defmethod call-fn "list" [_ & elements] (vec elements))
+(def-stencil-fn "list"
+  "Creates a list collection from the supplied arguments.
+   Intended to be used with other collections functions."
+  [& elements] (vec elements))
 
 (defn- lookup [column data]
   (second (or (find data column)
               (find data (keyword column)))))
 
-(defmethod call-fn "map" [_ ^String column data]
+(def-stencil-fn "map"
+  "Selects values under a given key in a sequence of maps. 
+   The first parameter is a string which contains what key to select:
+   - It can be a single key name
+   - It can be a nested key, separated by `.` character. For example: `outerkey.innerkey`
+   - It can be used for selecting from multidimensional arrays: `outerkey..innerkey`
+   
+   Example use cases with data: `{'items': [{'price': 10, 'name': 'Wood'}, {'price': '20', 'name': 'Stone'}]}`
+
+   - `join(map('name', items), ',')`: to create a comma-separated string of item names. Prints `Wood, Stone`.
+   - `sum(map('price', items))`: to write the sum of item prices. Prints `30`.
+   "
+  [^String column data]
   (when-not (string? column)
     (fail "First parameter of map() must be a string!" {}))
   (reduce (fn [elems p]
@@ -92,11 +142,21 @@
           data
           (.split column "\\.")))
 
-(defmethod call-fn "joinAnd" [_ elements ^String separator1 ^String separator2]
-  (case (count elements)
-     0 ""
-     1 (str (first elements))
-     (str (clojure.string/join separator1 (butlast elements)) separator2 (last elements))))
+(def-stencil-fn "joinAnd"
+  "Joins a list of items using two separators.
+   The first separator is used to join the items except for the last item.
+   The second separator is used to join the last item.
+   When two items are supplied, then only the second separator is used.
 
-(defmethod call-fn "replace" [_ text pattern replacement]
+   **Example:** call `joinAnd(xs, ', ', ' and ')` to get `'1, 2, 3 and 4'`."
+  [elements ^String separator1 ^String separator2]
+  (case (count elements)
+    0 ""
+    1 (str (first elements))
+    (str (clojure.string/join separator1 (butlast elements)) separator2 (last elements))))
+
+(def-stencil-fn "replace"
+  "The replace(text, pattern, replacement) function replaces all occurrences
+   of pattern in text by replacement."
+  [text pattern replacement]
   (clojure.string/replace (str text) (str pattern) (str replacement)))
