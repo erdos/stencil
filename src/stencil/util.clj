@@ -49,7 +49,7 @@
            (comp seq :content)
            (fn [node children] (assoc node :content (some-> children vec)))))
 
-(defn assoc-if-val [m k v]
+(defn assoc-some [m k v]
   (if (some? v) (assoc m k v) m))
 
 (defmacro fail [msg obj]

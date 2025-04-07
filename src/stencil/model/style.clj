@@ -113,4 +113,4 @@
 
 (defn assoc-style [model dir]
   (->> (main-style-item dir (:stencil.model/path model) (:relations model))
-       (assoc-if-val model :style)))
+       (assoc-some model :style)))

@@ -2,7 +2,7 @@
   (:require [clojure.data.xml :as xml]
             [clojure.java.io :as io]
             [stencil.ooxml :as ooxml]
-            [stencil.util :refer [unlazy-tree ->int assoc-if-val find-first]]
+            [stencil.util :refer [unlazy-tree ->int assoc-some find-first]]
             [stencil.model.common :refer [->xml-writer]]
             [stencil.fs :as fs :refer [unix-path]]))
 
@@ -167,7 +167,7 @@
 
 (defn assoc-numbering [model dir]
   (->> (main-numbering dir (:stencil.model/path model) (:relations model))
-       (assoc-if-val model :stencil.model/numbering)))
+       (assoc-some model :stencil.model/numbering)))
 
 (defn style-def-for [id lvl]
   (assert (string? id))
