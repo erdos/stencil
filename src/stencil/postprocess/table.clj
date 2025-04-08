@@ -14,7 +14,7 @@
 (defrecord HideTableColumnMarker [columns-resize] ControlMarker)
 (defn hide-table-column-marker? [x] (instance? HideTableColumnMarker x))
 
-#_{:clj-kondo/ignore [:redefined-var]}
+(ns-unmap *ns* '->HideTableColumnMarker)
 (defn ->HideTableColumnMarker
   ([] (HideTableColumnMarker. :cut))
   ([x] (assert (column-resize-modes x))

@@ -9,8 +9,7 @@
 
 (set! *warn-on-reflection* true)
 
-#_{:clj-kondo/ignore [:unused-binding]}
-(defmulti eval-step (fn [function data item] (:cmd item)))
+(defmulti eval-step (fn [_function _data item] (:cmd item)))
 
 (defmethod eval-step :default [_ _ item] [item])
 

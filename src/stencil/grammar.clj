@@ -19,7 +19,7 @@
 
 (defn- read-or-throw [reader tokens]
   (or (reader tokens)
-      (throw (ex-info (str "Invalid stencil expression!") {:reader reader :prefix tokens}))))
+      (throw (ex-info "Invalid stencil expression!" {:reader reader :prefix tokens}))))
 
 (defn- all [condition & readers]
   (fn [tokens]
@@ -59,7 +59,8 @@
   (fn [t] (or (reader t) [nil t])))
 
 #_{:clj-kondo/ignore [:unresolved-symbol]}
-(def testlang
+(def expr-lang
+  "Stencil Expressoin language description"
   (grammar [val  (some-fn iden-or-fncall
                           (parenthesed expression)
                           (guarded number?)
@@ -86,5 +87,5 @@
             expression or]
            expression))
 
-(defn runlang [grammar input]
-  (ffirst (read-or-throw (all grammar {nil []}) input)))
+(defn parse [grammar tokens]
+  (ffirst (read-or-throw (all grammar {nil []}) tokens)))

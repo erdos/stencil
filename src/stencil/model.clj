@@ -21,7 +21,7 @@
   (with-open [stream (io/input-stream xml-streamable)]
     (-> (merger/parse-to-tokens-seq stream)
         (cleanup/process)
-        (select-keys [:variables :dynamic? :executable :fragments]))))
+        #_(select-keys [:variables :dynamic? :executable :fragments]))))
 
 (defn- ->submodel [dir f]
   {::path       (fs/unix-path (fs/unroll f))
