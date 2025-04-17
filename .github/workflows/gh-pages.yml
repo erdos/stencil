@@ -41,7 +41,7 @@ jobs:
       - name: copy
         run: cp -R ./_site_jekyll/* ./_site/
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v2
+        uses: actions/upload-pages-artifact@v3.0.1
 
   # Deployment job
   deploy:
