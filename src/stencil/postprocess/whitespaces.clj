@@ -1,8 +1,14 @@
 (ns stencil.postprocess.whitespaces
+  "Logics of handling whitespace characters in OOXML text runs.
+ 
+   The code visits all <w/t> elements and modifies content where necessary:
+   - If content starts or ends with whitespace, add a space=preserve attribute.
+   - Replace \n characters with <w/br /> elements.
+   - Replace \t characters with <w/tab /> elements."
   (:require [clojure.string :refer [includes? starts-with? ends-with? index-of]]
             [clojure.zip :as zip]
             [stencil.ooxml :as ooxml]
-            [stencil.util :refer :all]))
+            [stencil.util :refer [dfs-walk-xml-node zipper?]]))
 
 (defn- should-fix? [element]
   (when (and (map? element)
@@ -17,28 +23,40 @@
   (assert (not-empty items))
   (reduce (comp zip/right zip/insert-right) (zip/replace loc (first items)) (next items)))
 
-;; (defn- lines-of [s] (enumeration-seq (java.util.StringTokenizer. s "\n" true)))
-;; (defn- lines-of [s] (remove #{""} (interpose "\n" (clojure.string/split s "\n" -1))))
+;; Returns smallest index of c1 or c2 in s.
+(defn- first-index-of [s c1 c2]
+  (assert (string? s))
+  (let [idx1 (index-of s c1)
+        idx2 (index-of s c2)]
+    (if (and idx1 idx2)
+      (min idx1 idx2)
+      (or idx1 idx2))))
 
-(defn- lines-of [s]
-  (if-let [idx (index-of s "\n")]
+;; Returns a lazy seq of substrings split by \t or \n, separators included.
+(defn- split-str [s]
+  (assert (string? s))
+  (if-let [idx (first-index-of s \newline \tab)]
     (if (zero? idx)
-      (cons "\n" (lazy-seq (lines-of (subs s 1))))
-      (list* (subs s 0 idx) "\n" (lazy-seq (lines-of (subs s (inc idx))))))
+      (list*                (subs s 0 1)           (lazy-seq (split-str (subs s 1))))
+      (list* (subs s 0 idx) (subs s idx (inc idx)) (lazy-seq (split-str (subs s (inc idx))))))
     (if (empty? s) [] (list s))))
 
-(defn- item->elem [item]
+(defn- str->element [item]
   (cond (= "\n" item)
         ,,,{:tag ooxml/br}
+        (= "\t" item)
+        ,,,{:tag ooxml/tab}
         (or (starts-with? item " ") (ends-with? item " "))
         ,,,{:tag ooxml/t :content [item] :attrs {ooxml/space "preserve"}}
         :else
         ,,,{:tag ooxml/t :content [item]}))
 
 (defn- fix-elem-node [loc]
-  (->> (apply str (:content (zip/node loc)))
-       (lines-of)
-       (map item->elem)
+  (->> (:content (zip/node loc))
+       (apply str)
+       (split-str)
+       (map str->element)
        (multi-replace loc)))
 
 (defn fix-whitespaces [xml-tree] (dfs-walk-xml-node xml-tree should-fix? fix-elem-node))
+ 
