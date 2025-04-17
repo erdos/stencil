@@ -5,25 +5,12 @@
    - If content starts or ends with whitespace, add a space=preserve attribute.
    - Replace \n characters with <w/br /> elements.
    - Replace \t characters with <w/tab /> elements."
-  (:require [clojure.string :refer [includes? starts-with? ends-with? index-of]]
+  (:require [clojure.string :refer [starts-with? ends-with? index-of]]
             [clojure.zip :as zip]
             [stencil.ooxml :as ooxml]
             [stencil.util :refer [dfs-walk-xml-node zipper?]]))
 
-(defn- should-fix? [element]
-  (when (and (map? element)
-             (= ooxml/t (:tag element))
-             (not-empty (:content element)))
-    (or (starts-with? (first (:content element)) " ")
-        (ends-with? (last (:content element)) " ")
-        (some #(includes? % "\n") (:content element)))))
-
-(defn- multi-replace [loc items]
-  (assert (zipper? loc))
-  (assert (not-empty items))
-  (reduce (comp zip/right zip/insert-right) (zip/replace loc (first items)) (next items)))
-
-;; Returns smallest index of c1 or c2 in s.
+;; Returns smallest index of c1 or c2 in s or nil when not found.
 (defn- first-index-of [s c1 c2]
   (assert (string? s))
   (let [idx1 (index-of s c1)
@@ -31,6 +18,19 @@
     (if (and idx1 idx2)
       (min idx1 idx2)
       (or idx1 idx2))))
+
+(defn- should-fix? [element]
+  (when (and (map? element)
+             (= ooxml/t (:tag element))
+             (not-empty (:content element)))
+    (or (starts-with? (first (:content element)) " ")
+        (ends-with? (last (:content element)) " ")
+        (some #(first-index-of (str %) \newline \tab) (:content element)))))
+
+(defn- multi-replace [loc items]
+  (assert (zipper? loc))
+  (assert (not-empty items))
+  (reduce (comp zip/right zip/insert-right) (zip/replace loc (first items)) (next items)))
 
 ;; Returns a lazy seq of substrings split by \t or \n, separators included.
 (defn- split-str [s]
