@@ -31,6 +31,7 @@ jobs:
         path: |
           /home/runner/work/_temp/**/*.png
           /home/runner/work/_temp/**/*.pdf
+          target/surefire-reports/*.xml
     - name: Test Report
       uses: dorny/test-reporter@v1
       if: success() || failure()
