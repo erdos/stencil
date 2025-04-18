@@ -33,7 +33,7 @@ jobs:
           /home/runner/work/_temp/**/*.pdf
           target/surefire-reports/*.xml
     - name: Test Report
-      uses: dorny/test-reporter@v1
+      uses: dorny/test-reporter@v2
       if: success() || failure()
       with:
         name: Visual Tests
