@@ -30,6 +30,7 @@ jobs:
         name: test-visual-images
         path: |
           /home/runner/work/_temp/**/*.png
+          /home/runner/work/_temp/**/*.docx
           /home/runner/work/_temp/**/*.pdf
           target/surefire-reports/*.xml
     - name: Test Report
