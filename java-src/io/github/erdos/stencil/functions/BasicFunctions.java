@@ -35,6 +35,12 @@ public enum BasicFunctions implements Function {
                 return null;
             }
         }
+
+        @Override
+        public String getDocumentation() {
+            return "Select a value based on the first argument.\n"
+                    + "Usage: `switch(expression, case-1, value-1, case-2, value-2, ..., optional-default-value)`";
+        }
     },
 
     /**
@@ -49,6 +55,12 @@ public enum BasicFunctions implements Function {
                 if (arg != null && !"".equals(arg) && (!(arg instanceof Collection) || !((Collection) arg).isEmpty()))
                     return arg;
             return null;
+        }
+        
+        @Override
+        public String getDocumentation() {
+            return "Returns the first non-null or non-empty parameter.\n\n"
+                   + "Accepts any number of arguments. Ignores null values, empty string and empty collections.";
         }
     },
 
@@ -66,6 +78,12 @@ public enum BasicFunctions implements Function {
             return (x == null || "".equals(x))
                     || ((x instanceof Collection) && ((Collection) x).isEmpty())
                     || ((x instanceof Iterable) && !((Iterable) x).iterator().hasNext());
+        }
+        
+        @Override
+        public String getDocumentation() {
+            return "Returns true iff input is null, empty string or empty collection.\n\n"
+                    + "Expects exactly 1 parameter.";
         }
     };
 
