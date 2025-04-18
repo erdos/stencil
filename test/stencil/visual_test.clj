@@ -30,6 +30,7 @@
        :data      {:name "Janos"}
        :expected  (format "multipart-gen/expected-%s-%s-%s.pdf" main body header)
        :fix? true
+       :label     (format "gen-%s-%s-%s" main body header)
        :fragments {"body"   (format "multipart-gen/body-%s.docx" body)
                    "header" (when header (format "multipart-gen/header-%s.docx" header))}))))
 
