@@ -24,6 +24,7 @@
 
 ;; Content Break: http://officeopenxml.com/WPtextSpecialContent-break.php
 (def br :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/br)
+(def tab :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/tab)
 
 (def type :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fwordprocessingml%2F2006%2Fmain/type)
 
