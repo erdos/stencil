@@ -5,13 +5,12 @@
             [stencil.log :as log]
             [stencil.ooxml :as ooxml]
             [stencil.model.relations :as relations]
-            [stencil.types :refer [ControlMarker]]
             [stencil.util :refer [fail find-first iterations dfs-walk-xml-node]]))
 
 (set! *warn-on-reflection* true)
 
 ;; Tells if the reference of an adjacent image node should be replaced in postprocess step.
-(defrecord ReplaceImage [relation] ControlMarker)
+(defrecord ReplaceImage [relation])
 
 (def mime-type->extension
   {"image/png"  "png"

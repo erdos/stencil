@@ -1,6 +1,5 @@
 (ns stencil.postprocess.whitespaces-test
-  (:require [stencil.types]
-            [clojure.test :refer [deftest is testing]]
+  (:require [clojure.test :refer [deftest is testing]]
             [clojure.data.xml :as xml]
             [clojure.zip]
             [stencil.eval :as eval]

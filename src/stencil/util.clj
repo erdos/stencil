@@ -4,6 +4,9 @@
 
 (set! *warn-on-reflection* true)
 
+(def open-tag "{%")
+(def close-tag "%}")
+
 (defn stacks-difference-key
   "Removes suffixes of two lists where key-fn gives the same result."
   [key-fn stack1 stack2]

@@ -1,6 +1,5 @@
 (ns stencil.tree-postprocess-test
   (:require [clojure.zip :as zip]
-            [stencil.types :refer :all]
             [clojure.test :refer [deftest is are testing]]
             [stencil.util :refer [xml-zip]]
             [stencil.ooxml :as ooxml]

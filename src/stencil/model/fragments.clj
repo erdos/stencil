@@ -1,7 +1,6 @@
 (ns stencil.model.fragments
   (:require [stencil.util :refer [eval-exception]]
             [stencil.functions :refer [call-fn]]
-            [stencil.types :refer [ControlMarker]]
             [stencil.ooxml :as ooxml]
             [clojure.data.xml :as xml]))
 
@@ -30,7 +29,7 @@
      [result# fragments#]))
 
 ;; Invocation of a fragment by name
-(defrecord FragmentInvoke [result] ControlMarker)
+(defrecord FragmentInvoke [result])
 
 ;; custom XML content
 (defmethod call-fn "xml" [_ content]

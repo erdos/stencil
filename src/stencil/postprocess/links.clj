@@ -4,13 +4,12 @@
             [stencil.log :as log]
             [stencil.ooxml :as ooxml]
             [stencil.model.relations :as relations]
-            [stencil.types :refer [ControlMarker]]
             [stencil.util :refer [fail find-first iterations dfs-walk-xml-node]]))
 
 (set! *warn-on-reflection* true)
 
 ;; Tells if the reference of an adjacent hyperlink node should be replaced in postprocess step.
-(defrecord ReplaceLink [relation] ControlMarker)
+(defrecord ReplaceLink [relation])
 
 (defn- update-link [link-node, ^ReplaceLink data]
   (assert (= ooxml/hyperlink (:tag link-node)))

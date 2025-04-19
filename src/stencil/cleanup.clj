@@ -7,8 +7,8 @@
 
   valid XML String -> tokens -> Annotated Control AST -> Normalized Control AST -> Evaled AST -> Hiccup or valid XML String
   "
-  (:require [stencil.util :refer [mod-stack-top-conj mod-stack-top-last parsing-exception stacks-difference-key]]
-            [stencil.types :refer [open-tag close-tag]]))
+  (:require [stencil.util :refer [mod-stack-top-conj mod-stack-top-last parsing-exception stacks-difference-key
+                                  open-tag close-tag]]))
 
 (set! *warn-on-reflection* true)
 

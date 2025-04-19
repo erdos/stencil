@@ -3,7 +3,6 @@
   (:require [clojure.zip :as zip]
             [stencil.functions :refer [call-fn]]
             [stencil.ooxml :as ooxml]
-            [stencil.types :refer [ControlMarker]]
             [stencil.util :refer [find-first find-last fixpt iterations ->int find-first-in-tree xml-zip zipper?]]))
 
 (set! *warn-on-reflection* true)
@@ -11,7 +10,7 @@
 (def column-resize-modes #{:resize-first :resize-last :rational :cut})
 
 ;; Tells if a table column should be hidden in a postprocess step.
-(defrecord HideTableColumnMarker [columns-resize] ControlMarker)
+(defrecord HideTableColumnMarker [columns-resize])
 (defn hide-table-column-marker? [x] (instance? HideTableColumnMarker x))
 
 ; (ns-unmap *ns* '->HideTableColumnMarker)
@@ -21,7 +20,7 @@
        (HideTableColumnMarker. x)))
 
 ;; Tells if a table row should be hidden in a postprocess step.
-(defrecord HideTableRowMarker [] ControlMarker)
+(defrecord HideTableRowMarker [])
 (defn hide-table-row-marker? [x] (instance? HideTableRowMarker x))
 
 (defmethod call-fn "hideColumn" [_ & args]

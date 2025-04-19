@@ -2,7 +2,6 @@
   "converts Normalized Control AST -> Evaled token seq"
   (:require [stencil.log :as log]
             [stencil.infix :refer [eval-rpn]]
-            [stencil.types :refer [control?]]
             [stencil.tokenizer :as tokenizer]
             [stencil.util :refer [eval-exception]]
             [stencil.tree-postprocess :as tree-postprocess]))
@@ -33,7 +32,7 @@
 (defmethod eval-step :cmd/echo [function data item]
   (let [value (eval-rpn* data function (:expression item) (:raw item))]
     (log/trace "Echoing {} as {}" (:expression item) value)
-    [{:text (if (control? value) value (str value))}]))
+    [{:text (if (instance? clojure.lang.IRecord value) value (str value))}]))
 
 (defmethod eval-step :cmd/for [function data item]
   (let [items (eval-rpn* data function (:expression item) (:raw item))]

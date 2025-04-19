@@ -3,8 +3,8 @@
             [clojure.java.io :as io]
             [stencil.fs :as fs]
             [stencil.ooxml :as ooxml]
-            [stencil.model.common :refer :all]
-            [stencil.util :refer :all]))
+            [stencil.model.common :refer [->xml-writer]]
+            [stencil.util :refer [assoc-some find-first update-some]]))
 
 
 (set! *warn-on-reflection* true)
