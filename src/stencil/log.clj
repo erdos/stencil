@@ -27,5 +27,3 @@
 (def-log-level info)
 (def-log-level warn)
 (def-log-level error)
-
-(ns-unmap *ns* 'def-log-level)

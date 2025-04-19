@@ -1,13 +1,13 @@
 (ns stencil.tree-postprocess
   "Postprocessing an xml tree"
-  (:require [stencil.postprocess.table :refer :all]
-            [stencil.postprocess.whitespaces :refer :all]
-            [stencil.postprocess.ignored-tag :refer :all]
-            [stencil.postprocess.images :refer :all]
-            [stencil.postprocess.links :refer :all]
-            [stencil.postprocess.list-ref :refer :all]
-            [stencil.postprocess.fragments :refer :all]
-            [stencil.postprocess.html :refer :all]))
+  (:require [stencil.postprocess.table :refer [fix-tables]]
+            [stencil.postprocess.whitespaces :refer [fix-whitespaces]]
+            [stencil.postprocess.ignored-tag :refer [unmap-ignored-attr]]
+            [stencil.postprocess.images :refer [replace-images]]
+            [stencil.postprocess.links :refer [replace-links]]
+            [stencil.postprocess.list-ref :refer [fix-list-dirty-refs]]
+            [stencil.postprocess.fragments :refer [unpack-fragments]]
+            [stencil.postprocess.html :refer [fix-html-chunks]]))
 
 ;; calls postprocess
 (def postprocess
