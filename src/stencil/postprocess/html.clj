@@ -4,13 +4,12 @@
             [clojure.data.xml :as xml]
             [stencil.functions :refer [call-fn]]
             [stencil.postprocess.fragments :as fragments]
-            [stencil.types :refer [ControlMarker]]
             [stencil.util :refer [find-first dfs-walk-xml dfs-walk-xml-node]]
             [stencil.ooxml :as ooxml]))
 
 (set! *warn-on-reflection* true)
 
-(defrecord HtmlChunk [content] ControlMarker)
+(defrecord HtmlChunk [content])
 
 (defmethod call-fn "html" [_ content] (->HtmlChunk content))
 

@@ -1,8 +1,7 @@
 (ns stencil.cleanup-test
   (:require [clojure.test :refer [deftest testing is are]]
             [stencil
-             [cleanup :refer :all]
-             [types :refer :all]]))
+             [cleanup :refer :all]]))
 
 (defn- ->text [t] {:text t})
 (defn- ->close [t] {:close t})

@@ -3,8 +3,7 @@
   (:require [clojure.data.xml :as xml]
             [stencil.postprocess.ignored-tag :as ignored-tag]
             [stencil
-             [types :refer [open-tag close-tag]]
-             [util :refer [parsing-exception]]
+             [util :refer [parsing-exception open-tag close-tag]]
              [tokenizer :as tokenizer]]))
 
 (set! *warn-on-reflection* true)

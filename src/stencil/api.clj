@@ -2,8 +2,7 @@
   "A simple public API for document generation from templates."
   (:require [clojure.walk :refer [stringify-keys]]
             [clojure.java.io :as io]
-            [stencil.fs :as fs]
-            [stencil.types])
+            [stencil.fs :as fs])
   (:import [io.github.erdos.stencil API PreparedFragment PreparedTemplate TemplateData]
            [java.util Map]))
 
