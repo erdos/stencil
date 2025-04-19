@@ -24,11 +24,13 @@
           body  '[static static-styled]
           header '[nil static plain styled]
           :when (= (str/includes? (name main) "with-header") (some? header))]
-    (render-visual-compare!
-     :template  (format "multipart-gen/main-%s.docx" main)
-     :data      {:name "Janos"}
-     :expected  (format "multipart-gen/expected-%s-%s-%s.pdf" main body header)
-     :fix? true
-     :fragments {"body"   (format "multipart-gen/body-%s.docx" body)
-                 "header" (when header (format "multipart-gen/header-%s.docx" header))})))
+    (testing (format "main=%s body=%s header=%s" main body header)
+      (render-visual-compare!
+       :template  (format "multipart-gen/main-%s.docx" main)
+       :data      {:name "Janos"}
+       :expected  (format "multipart-gen/expected-%s-%s-%s.pdf" main body header)
+       :fix? true
+       :label     (format "gen-%s-%s-%s" main body header)
+       :fragments {"body"   (format "multipart-gen/body-%s.docx" body)
+                   "header" (when header (format "multipart-gen/header-%s.docx" header))}))))
 

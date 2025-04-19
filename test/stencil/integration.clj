@@ -61,9 +61,11 @@
       data :data
       expected-pdf-file :expected
       fragments :fragments
+      label     :label
       fix? :fix?}]
   (let [basename      (str (str (.getName (io/file expected-pdf-file)) "-base"))
-        outdir        (io/file (or (System/getenv "RUNNER_TEMP") "/tmp") "stencil-testing")
+        outdir        (io/file (or (System/getenv "RUNNER_TEMP") "/tmp")
+                               (or label "stencil-testing"))
         docx-output   (io/file outdir (str basename ".result.docx"))
         pdf-output    (io/file outdir (str basename ".result.pdf"))
         expected-pdf  (io/file (io/resource expected-pdf-file))]
