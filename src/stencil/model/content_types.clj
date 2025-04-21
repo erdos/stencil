@@ -16,7 +16,7 @@
 (def attr-part-name :PartName)
 (def attr-content-type :ContentType)
 
-;; return a map of 
+
 (defn- parse-ct-file [content-types-file]
   (with-open [reader (input-stream (file content-types-file))]
     (let [parsed (xml/parse reader)]
@@ -27,6 +27,7 @@
                   "Override" (assoc-in m [::override (attr-part-name (:attrs elem))] (attr-content-type (:attrs elem)))))
               {} (remove string? (:content parsed)))))) ;; rm empty strings
 
+
 (defn parse-content-types [dir]
   (assert (fs/directory? dir))
   (let [cts (file dir "[Content_Types].xml")]
@@ -34,6 +35,7 @@
     (assert (.isFile cts))
     {:parsed                   (parse-ct-file cts)
      :stencil.model/path       (.getName cts)}))
+
 
 (defn with-content-types [model]
   (let [parsed (-> model :content-types :parsed)
@@ -44,3 +46,7 @@
                                  (for [[k v] (::override parsed)]
                                    {:tag tag-override :attrs {attr-part-name k attr-content-type v}}))}]
     (assoc-in model [:content-types :result :writer] (->xml-writer tree))))
+
+
+(defn assoc-override [model path mime-type]
+  (assoc-in model [:content-types :parsed ::override path] mime-type))
