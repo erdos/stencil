@@ -85,16 +85,8 @@
   (println "Built JAR file")
   opts)
 
-(defn install [opts]
-  (jar opts)
-  (b/install {:basis basis
-              :lib lib
-              :version version
-              :jar-file jar-file-name
-              :class-dir jar-content})
-  opts)
-
 (defn java-test [_]
+  #_{:clj-kondo/ignore [:inline-def]} ; TODO: extract to delayed top level form
   (def basis (b/create-basis {:project "deps.edn" :aliases [:junit]}))
 
   (println "Running Java test cases")
@@ -119,7 +111,10 @@
   (println "Done"))
 
 (defn uber [opts]
-  (jar opts) 
+  (jar opts)
+  (b/compile-clj {:basis      basis
+                  :ns-compile '[stencil.process stencil.api]
+                  :class-dir  jar-content})
   (b/uber {:class-dir jar-content
            :uber-file uber-file-name
            :basis     basis

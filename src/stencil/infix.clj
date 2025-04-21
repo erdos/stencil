@@ -165,6 +165,6 @@
    (binding [*calc-vars* bindings]
      (eval-tree tree))))
 
-(def parse (comp (partial grammar/runlang grammar/testlang) tokenize))
+(def parse (comp (partial grammar/parse grammar/expr-lang) tokenize))
 
 :OK

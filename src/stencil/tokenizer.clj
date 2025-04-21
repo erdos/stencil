@@ -3,7 +3,7 @@
   (:require [clojure.data.xml :as xml]
             [clojure.string :refer [includes? split]]
             [stencil.infix :as infix]
-            [stencil.util :refer [assoc-if-val mod-stack-top-conj mod-stack-top-last parsing-exception trim]]))
+            [stencil.util :refer [assoc-some mod-stack-top-conj mod-stack-top-last parsing-exception trim]]))
 
 (set! *warn-on-reflection* true)
 
@@ -60,12 +60,12 @@
 
     (seq (:content parsed))
     (concat
-     [(assoc-if-val {:open (:tag parsed)} :attrs (not-empty (:attrs parsed)))]
+     [(assoc-some {:open (:tag parsed)} :attrs (not-empty (:attrs parsed)))]
      (mapcat structure->seq (:content parsed))
      [{:close (:tag parsed)}])
 
     :else
-    [(assoc-if-val {:open+close (:tag parsed)} :attrs (not-empty (:attrs parsed)))]))
+    [(assoc-some {:open+close (:tag parsed)} :attrs (not-empty (:attrs parsed)))]))
 
 (defn- tokens-seq-reducer [stack token]
   (cond
@@ -82,7 +82,7 @@
 
     (:close token)
     (let [[s & stack] stack]
-      (mod-stack-top-last stack assoc-if-val :content (not-empty s)))
+      (mod-stack-top-last stack assoc-some :content (not-empty s)))
 
     :else
     (throw (ex-info (str "Unexpected token: " token " of " (type token)) {:token token}))))

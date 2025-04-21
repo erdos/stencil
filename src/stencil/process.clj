@@ -3,13 +3,13 @@
   (:import [java.util.zip ZipEntry ZipOutputStream]
            [java.nio.file Path]
            [io.github.erdos.stencil EvaluatedDocument PrepareOptions PreparedFragment PreparedTemplate TemplateVariables]
-           [io.github.erdos.stencil.impl FileHelper ZipHelper LifecycleLock])
+           [io.github.erdos.stencil.impl ZipHelper LifecycleLock])
   (:require [clojure.core.protocols :refer [Datafiable]]
             [clojure.datafy :refer [datafy]]
             [clojure.java.io :as io]
             [stencil.log :as log]
             [stencil.model :as model]
-            [stencil.fs :refer [unix-path]]))
+            [stencil.fs :as fs :refer [unix-path]]))
 
 (set! *warn-on-reflection* true)
 (declare render-writers-map)
@@ -32,16 +32,15 @@
 
 ;; Called  from Java API
 (defn prepare-template [^Path template-file, ^PrepareOptions options]
-  (let [zip-dir   (FileHelper/createNonexistentTempFile
-                   (.getTemporaryDirectoryOverride options)
-                   "stencil-" ".zip.contents")
+  (let [zip-dir   (fs/->tmp-file (.getTemporaryDirectoryOverride options)
+                                 "stencil-" ".zip.contents")
         options   {:only-includes (.isOnlyIncludes options)}
         _         (with-open [zip-stream (path->input-stream template-file)]
                     (ZipHelper/unzipStreamIntoDirectory zip-stream zip-dir))
         model     (model/load-template-model zip-dir options)
         variables (TemplateVariables/fromPaths (get-variable-names model) (get-fragment-names model))
         datetime  (java.time.LocalDateTime/now)
-        lock      (new LifecycleLock #(FileHelper/forceDelete zip-dir))]
+        lock      (new LifecycleLock #(fs/delete! zip-dir))]
     (reify PreparedTemplate
       (getTemplateFile [_] template-file)
       (creationDateTime [_] datetime)
@@ -64,13 +63,12 @@
 
 ;; Called from Java API
 (defn prepare-fragment [fragment-file, ^PrepareOptions options]
-  (let [zip-dir (FileHelper/createNonexistentTempFile
-                 (.getTemporaryDirectoryOverride options)
-                 "stencil-fragment-" ".zip.contents")
+  (let [zip-dir (fs/->tmp-file (.getTemporaryDirectoryOverride options)
+                               "stencil-fragment-" ".zip.contents")
         options {:only-includes (.isOnlyIncludes options)}
         _       (with-open [zip-stream (path->input-stream fragment-file)] ;;; TODO
                   (ZipHelper/unzipStreamIntoDirectory zip-stream zip-dir))
-        lock    (new LifecycleLock #(FileHelper/forceDelete zip-dir))
+        lock    (new LifecycleLock #(fs/delete! zip-dir))
         model   (-> (model/load-fragment-model zip-dir options)
                     (assoc ::lock lock))]
     (reify

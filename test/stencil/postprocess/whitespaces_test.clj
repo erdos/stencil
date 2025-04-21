@@ -1,9 +1,10 @@
 (ns stencil.postprocess.whitespaces-test
-  (:require [stencil.types :refer :all]
-            [clojure.test :refer [deftest is are testing]]
+  (:require [clojure.test :refer [deftest is testing]]
             [clojure.data.xml :as xml]
+            [clojure.zip]
             [stencil.eval :as eval]
-            [stencil.process :refer :all]
+            [stencil.process]
+            [stencil.util]
             [stencil.model :as model]))
 
 
@@ -31,6 +32,11 @@
      "<w:a xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"><w:t>two lines: first</w:t><w:br/><w:t>second</w:t><w:t xml:space=\"preserve\"> </w:t></w:a>"
      "<x:a xmlns:x=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"><x:t>two lines: {%=x </x:t><x:t>%} </x:t></x:a>"
      {"x" "first\nsecond"}))
+  (testing "tabulator"
+    (test-equals
+     "<w:a xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"><w:t>two entries: first</w:t><w:tab/><w:t>second</w:t></w:a>"
+     "<x:a xmlns:x=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"><x:t>two entries: {%=x %}</x:t></x:a>"
+     {"x" "first\tsecond"}))
   (testing "existing space=preserve attributes are kept intact"
     (test-equals
      "<w:a xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\" xml:space=\"preserve\"> Hello </w:a>"
@@ -44,10 +50,13 @@
           :when (and (var? v) (= target (.ns v)))]
     (eval `(defn ~(symbol (str "-" k)) [~'& args#] (apply (deref ~v) args#)))))
 
-(deftest test-lines-of
-  (is (= ["ab" "\n" "\n" "bc"] (-lines-of "ab\n\nbc")))
-  (is (= ["\n" "xy" "\n"] (-lines-of "\nxy\n")))
-  (is (= () (-lines-of ""))))
+(declare -split-str -multi-replace)
+
+(deftest test-split-str
+  (is (= ["ab" "\n" "\n" "bc"] (-split-str "ab\n\nbc")))
+  (is (= ["\n" "xy" "\n"] (-split-str "\nxy\n")))
+  (is (= ["a" "\t" "\n" " b"] (-split-str "a\t\n b")))
+  (is (= () (-split-str ""))))
 
 (deftest test-multi-replace
   (let [tree     (stencil.util/xml-zip {:tag :a :content ["x" "y" "z"]})

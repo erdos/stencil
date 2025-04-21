@@ -4,7 +4,7 @@
             [clojure.java.io :as io :refer [file]]
             [stencil.fs :as fs :refer [unix-path]]
             [stencil.ooxml :as ooxml]
-            [stencil.util :refer [update-some]]
+            [stencil.util :refer [update-some find-first]]
             [stencil.model.common :refer [->xml-writer]]))
 
 (def tag-relationships
@@ -169,3 +169,10 @@
     ;; relation file will be rendered instead of copied
     (seq @*extra-files*)
     (update-in [:relations] dissoc :source-file)))
+
+(defn assoc-relation [model name type target]
+  (-> model
+      (assoc-in [:main :relations :parsed name]
+                {:stencil.model/type type
+                 :stencil.model/target target})
+      (update-in [:main :relations] dissoc :source-file)))

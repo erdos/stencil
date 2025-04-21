@@ -5,12 +5,11 @@
 
 (set! *warn-on-reflection* true)
 
-#_{:clj-kondo/ignore [:unused-binding]}
 (defmulti call-fn
   "Extend this multimethod to make additional functions available from the template files.
    The first argument is the lowercase function name which is used for dispatching the calls.
    The rest of the arguments are the function call parameters."
-  (fn [function-name & args-seq] function-name))
+  (fn [function-name & _args-seq] function-name))
 
 (defmethod call-fn "range"
   ([_ x] (range x))

@@ -3,9 +3,8 @@
   (:require [stencil.model.fragments])
   (:import [stencil.model.fragments FragmentInvoke])
   (:require [clojure.zip :as zip]
-            [stencil.types :refer [control?]]
             [stencil.ooxml :as ooxml]
-            [stencil.util :refer :all]))
+            [stencil.util :refer [dfs-walk-xml-node fail find-first zipper?]]))
 
 (defn- remove+up
   "Removes current node and moves pointer to parent node."
@@ -62,7 +61,7 @@
 (defn- node-r?! [x] (assert (= ooxml/r (:tag (zip/node x)))) x)
 
 
-(defn- split-texts [chunk-loc & insertable-runs]
+(defn- split-texts [_chunk-loc & _insertable-runs]
   (fail "Not implemented!" {}))
 
 
@@ -141,7 +140,7 @@
 
 (defn unpack-items [node-to-replace & insertable-nodes]
   (assert (zipper? node-to-replace))
-  (assert (control? (zip/node node-to-replace)))
+  (assert (instance? clojure.lang.IRecord (zip/node node-to-replace)))
   (assert (sequential? insertable-nodes))
   (cond
     (= ooxml/r (:tag (first insertable-nodes)))

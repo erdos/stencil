@@ -12,7 +12,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Install Libreoffice for tests
       run: sudo apt-get update && sudo apt-get install -y libreoffice-core libreoffice-writer libreoffice-java-common imagemagick ghostscript --no-install-recommends
     - name: Set PDF Policy
@@ -24,14 +24,17 @@ jobs:
     - name: Test Clojure
       run: make visual-test
     - name: Archive diff png
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       if: failure()
       with:
         name: test-visual-images
         path: |
           /home/runner/work/_temp/**/*.png
+          /home/runner/work/_temp/**/*.docx
+          /home/runner/work/_temp/**/*.pdf
+          target/surefire-reports/*.xml
     - name: Test Report
-      uses: dorny/test-reporter@v1
+      uses: dorny/test-reporter@v2
       if: success() || failure()
       with:
         name: Visual Tests

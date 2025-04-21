@@ -2,8 +2,10 @@
   (:require [clojure.data.xml :as xml]
             [clojure.java.io :as io]
             [stencil.ooxml :as ooxml]
-            [stencil.util :refer [unlazy-tree ->int assoc-if-val find-first]]
+            [stencil.util :refer [unlazy-tree ->int assoc-some find-first]]
             [stencil.model.common :refer [->xml-writer]]
+            [stencil.model.content-types :as content-types]
+            [stencil.model.relations :as relations]
             [stencil.fs :as fs :refer [unix-path]]))
 
 
@@ -38,16 +40,11 @@
                             :parsed {:tag ooxml/tag-numbering :attrs {ooxml/ignorable ""} :content []}
                             :stencil.model/path  "word/numbering.xml"))))
       ;; TODO: make it conditional
-      (assoc-in [:content-types :parsed :stencil.model.content-types/override "/word/numbering.xml"]
-                "application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml")
+      (content-types/assoc-override "/word/numbering.xml" "application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml")
       (update-in [:main :stencil.model/numbering :parsed :content] concat extra-elems)
       (update-in [:main :stencil.model/numbering]
                  (fn [nr#] (assoc nr# :result {:writer (->xml-writer (:parsed nr#))})))
-      (update-in [:main :relations :parsed]
-                 assoc "genStencilNumbering"
-                 {:stencil.model/type rel-type-numbering
-                  :stencil.model/target "numbering.xml"})
-      (update-in [:main :relations] dissoc :source-file)))
+      (relations/assoc-relation "genStencilNumbering" rel-type-numbering "numbering.xml")))
 
 ;; defines target context. changes to numberngs will be moved here.
 (defmacro with-numbering-context [template-model body]
@@ -167,7 +164,7 @@
 
 (defn assoc-numbering [model dir]
   (->> (main-numbering dir (:stencil.model/path model) (:relations model))
-       (assoc-if-val model :stencil.model/numbering)))
+       (assoc-some model :stencil.model/numbering)))
 
 (defn style-def-for [id lvl]
   (assert (string? id))

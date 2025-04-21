@@ -1,6 +1,6 @@
 (ns stencil.merger-test
   (:require [stencil.merger :refer :all]
-            [stencil.types]
+            [stencil.util]
             [clojure.test :refer [deftest testing is are use-fixtures]]))
 
 (def map-action-token' map-action-token)
@@ -58,14 +58,14 @@
 (deftest cleanup-runs-test-redefined-tags
   (testing "Redefining open-close tags does not affect parsing logic"
     (testing "Redefined tags consist of repeating characters"
-      (with-redefs [stencil.types/open-tag "{{"
-                    stencil.types/close-tag "}}"]
+      (with-redefs [stencil.util/open-tag "{{"
+                    stencil.util/close-tag "}}"]
         (are [x expected] (= expected (vec (cleanup-runs x)))
           [{:text "asdf{{1234}}ghi"}]
           [{:text "asdf"} {:action "1234"} {:text "ghi"}])))
     (testing "Redefined tags are longer"
-      (with-redefs [stencil.types/open-tag "<%!"
-                    stencil.types/close-tag "!%>"]
+      (with-redefs [stencil.util/open-tag "<%!"
+                    stencil.util/close-tag "!%>"]
         (are [x expected] (= expected (vec (cleanup-runs x)))
           [{:text "asdf<%!1234!%>ghi"}]
           [{:text "asdf"} {:action "1234"} {:text "ghi"}])))))

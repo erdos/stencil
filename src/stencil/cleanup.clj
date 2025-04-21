@@ -7,12 +7,12 @@
 
   valid XML String -> tokens -> Annotated Control AST -> Normalized Control AST -> Evaled AST -> Hiccup or valid XML String
   "
-  (:require [stencil.util :refer [mod-stack-top-conj mod-stack-top-last parsing-exception stacks-difference-key]]
-            [stencil.types :refer [open-tag close-tag]]))
+  (:require [stencil.util :refer [mod-stack-top-conj mod-stack-top-last parsing-exception stacks-difference-key
+                                  open-tag close-tag]]))
 
 (set! *warn-on-reflection* true)
 
-(defmulti tokens->ast-step (fn [stack token] (:cmd token)))
+(defmulti tokens->ast-step (fn [_stack token] (:cmd token)))
 
 (defmethod tokens->ast-step :cmd/if [stack token] (conj (mod-stack-top-conj stack token) []))
 (defmethod tokens->ast-step :cmd/for [stack token] (conj (mod-stack-top-conj stack token) []))
@@ -54,20 +54,20 @@
 
 (defn- nested-tokens-fmap-postwalk
   "Depth-first traversal of the tree."
-  [f-cmd-block-before f-cmd-block-after f-child node]
+  [pre-visit post-visit visit node]
   (assert (map? node))
   (letfn [(children-mapper [children]
             (mapv update-blocks children))
           (update-children [node]
             (update node ::children children-mapper))
           (visit-block [block]
-            (-> block f-cmd-block-before update-children f-cmd-block-after))
+            (-> block pre-visit update-children post-visit))
           (blocks-mapper [blocks]
             (mapv visit-block blocks))
           (update-blocks [node]
             (if (:cmd node)
               (update node ::blocks blocks-mapper)
-              (f-child node)))]
+              (visit node)))]
     (update-blocks node)))
 
 (defn annotate-environments

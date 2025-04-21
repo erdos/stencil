@@ -4,6 +4,9 @@
 
 (set! *warn-on-reflection* true)
 
+(def open-tag "{%")
+(def close-tag "%}")
+
 (defn stacks-difference-key
   "Removes suffixes of two lists where key-fn gives the same result."
   [key-fn stack1 stack2]
@@ -34,13 +37,23 @@
 (defn update-some [m path f]
   (or (some->> (get-in m path) f (assoc-in m path)) m))
 
-(defn fixpt [f x] (let [fx (f x)] (if (= fx x) x (recur f fx))))
+(defn fixpt
+  "Repeatedly calls (f x), (f (f x)), (f (f (f x))) etc until we get the same element with further function applications."
+  [f x] (let [fx (f x)] (if (= fx x) x (recur f fx))))
+
 (defn zipper? [loc] (-> loc meta (contains? :zip/branch?)))
-(defn iterations [f elem] (eduction (take-while some?) (iterate f elem)))
+(defn iterations
+  "Returns an eduction of x, (f x) (f (f x)), ... while the value is not nil."
+  [f x] (eduction (take-while some?) (iterate f x)))
 
 ;; same as (first (filter pred xs))
-(defn find-first [pred xs] (reduce (fn [_ x] (when (pred x) (reduced x))) nil xs))
-(defn find-last [pred xs] (reduce (fn [a x] (if (pred x) x a)) nil xs))
+(defn find-first
+  "Given a reducible coll, returns first element for which predicate is true. Returns nil when no such element is found."
+  [pred coll] (reduce (fn [_ x] (when (pred x) (reduced x))) nil coll))
+
+(defn find-last
+  "Given a reducible coll, returns last element for which predicate is true. Returns nil when no such element is found."
+  [pred coll] (reduce (fn [a x] (if (pred x) x a)) nil coll))
 
 (def xml-zip
   "Like clojure.zip/xml-zip but more flexible. Only maps are considered branches."
@@ -49,8 +62,9 @@
            (comp seq :content)
            (fn [node children] (assoc node :content (some-> children vec)))))
 
-(defn assoc-if-val [m k v]
-  (if (some? v) (assoc m k v) m))
+(defn assoc-some
+  "Associate key k to value v in map m if v is not nil."
+  [m k v] (if (some? v) (assoc m k v) m))
 
 (defmacro fail [msg obj]
   (assert (string? msg))

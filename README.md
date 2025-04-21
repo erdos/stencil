@@ -1,7 +1,7 @@
 # Stencil Template Engine
 
 Stencil is an open source templating engine that transforms Office Open XML documents (mostly Microsoft
-Office's Word `.docx` files) from Java programs. It has a simple syntax and no programming is needed to write document templates.
+Office's Word `.docx` files) from the JVM. It has a simple syntax and no programming is needed to write document templates.
 
 <p align="center"><img src="https://raw.githubusercontent.com/erdos/stencil/master/docs/graphics.svg?sanitize=true" alt="stencil flow"/></p>
 
@@ -20,59 +20,81 @@ them to make your template more readable.
 
 ## Features
 
-- Works with `docx` and `pptx` files
-- Simple value substitution, conditional and repeating blocks
-- Substituting HTML text for dynamic text formatting
-- Dynamically replace images and links in the template
-- Show/hide rows and columns in tables
+- 📄 **Multiple Formats:** Works with `docx` and `pptx` files
+- 💻 **Simple syntax:** For value substitution, conditional and repeating blocks
+- 🔧 **Extendable:** Dozens of [built-in functions](https://stencil.erdos.dev/Functions.html) callable from the template
+- 📰 **Dynamic content:** Substituting HTML text for dynamic text formatting
+- 🌄 **Images and links:** Dynamically replace images and links in the template
+- 👀 **Tables:** Show/hide rows and columns in tables
+- 📐 **Programmable:** Offers API for Java and Clojure. Deployable as a Docker container.
 
-## Getting Started with the Library
+## 📖 Getting Started with the Library
 
 - See the [Example templates](examples)
 - Read the [Documentation](https://stencil.erdos.dev)
-- Read about the [Java API](docs/GettingStarted.md#java-api) and the [Clojure API](docs/GettingStarted.md#clojure-api).
+- Reference the [Java API](docs/GettingStarted.md#java-api) and the [Clojure API](docs/GettingStarted.md#clojure-api).
 
-
-## Getting Started with the Service
+## 🐳 Getting Started with the Service
 
 The project has a simple [service implementation](https://github.com/erdos/stencil/tree/master/service), which is available on GitHub Packages as a [Container image](https://github.com/users/erdos/packages/container/package/stencil).
 
 
-## Version
+## 👉 Version
 
-**Latest stable** version is `0.6.1`
+**Latest stable** version is `0.6.2`
 
-**Latest snapshot** version is `0.6.2-SNAPSHOT`
+**Latest snapshot** version is `0.6.3-SNAPSHOT`
 
-If you are using Maven, add the followings to your `pom.xml`:
+Previous versions are available on the [Stencil Clojars](https://clojars.org/io.github.erdos/stencil-core) page.
 
-The dependency:
+<details>
+  <summary><b>For Java with Maven</b></summary>
+
+  If you are using Maven, add the followings to your `pom.xml`:
+
+  1. The dependency:
 
 ``` xml
 <dependency>
   <groupId>io.github.erdos</groupId>
   <artifactId>stencil-core</artifactId>
-  <version>0.6.1</version>
+  <version>0.6.2</version>
 </dependency>
 ```
 
-And the [Clojars](https://clojars.org) repository:
+2. And the [Clojars](https://clojars.org) repository:
 
 ``` xml
 <repository>
   <id>clojars.org</id>
   <url>https://repo.clojars.org</url>
 </repository>
-```
+```  
+</details>
 
-Alternatively, if you are using Leiningen, add the following to
-the `:dependencies` section of your `project.clj`
-file: `[io.github.erdos/stencil-core "0.6.1"]`
+<details>
+  <summary><b>For Java with Gradle</b></summary>
 
-Previous versions are available on the [Stencil Clojars](https://clojars.org/io.github.erdos/stencil-core) page.
+  Add to the `dependencies` section of your `build.gradle` file: `implementation('io.github.erdos/stencil-core:0.6.2')`
+  </details>
+
+<details>
+  <summary><b>For Clojure with Leiningen</b></summary>
+
+  If you are using Leiningen, add the following to the `:dependencies` section of your `project.clj` file:
+  
+  `[io.github.erdos/stencil-core "0.6.2"]`
+</details>
+
+<details>
+  <summary><b>For Clojure with deps.edn</b></summary>
+
+  Add `io.github.erdos/stencil-core {:mvn/version "0.6.2"}`
+</details>
 
 
-## License
+
+## 😎 License
 
 Copyright (c) Janos Erdos. All rights reserved. The use and distribution terms
 for this software are covered by the Eclipse Public License 2.0
