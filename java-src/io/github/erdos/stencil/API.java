@@ -27,6 +27,14 @@ public final class API {
 
     /**
      * Prepares a document template file from the file system.
+     * @deprecated use prepare(Path, PerpareOptions) instead.
+     */
+    public static PreparedTemplate prepare(File templateFile, PrepareOptions options) throws IOException {
+        return prepare(templateFile.toPath(), options);
+    }
+
+    /**
+     * Prepares a document template file from the file system.
      */
     public static PreparedTemplate prepare(Path templateSource) throws IOException {
         return prepare(templateSource, PrepareOptions.options());
