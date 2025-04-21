@@ -4,6 +4,7 @@ import io.github.erdos.stencil.functions.Function;
 import io.github.erdos.stencil.functions.FunctionEvaluator;
 import io.github.erdos.stencil.impl.NativeTemplateFactory;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Collection;
@@ -15,6 +16,14 @@ import static java.util.Collections.emptyMap;
 public final class API {
 
     private API() {}
+
+    /**
+     * Prepares a document template file from the file system.
+     * @deprecated use prepare(Path templateSource) instead.
+     */
+    public static PreparedTemplate prepare(File templateFile) throws IOException {
+        return prepare(templateFile.toPath(), PrepareOptions.options());
+    }
 
     /**
      * Prepares a document template file from the file system.
