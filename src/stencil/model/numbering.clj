@@ -152,19 +152,19 @@
       (prepare-numbering-xml tree))))
 
 
-(defn- main-numbering [dir main-document main-document-rels]
-  (when-let [main-numbering-path
-             (some #(when (= rel-type-numbering (:stencil.model/type %))
-                      (unix-path (io/file (fs/parent-file (io/file main-document))
-                                          (:stencil.model/target %))))
-                   (vals (:parsed main-document-rels)))]
-    {:stencil.model/path       main-numbering-path
-     :source-file              (io/file dir main-numbering-path)
-     :parsed                   (parse (io/file dir main-numbering-path))}))
+(defn- main-numbering [model dir]
+  (when-let [path (relations/path-by-type model rel-type-numbering)]
+    (let [main-document       (:stencil.model/path model)
+          main-numbering-path (unix-path (io/file (fs/parent-file (io/file main-document)) path))]
+      {:stencil.model/path main-numbering-path
+       :source-file        (io/file dir main-numbering-path)
+       :parsed             (parse (io/file dir main-numbering-path))})))
+
 
 (defn assoc-numbering [model dir]
-  (->> (main-numbering dir (:stencil.model/path model) (:relations model))
+  (->> (main-numbering model dir)
        (assoc-some model :stencil.model/numbering)))
+
 
 (defn style-def-for [id lvl]
   (assert (string? id))
