@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file. This change
 ### Changed
 - ....
 
+## [0.6.3] - 2025-08-02
+### Changed
+- Bump base image versions of service Dockerfile to latest stable Debian.
+
+## [0.6.2] - 2025-04-21
+### Changed
+- Allow substitution of tabulator characters in text runs. #171
+- Various small refactors around namespace organization.
+- Fix broken regression tests.
+
 ## [0.6.1] - 2024-08-03
 ### Changed
 - Update GraalVM version for service
