@@ -5,6 +5,10 @@ All notable changes to this project will be documented in this file. This change
 ### Changed
 - ....
 
+## [0.6.4] - 2025-09-10
+### Changed
+- Fix keys starting with digit, issue #175 - a regression introduced in #91
+
 ## [0.6.3] - 2025-08-02
 ### Changed
 - Bump base image versions of service Dockerfile to latest stable Debian.

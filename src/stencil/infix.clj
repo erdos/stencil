@@ -75,9 +75,11 @@
   [characters]
   (when (contains? digits (first characters))
     (let [content (string (take-while (set "1234567890._")) characters)
-          content (.replaceAll content "_" "")
-          number  (if (some #{\.} content) (parse-double content) (parse-long content))]
-      [number (drop (count content) characters)])))
+          tail    (drop (count content) characters)]
+      (when-not (contains? identifier (first tail))
+        (let [content (.replaceAll content "_" "")
+              number  (if (some #{\.} content) (parse-double content) (parse-long content))]
+          [number tail])))))
 
 (defn- read-ops2 [chars]
   (when-let [op (get ops2 [(first chars) (second chars)])]
@@ -137,7 +139,7 @@
             (cond (sequential? b) (when (number? a) (get b (->int a)))
                   (string? b)     (when (number? a) (get b (->int a)))
                   (instance? java.util.List b) (when (number? a) (.get ^java.util.List b (->int a)))
-                  :else           (get b (str a)))) 
+                  :else           (get b (str a))))
           (eval-tree m) (map eval-tree path)))
 
 (defmethod call-fn :default [fn-name & args-seq]
@@ -153,8 +155,8 @@
   (let [args (mapv eval-tree args)]
     (try (apply call-fn (name f) args)
          (catch clojure.lang.ArityException _
-                (throw (ex-info (format "Function '%s' was called with a wrong number of arguments (%d)" f (count args))
-                                {:fn f :args args}))))))
+           (throw (ex-info (format "Function '%s' was called with a wrong number of arguments (%d)" f (count args))
+                           {:fn f :args args}))))))
 
 (defn eval-rpn
   ([bindings default-function tree]
