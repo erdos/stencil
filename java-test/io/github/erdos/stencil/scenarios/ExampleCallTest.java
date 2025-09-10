@@ -22,7 +22,7 @@ public class ExampleCallTest {
 
         final File template = new File("/home/developer/templates/invoice.docx");
 
-        final PreparedTemplate prepared = API.prepare(template);
+        final PreparedTemplate prepared = API.prepare(template.toPath());
 
         final Map<String, Object> data = new HashMap<>();
         data.put("name", userName);
