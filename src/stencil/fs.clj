@@ -10,8 +10,13 @@
 (defn directory? [^File file]
   (.isDirectory file))
 
-(defn unix-path ^String [^File f]
-  (some-> f .toPath FileHelper/toUnixSeparatedString))
+(defn unix-path
+  "Returns a string representation of path with unix separators ('/')
+   instead of the system-dependent separators (which is backslash on Windows)."  
+  ^String [^File f]
+  (when f
+    (let [path (.toPath f)]
+      (.replace (str path) (.getSeparator (.getFileSystem path)) "/"))))
 
 (defn parent-file ^File [^File f]
   (.getParentFile f))
