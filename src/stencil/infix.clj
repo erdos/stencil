@@ -93,14 +93,23 @@
   (when-let [content (not-empty (string (take-while identifier) characters))]
     [(symbol content) (drop (count content) characters)]))
 
-(def token-readers (some-fn read-number read-string-literal read-iden read-ops2 read-ops1))
+;; Reads a . character followed by an identifier
+(defn- read-dotted [characters]
+  (when (= \. (first characters))
+    (when-let [content (not-empty (string (take-while identifier) (next characters)))]
+      [[:dot (symbol content)]
+       (drop (count content) (next characters))])))
+
+(def token-readers (some-fn read-number read-string-literal read-iden read-dotted read-ops2 read-ops1))
 
 (defn tokenize
   "Returns a sequence of tokens for an input string"
   [text]
   (when-let [text (seq (drop-while (comp whitespace? char) text))]
     (if-let [[token tail] (token-readers text)]
-      (cons token (lazy-seq (tokenize tail)))
+      (if (vector? token)
+        (concat token (lazy-seq (tokenize tail)))
+        (cons token (lazy-seq (tokenize tail))))
       (throw (ex-info "Unexpected end of string" {:index (.index ^clojure.lang.IndexedSeq text)})))))
 
 (defmulti eval-tree (fn [tree] (if (sequential? tree) (first tree) (type tree))))

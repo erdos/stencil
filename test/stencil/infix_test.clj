@@ -4,6 +4,9 @@
             [stencil.postprocess.table :refer [hide-table-column-marker?]]
             [clojure.test :refer [deftest testing is are]]))
 
+; To make #sym 1 resolve to (symbol "1")
+(alter-var-root #'default-data-readers assoc 'sym #(list 'quote (symbol (str %))))
+
 (defn- run
   ([xs] (run xs {}))
   ([xs args] (infix/eval-rpn args (infix/parse xs))))
@@ -37,9 +40,15 @@
     (is (= [(symbol "123abc")] (infix/tokenize "123abc")))
     (is (= [(symbol "123_4abc_") 5] (infix/tokenize "123_4abc_ 5"))))
   (testing "Floating point numbers"
-    (is (= [1.2] (infix/tokenize "1.2")))
-    (is (= [(symbol "1") :dot 'a] (infix/tokenize "1.a")))
-    (is (= ['a :dot 2] (infix/tokenize "a.2"))))
+    (is (= [0]   (infix/tokenize "0")))
+    (is (= [1.2] (infix/tokenize "1.2"))
+    (testing "Negative sign"
+      (is (= [:minus 1.2] (infix/tokenize "-1.2"))
+      (is (= -1.2 (run " -1.2"))))
+    #_ ; - not yet supported
+    (testing "Positive sign"
+      (is (= [:plus 1.2] (infix/tokenize "+1.2"))
+      (is (= 1.2 (run "+1.2"))))))))
   (testing "Underscore character is used to split it up"
     (is (= [1234 5 67] (infix/tokenize "1_234 5 67_")))))
 
@@ -72,8 +81,12 @@
     (is (= 12 (infix/parse "  12 ") (infix/parse "12"))))
 
   (testing "Dotted form for chained access"
-    (is (= '[:get ax "y"] (infix/parse "   ax.y  ")))
-    (is (= '[:get myobject "2mykey"] (infix/parse "myobject.2mykey  "))))
+    (is (= [:get 'ax "y"] (infix/parse "   ax.y  ")))
+    (is (= [:get 'myobject "2mykey"] (infix/parse "myobject.2mykey  ")))
+    (is (= [:get 'x1 "1"] (infix/parse "x1.1")))
+    (is (= [:get 'v1 "1_2"] (infix/parse "v1.1_2")))
+    (is (= [#sym 1, :dot, 'a] (infix/tokenize "1.a")))
+    (is (= ['a, :dot, #sym 2] (infix/tokenize "a.2")))) 
 
   (testing "Simple operations"
     (is (= [:plus 1 2]
