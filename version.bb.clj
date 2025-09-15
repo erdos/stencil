@@ -1,3 +1,5 @@
+(require '[babashka.process :refer [shell]])
+
 (def modifier-snapshot "SNAPSHOT")
 
 (defn parse-version [version]
@@ -73,4 +75,9 @@
                    (-> versions :current :snapshot)
                    (-> versions :bump :snapshot)))
 
-(println :versions versions)
+(if (-> versions :next :stable?)
+  (do (->> versions :next :stable (str "chore: Releasing v") (shell "git" "commit" "-m"))
+      (->> versions :next :stable (str "v") (shell "git" "tag"))
+      (println "Created tag and version commit."))
+  (do (->> versions :next :stable (str "chore: Starting work on v") (shell "git" "commit" "-m"))
+      (println "Created snapshot version commit.")))
