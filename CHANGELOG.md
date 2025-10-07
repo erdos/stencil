@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file. This change
 ### Changed
 - ....
 
+## [0.6.6] - 2025-10-07
+### Changed
+- Remove template file enumeration on startup of the Stencil service.
+
+## [0.6.5] - TODO
+
 ## [0.6.4] - 2025-09-10
 ### Changed
 - Fix keys starting with digit, issue #175 - a regression introduced in #91

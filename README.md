@@ -41,9 +41,9 @@ The project has a simple [service implementation](https://github.com/erdos/stenc
 
 ## 👉 Version
 
-**Latest stable** version is `0.6.5`
+**Latest stable** version is `0.6.6`
 
-**Latest snapshot** version is `0.6.6-SNAPSHOT`
+**Latest snapshot** version is `0.6.7-SNAPSHOT`
 
 Previous versions are available on the [Stencil Clojars](https://clojars.org/io.github.erdos/stencil-core) page.
 
@@ -58,7 +58,7 @@ Previous versions are available on the [Stencil Clojars](https://clojars.org/io.
 <dependency>
   <groupId>io.github.erdos</groupId>
   <artifactId>stencil-core</artifactId>
-  <version>0.6.5</version>
+  <version>0.6.6</version>
 </dependency>
 ```
 
@@ -75,7 +75,7 @@ Previous versions are available on the [Stencil Clojars](https://clojars.org/io.
 <details>
   <summary><b>For Java with Gradle</b></summary>
 
-  Add to the `dependencies` section of your `build.gradle` file: `implementation('io.github.erdos/stencil-core:0.6.5')`
+  Add to the `dependencies` section of your `build.gradle` file: `implementation('io.github.erdos/stencil-core:0.6.6')`
   </details>
 
 <details>
@@ -83,13 +83,13 @@ Previous versions are available on the [Stencil Clojars](https://clojars.org/io.
 
   If you are using Leiningen, add the following to the `:dependencies` section of your `project.clj` file:
   
-  `[io.github.erdos/stencil-core "0.6.5"]`
+  `[io.github.erdos/stencil-core "0.6.6"]`
 </details>
 
 <details>
   <summary><b>For Clojure with deps.edn</b></summary>
 
-  Add `io.github.erdos/stencil-core {:mvn/version "0.6.5"}`
+  Add `io.github.erdos/stencil-core {:mvn/version "0.6.6"}`
 </details>
 
 
