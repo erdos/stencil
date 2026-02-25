@@ -7,9 +7,12 @@ All notable changes to this project will be documented in this file. This change
 
 ## [0.6.6] - 2025-10-07
 ### Changed
-- Remove template file enumeration on startup of the Stencil service.
+- Remove template file enumeration on startup of the Stencil service. Fixes issue https://github.com/erdos/stencil/issues/176
 
-## [0.6.5] - TODO
+## [0.6.5] - 2025-09-15
+### Changed
+- Introducing `stencil.fs/unix-path` function
+- Additional fixes for issue #175
 
 ## [0.6.4] - 2025-09-10
 ### Changed
@@ -69,6 +72,8 @@ All notable changes to this project will be documented in this file. This change
 - Introduce `replaceLink` function #150
 
 ## [0.5.3] - 2023-07-22
+### Changed
+- improvements to `stencil.util/whitespace?` function
 
 ## [0.5.2] - 2023-07-13
 ### Changed
@@ -117,7 +122,6 @@ All notable changes to this project will be documented in this file. This change
 - Introduce the `foreach` loop construct #129
 - Introduce the `pageBreak` function #126
 
-
 ## [0.4.2] - 2022-05-04
 ### Changed
 - service: fix division error on non-terminating decimal expansion due to BigDecimal usage in service.
@@ -134,3 +138,13 @@ All notable changes to this project will be documented in this file. This change
 - core: introduce more transducers
 - core: `html()` function supports uppercase tags [#113]
 - core: newlines are kept in str substitution [#111]
+
+## [0.3.31] - 2022-01-16
+No changes.
+
+## [0.3.30] - 2022-01-16
+### Changes
+- fix logs in stencil service
+- Add `data()` function to access whole data map, as proposed in https://github.com/erdos/stencil/issues/102
+- Improve code test coverage, adding unit tests, removing dead code.
+
