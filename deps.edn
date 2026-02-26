@@ -1,6 +1,6 @@
 {:deps {org.clojure/clojure {:mvn/version "1.11.1"}
-        org.clojure/data.xml {:mvn/version "0.2.0-alpha8"}
-        org.slf4j/slf4j-api {:mvn/version "2.0.9"}}
+        org.clojure/data.xml {:mvn/version "0.2.0-alpha10"}
+        org.slf4j/slf4j-api {:mvn/version "2.0.17"}}
  :paths ["src" "target/classes"]
  :aliases
  {:stencil/version "0.6.6"

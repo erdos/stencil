@@ -8,7 +8,7 @@
             [clojure.java.io :as io]
             [stencil.log :as log]
             [stencil.model :as model]
-            [stencil.fs :as fs :refer [unix-path]]))
+            [stencil.fs :as fs :refer [unix-path path->input-stream]]))
 
 (set! *warn-on-reflection* true)
 (declare render-writers-map)
@@ -31,7 +31,7 @@
   (let [zip-dir   (fs/->tmp-file (.getTemporaryDirectoryOverride options)
                                  "stencil-" ".zip.contents")
         options   {:only-includes (.isOnlyIncludes options)}
-        _         (with-open [zip-stream (io/input-stream template-file)]
+        _         (with-open [zip-stream (path->input-stream template-file)]
                     (ZipHelper/unzipStreamIntoDirectory zip-stream zip-dir))
         model     (model/load-template-model zip-dir options)
         variables (TemplateVariables/fromPaths (get-variable-names model) (get-fragment-names model))
@@ -62,7 +62,7 @@
   (let [zip-dir (fs/->tmp-file (.getTemporaryDirectoryOverride options)
                                "stencil-fragment-" ".zip.contents")
         options {:only-includes (.isOnlyIncludes options)}
-        _       (with-open [zip-stream (io/input-stream fragment-file)]
+        _       (with-open [zip-stream (path->input-stream fragment-file)] ;;; TODO
                   (ZipHelper/unzipStreamIntoDirectory zip-stream zip-dir))
         lock    (new LifecycleLock #(fs/delete! zip-dir))
         model   (-> (model/load-fragment-model zip-dir options)
