@@ -14,7 +14,7 @@ them to make your template more readable.
 [![codecov](https://codecov.io/gh/erdos/stencil/branch/master/graph/badge.svg)](https://codecov.io/gh/erdos/stencil)
 [![contributions welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg?style=flat)](https://github.com/erdos/stencil/issues)
 <!-- [![HitCount](http://hits.dwyl.io/erdos/stencil.svg)](http://hits.dwyl.io/erdos/stencil) -->
-[![Hits](https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2Ferdos%2Fstencil&count_bg=%239F3DC8&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=hits&edge_flat=false)](https://hits.seeyoufarm.com)
+[![Hits](https://hits.sh/github.com/erdos/stencil.svg?view=today-total&color=80c521)](https://hits.sh/github.com/erdos/stencil/)
 [![EPL 2.0](https://img.shields.io/badge/License-EPL%202.0-red.svg)](https://www.eclipse.org/legal/epl-2.0/)
 
 
@@ -41,9 +41,9 @@ The project has a simple [service implementation](https://github.com/erdos/stenc
 
 ## 👉 Version
 
-**Latest stable** version is `0.6.2`
+**Latest stable** version is `0.6.6`
 
-**Latest snapshot** version is `0.6.3-SNAPSHOT`
+**Latest snapshot** version is `0.6.7-SNAPSHOT`
 
 Previous versions are available on the [Stencil Clojars](https://clojars.org/io.github.erdos/stencil-core) page.
 
@@ -58,7 +58,7 @@ Previous versions are available on the [Stencil Clojars](https://clojars.org/io.
 <dependency>
   <groupId>io.github.erdos</groupId>
   <artifactId>stencil-core</artifactId>
-  <version>0.6.2</version>
+  <version>0.6.6</version>
 </dependency>
 ```
 
@@ -75,7 +75,7 @@ Previous versions are available on the [Stencil Clojars](https://clojars.org/io.
 <details>
   <summary><b>For Java with Gradle</b></summary>
 
-  Add to the `dependencies` section of your `build.gradle` file: `implementation('io.github.erdos/stencil-core:0.6.2')`
+  Add to the `dependencies` section of your `build.gradle` file: `implementation('io.github.erdos/stencil-core:0.6.6')`
   </details>
 
 <details>
@@ -83,13 +83,13 @@ Previous versions are available on the [Stencil Clojars](https://clojars.org/io.
 
   If you are using Leiningen, add the following to the `:dependencies` section of your `project.clj` file:
   
-  `[io.github.erdos/stencil-core "0.6.2"]`
+  `[io.github.erdos/stencil-core "0.6.6"]`
 </details>
 
 <details>
   <summary><b>For Clojure with deps.edn</b></summary>
 
-  Add `io.github.erdos/stencil-core {:mvn/version "0.6.2"}`
+  Add `io.github.erdos/stencil-core {:mvn/version "0.6.6"}`
 </details>
 
 

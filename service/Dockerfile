@@ -1,4 +1,4 @@
-FROM clojure:openjdk-11-lein-2.9.6-slim-buster AS build-env
+FROM clojure AS build-env
 
 WORKDIR /usr/src/myapp
 
@@ -12,7 +12,7 @@ COPY . /usr/src/myapp
 RUN mv "$(lein uberjar | sed -n 's/^Created \(.*standalone\.jar\)/\1/p')" myapp-standalone.jar
 RUN jlink --strip-debug --add-modules "$(jdeps --print-module-deps --ignore-missing-deps myapp-standalone.jar)" --add-modules jdk.localedata --output /java
 
-FROM debian:10-slim
+FROM debian:12-slim
 
 ENV STENCIL_HTTP_PORT 8080
 ENV STENCIL_TEMPLATE_DIR /templates

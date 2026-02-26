@@ -4,6 +4,9 @@
             [stencil.postprocess.table :refer [hide-table-column-marker?]]
             [clojure.test :refer [deftest testing is are]]))
 
+; To make #sym 1 resolve to (symbol "1")
+(alter-var-root #'default-data-readers assoc 'sym #(list 'quote (symbol (str %))))
+
 (defn- run
   ([xs] (run xs {}))
   ([xs args] (infix/eval-rpn args (infix/parse xs))))
@@ -26,6 +29,28 @@
 (deftest test-read-string-literal
   (testing "Incomplete string"
     (is (thrown? ExceptionInfo (infix/read-string-literal "'alaba")))))
+
+(deftest tokenize-numbers
+  (testing "basic functionality"
+    (is (= [123] (infix/tokenize "123")))
+    (is (= [123 'abc] (infix/tokenize "123 abc")))
+    (is (= ['abc 123] (infix/tokenize "abc 123")))
+    (is (= ['abc123] (infix/tokenize "abc123"))))
+  (testing "Starts as a number but it is actaully a symbol"
+    (is (= [(symbol "123abc")] (infix/tokenize "123abc")))
+    (is (= [(symbol "123_4abc_") 5] (infix/tokenize "123_4abc_ 5"))))
+  (testing "Floating point numbers"
+    (is (= [0]   (infix/tokenize "0")))
+    (is (= [1.2] (infix/tokenize "1.2"))
+    (testing "Negative sign"
+      (is (= [:minus 1.2] (infix/tokenize "-1.2"))
+      (is (= -1.2 (run " -1.2"))))
+    #_ ; - not yet supported
+    (testing "Positive sign"
+      (is (= [:plus 1.2] (infix/tokenize "+1.2"))
+      (is (= 1.2 (run "+1.2"))))))))
+  (testing "Underscore character is used to split it up"
+    (is (= [1234 5 67] (infix/tokenize "1_234 5 67_")))))
 
 (deftest tokenize-string-literal
   (testing "spaces are kept"
@@ -53,8 +78,15 @@
     (is (thrown? ExceptionInfo (infix/parse ""))))
 
   (testing "Simple values"
-    (is (= 12 (infix/parse "  12 ") (infix/parse "12")))
-    (is (= '[:get ax "y"] (infix/parse "   ax.y  "))))
+    (is (= 12 (infix/parse "  12 ") (infix/parse "12"))))
+
+  (testing "Dotted form for chained access"
+    (is (= [:get 'ax "y"] (infix/parse "   ax.y  ")))
+    (is (= [:get 'myobject "2mykey"] (infix/parse "myobject.2mykey  ")))
+    (is (= [:get 'x1 "1"] (infix/parse "x1.1")))
+    (is (= [:get 'v1 "1_2"] (infix/parse "v1.1_2")))
+    (is (= [#sym 1, :dot, 'a] (infix/tokenize "1.a")))
+    (is (= ['a, :dot, #sym 2] (infix/tokenize "a.2")))) 
 
   (testing "Simple operations"
     (is (= [:plus 1 2]
@@ -149,7 +181,7 @@
   (testing "syntax error"
     (is (thrown? ExceptionInfo (run "[3]" {})))
     (is (thrown? ExceptionInfo (run "a[[3]]" {})))
-    (is (thrown? ExceptionInfo (run "a.[1]b" {}))) 
+    (is (thrown? ExceptionInfo (run "a.[1]b" {})))
     (is (thrown? ExceptionInfo (run "a..b" {})))
     (is (thrown? ExceptionInfo (run "a[1,2]" {}))))
 
@@ -271,25 +303,25 @@
   (testing "Works for both keyword an string keys"
     (is (= [1 2 3]
            (run "map(\"x\", vals)"
-             {"vals" [{"x" 1}
-                      {"x" 2}
-                      {"y" -1}
-                      {:x 3}]}))))
+                {"vals" [{"x" 1}
+                         {"x" 2}
+                         {"y" -1}
+                         {:x 3}]}))))
   (testing "Calling in nil results in empty sequence"
     (is (= []
            (run "map(\"x\", vals)" {"vals" nil}))))
   (testing "Nested map"
     (is (= [1 2]
            (run "map('x.y', vals)"
-             {"vals" [{:x {:y 1}} {:x {}} {:x {:y 2}}]}))))
+                {"vals" [{:x {:y 1}} {:x {}} {:x {:y 2}}]}))))
   (testing "Nested vectors"
     (is (= [1 2 3]
            (run "map('x..y', vals)"
-             {"vals" [{:x [{:y 1} {:y 2}]}
-                      {:x [{:y 3}]}]})))
+                {"vals" [{:x [{:y 1} {:y 2}]}
+                         {:x [{:y 3}]}]})))
     (is (= [1 2 3]
            (run "map('.x', vals)"
-             {"vals" [[{:x 1} {:x 2}] [] [{}] [{:x 3}]]}))))
+                {"vals" [[{:x 1} {:x 2}] [] [{}] [{:x 3}]]}))))
   (testing "map with sum"
     (is (= 6
            (run "sum(map(\"x\", vals))"

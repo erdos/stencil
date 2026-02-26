@@ -122,8 +122,4 @@
   (let [http-port    (get-http-port)
         template-dir ^File (get-template-dir)
         server (run-server app {:port http-port})]
-    (log/info "Started listening on {} serving {}" http-port (str template-dir))
-    (log/info "Available template files:")
-    (doseq [^File line (file-seq template-dir)
-            :when (.isFile line)]
-      (log/info "- {}" (.relativize (.toPath template-dir) (.toPath line))))))
+    (log/info "Started listening on {} serving {}" http-port (str template-dir))))

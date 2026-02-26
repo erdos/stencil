@@ -75,9 +75,11 @@
   [characters]
   (when (contains? digits (first characters))
     (let [content (string (take-while (set "1234567890._")) characters)
-          content (.replaceAll content "_" "")
-          number  (if (some #{\.} content) (parse-double content) (parse-long content))]
-      [number (drop (count content) characters)])))
+          tail    (drop (count content) characters)]
+      (when-not (contains? identifier (first tail))
+        (let [content (.replaceAll content "_" "")
+              number  (if (some #{\.} content) (parse-double content) (parse-long content))]
+          [number tail])))))
 
 (defn- read-ops2 [chars]
   (when-let [op (get ops2 [(first chars) (second chars)])]
@@ -91,14 +93,23 @@
   (when-let [content (not-empty (string (take-while identifier) characters))]
     [(symbol content) (drop (count content) characters)]))
 
-(def token-readers (some-fn read-number read-string-literal read-iden read-ops2 read-ops1))
+;; Reads a . character followed by an identifier
+(defn- read-dotted [characters]
+  (when (= \. (first characters))
+    (when-let [content (not-empty (string (take-while identifier) (next characters)))]
+      [[:dot (symbol content)]
+       (drop (count content) (next characters))])))
+
+(def token-readers (some-fn read-number read-string-literal read-iden read-dotted read-ops2 read-ops1))
 
 (defn tokenize
   "Returns a sequence of tokens for an input string"
   [text]
   (when-let [text (seq (drop-while (comp whitespace? char) text))]
     (if-let [[token tail] (token-readers text)]
-      (cons token (lazy-seq (tokenize tail)))
+      (if (vector? token)
+        (concat token (lazy-seq (tokenize tail)))
+        (cons token (lazy-seq (tokenize tail))))
       (throw (ex-info "Unexpected end of string" {:index (.index ^clojure.lang.IndexedSeq text)})))))
 
 (defmulti eval-tree (fn [tree] (if (sequential? tree) (first tree) (type tree))))
@@ -137,7 +148,7 @@
             (cond (sequential? b) (when (number? a) (get b (->int a)))
                   (string? b)     (when (number? a) (get b (->int a)))
                   (instance? java.util.List b) (when (number? a) (.get ^java.util.List b (->int a)))
-                  :else           (get b (str a)))) 
+                  :else           (get b (str a))))
           (eval-tree m) (map eval-tree path)))
 
 (defmethod call-fn :default [fn-name & args-seq]
@@ -153,8 +164,8 @@
   (let [args (mapv eval-tree args)]
     (try (apply call-fn (name f) args)
          (catch clojure.lang.ArityException _
-                (throw (ex-info (format "Function '%s' was called with a wrong number of arguments (%d)" f (count args))
-                                {:fn f :args args}))))))
+           (throw (ex-info (format "Function '%s' was called with a wrong number of arguments (%d)" f (count args))
+                           {:fn f :args args}))))))
 
 (defn eval-rpn
   ([bindings default-function tree]
