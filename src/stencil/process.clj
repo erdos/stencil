@@ -1,7 +1,6 @@
 (ns stencil.process
   "These functions are called from Java."
   (:import [java.util.zip ZipEntry ZipOutputStream]
-           [java.nio.file Path]
            [io.github.erdos.stencil EvaluatedDocument PrepareOptions PreparedFragment PreparedTemplate TemplateVariables]
            [io.github.erdos.stencil.impl ZipHelper LifecycleLock])
   (:require [clojure.core.protocols :refer [Datafiable]]
@@ -9,7 +8,7 @@
             [clojure.java.io :as io]
             [stencil.log :as log]
             [stencil.model :as model]
-            [stencil.fs :as fs :refer [unix-path]]))
+            [stencil.fs :as fs :refer [unix-path path->input-stream]]))
 
 (set! *warn-on-reflection* true)
 (declare render-writers-map)
@@ -27,11 +26,8 @@
       (into (for [x (:headers+footers (:main model))
                   v (:variables (:executable x))] v))))
 
-(defn- path->input-stream ^java.io.InputStream [^Path path]
-  (java.nio.file.Files/newInputStream path (into-array java.nio.file.OpenOption [])))
-
 ;; Called  from Java API
-(defn prepare-template [^Path template-file, ^PrepareOptions options]
+(defn prepare-template [template-file, ^PrepareOptions options]
   (let [zip-dir   (fs/->tmp-file (.getTemporaryDirectoryOverride options)
                                  "stencil-" ".zip.contents")
         options   {:only-includes (.isOnlyIncludes options)}

@@ -1,9 +1,20 @@
 package io.github.erdos.stencil;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 
 public interface TemplateFactory {
+
+    @Deprecated
+    default PreparedTemplate prepareTemplateFile(File inputTemplateFile, PrepareOptions options) throws IOException {
+        return prepareTemplateFile(inputTemplateFile.toPath(), options);
+    }
+
+    @Deprecated
+    default PreparedTemplate prepareTemplateFile(File inputTemplateFile) throws IOException {
+        return prepareTemplateFile(inputTemplateFile.toPath());
+    }
 
     /**
      * Preprocesses a raw template file.

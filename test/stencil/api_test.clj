@@ -1,7 +1,8 @@
 (ns stencil.api-test
-  (:import [io.github.erdos.stencil.exceptions EvalException])
+  (:import [io.github.erdos.stencil.exceptions EvalException]
+           [java.nio.file Paths])
   (:require [clojure.test :refer [deftest testing is]]
-            [clojure.java.io]
+            [clojure.java.io :as io]
             [stencil.api :refer [prepare render! fragment cleanup!]]
             [stencil.functions :refer [call-fn]]))
 
@@ -42,7 +43,7 @@
     (testing "Can render output to output-stream"
       (let [f (java.io.File/createTempFile "stencil" ".docx")]
         (is (= 0 (.length f)))
-        (with-open [out (clojure.java.io/output-stream f)]
+        (with-open [out (io/output-stream f)]
           (render! template data :output out))
         (is (not= 0 (.length f)))))
 
@@ -73,6 +74,12 @@
 
 (deftest test-fragment-nil
   (is (thrown? clojure.lang.ExceptionInfo (fragment nil))))
+
+(deftest test-prepare+fragment-types
+  (let [fname "./examples/Multipart Template/footer.docx"]
+    (doseq [testable [prepare, fragment]
+            data [fname, (io/file fname), (Paths/get fname (make-array String 0))]]
+      (is (some? (testable data))))))
 
 (deftest test-fragment
   (let [f (fragment "./examples/Multipart Template/footer.docx")]
