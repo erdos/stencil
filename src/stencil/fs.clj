@@ -1,5 +1,6 @@
 (ns stencil.fs
   (:import [java.io File]
+           [java.nio.file Path]
            [io.github.erdos.stencil.impl FileHelper]))
 
 (set! *warn-on-reflection* true)
@@ -33,3 +34,6 @@
   "Create a new temporary file in the parent directory."
   [^File parent prefix suffix]
   (FileHelper/createNonexistentTempFile parent prefix suffix))
+
+(defn path->input-stream ^java.io.InputStream [^Path path]
+  (java.nio.file.Files/newInputStream path (into-array java.nio.file.OpenOption [])))

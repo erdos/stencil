@@ -3,6 +3,8 @@ package io.github.erdos.stencil;
 import io.github.erdos.stencil.impl.InputStreamExceptionPropagation;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.concurrent.ExecutorService;
 
 /**
@@ -17,10 +19,17 @@ public interface EvaluatedDocument {
      * Writes output of this document to a file
      */
     default void writeToFile(File output) throws IOException {
-        if (output.exists()) {
-            throw new IllegalArgumentException("Output file already exists: " + output);
+        writeToPath(output.toPath());
+    }
+
+    /**
+     * Writes output of this document to a path
+     */
+    default void writeToPath(Path output) throws IOException {
+        if (Files.exists(output)) {
+            throw new IllegalArgumentException("Output path already exists: " + output);
         }
-        try (FileOutputStream fos = new FileOutputStream(output)) {
+        try (OutputStream fos = Files.newOutputStream(output)) {
             write(fos);
         }
     }

@@ -28,7 +28,7 @@ public class SemanticErrorsTest {
         assertTrue(testFile.exists());
 
         // this should throw an error.
-        PreparedTemplate preparedTemplate = API.prepare(testFile);
+        PreparedTemplate preparedTemplate = API.prepare(testFile.toPath());
 
 
         API.render(preparedTemplate, TemplateData.empty());
