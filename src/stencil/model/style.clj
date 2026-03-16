@@ -4,7 +4,8 @@
             [stencil.fs :as fs]
             [stencil.ooxml :as ooxml]
             [stencil.model.common :refer [->xml-writer]]
-            [stencil.util :refer [assoc-some find-first update-some]]))
+            [stencil.model.relations :as relations]
+            [stencil.util :refer [assoc-some update-some]]))
 
 
 (set! *warn-on-reflection* true)
@@ -100,11 +101,10 @@
     xml-tree))
 
 
-(defn- main-style-item [dir main-document main-document-rels]
-  (when-let [main-style (find-first #(= rel-type (:stencil.model/type %))
-                              (vals (:parsed main-document-rels)))]
-    (let [main-style-file (io/file (fs/parent-file (io/file main-document))
-                                   (:stencil.model/target main-style))
+(defn- main-style-item [model dir]
+  (when-let [style-path (relations/path-by-type model rel-type)]
+    (let [main-document   (:stencil.model/path model)
+          main-style-file (io/file (fs/parent-file (io/file main-document)) style-path)
           main-style-abs  (io/file dir main-style-file)]
       {:stencil.model/path (fs/unix-path main-style-file)
        :source-file        main-style-abs
@@ -112,5 +112,5 @@
 
 
 (defn assoc-style [model dir]
-  (->> (main-style-item dir (:stencil.model/path model) (:relations model))
+  (->> (main-style-item model dir)
        (assoc-some model :style)))
