@@ -58,7 +58,11 @@ Problem: The zip entry paths mut not contain a `../` part.
 - LibreOffice: OK
 - Word: will not open file.
 
+## SVG images
 
+The `blip` OOXML element supports only a limitet set of raster graphic formats. The standard has support for SVG graphics via Extension List `extLst` elements nested in the `blip` element. In these cases, the `blip` references a fallback image and `extList` contains `ext` elements describing the extra media content.
+
+The above implies that when inserting SVG graphics in a template, a fallback image also needs to be added. Rendering fallback images for SVG graphics is out of scope for Stencil at the moment, therefore, handling SVG graphics is limited in current version.
 
 ## OOXML Model
 
