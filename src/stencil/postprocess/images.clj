@@ -48,7 +48,11 @@
         new-val     (-> data .relation)]
     (assert new-val)
     (log/debug "Replacing image relation {} by {}" current-rel new-val)
-    (assoc-in img-node [:attrs attr-key] new-val)))
+    (-> img-node
+        (assoc-in [:attrs attr-key] new-val)
+        ; If placeholder has an SVG graphic, remove so the replacement raster image is used directly:
+        (update :content #(remove (comp #{ooxml/ext-lst} :tag) %)))))
+
 
 (defn- replace-image [marker-loc]
   (if-let [img-loc (->> (zip/remove marker-loc)
@@ -83,6 +87,7 @@
     {:new-id               new-rel
      :stencil.model/type   relations/rel-type-image
      :stencil.model/target (image-path new-rel mime-type)
+     :stencil.model/mime-type mime-type
      :writer               (bytes->writer bytes)}))
 
 ;; replaces the nearest image with the content

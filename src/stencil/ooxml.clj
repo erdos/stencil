@@ -129,6 +129,9 @@
    "http://schemas.microsoft.com/office/powerpoint/2012/main"            "p15"
    })
 
+;; extension list, used for SVG image reference inside a blip
+(def ext-lst :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fdrawingml%2F2006%2Fmain/extLst)
+
 ;; drawing, binary large image or picture
 (def blip :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fdrawingml%2F2006%2Fmain/blip)
 ;; hyperlinks
