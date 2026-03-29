@@ -83,6 +83,7 @@
     {:new-id               new-rel
      :stencil.model/type   relations/rel-type-image
      :stencil.model/target (image-path new-rel mime-type)
+     :stencil.model/mime-type mime-type
      :writer               (bytes->writer bytes)}))
 
 ;; replaces the nearest image with the content
