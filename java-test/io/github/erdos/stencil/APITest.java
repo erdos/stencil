@@ -34,7 +34,7 @@ public class APITest {
     public void testCustomFunction() throws IOException {
         final CustomFunction fn = new CustomFunction();
         try (final PreparedTemplate prepared =
-                     API.prepare(new File("test-resources/test-custom-function.docx"))) {
+                     API.prepare(new File("test-resources/test-custom-function.docx").toPath())) {
             final Map<String, Object> data = new HashMap<>();
             data.put("input", "testInput");
             API.render(prepared, Collections.emptyMap(), TemplateData.fromMap(data), Collections.singletonList(fn));
@@ -46,7 +46,7 @@ public class APITest {
     @Test(expected = EvalException.class)
     public void testWithoutCustomFunction() throws IOException {
         try (final PreparedTemplate prepared =
-                     API.prepare(new File("test-resources/test-custom-function.docx"))) {
+                     API.prepare(new File("test-resources/test-custom-function.docx").toPath())) {
             final Map<String, Object> data = new HashMap<>();
             data.put("input", "testInput");
             API.render(prepared, Collections.emptyMap(), TemplateData.fromMap(data));

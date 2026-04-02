@@ -4,8 +4,9 @@ import io.github.erdos.stencil.PrepareOptions;
 import io.github.erdos.stencil.PreparedTemplate;
 import io.github.erdos.stencil.TemplateFactory;
 
-import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.ZoneOffset;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -16,7 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @SuppressWarnings("unused")
 public final class CachingTemplateFactory implements TemplateFactory {
     private final TemplateFactory templateFactory;
-    private final Map<File, PreparedTemplate> cache = new ConcurrentHashMap<>();
+    private final Map<Path, PreparedTemplate> cache = new ConcurrentHashMap<>();
 
     /**
      * Constructs a new wrapping instance. Caches in memory.
@@ -32,10 +33,11 @@ public final class CachingTemplateFactory implements TemplateFactory {
     }
 
     @Override
-    public PreparedTemplate prepareTemplateFile(File templateFile, PrepareOptions options) throws IOException {
+    public PreparedTemplate prepareTemplateFile(Path templateFile, PrepareOptions options) throws IOException {
         if (cache.containsKey(templateFile)) {
             PreparedTemplate stored = cache.get(templateFile);
-            if (stored.creationDateTime().toEpochSecond(ZoneOffset.UTC) <= templateFile.lastModified()) {
+            long fileLastModified = Files.getLastModifiedTime(templateFile).toMillis() / 1000;
+            if (stored.creationDateTime().toEpochSecond(ZoneOffset.UTC) <= fileLastModified) {
                 // TODO: this is so not thread safe.
                 stored.close();
                 stored = templateFactory.prepareTemplateFile(templateFile, options);
