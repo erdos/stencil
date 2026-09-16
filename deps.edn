@@ -1,18 +1,18 @@
-{:deps {org.clojure/clojure {:mvn/version "1.11.1"}
-        org.clojure/data.xml {:mvn/version "0.2.0-alpha8"}
-        org.slf4j/slf4j-api {:mvn/version "2.0.9"}}
+{:deps {org.clojure/clojure {:mvn/version "1.12.6"}
+        org.clojure/data.xml {:mvn/version "0.2.0-alpha11"}
+        org.slf4j/slf4j-api {:mvn/version "2.0.19"}}
  :paths ["src" "target/classes"]
  :aliases
- {:stencil/version "0.6.7-SNAPSHOT"
+ {:stencil/version "0.6.7"
 
   :build
-  {:deps {org.clojure/clojure {:mvn/version "1.12.0-beta1"}
+  {:deps {org.clojure/clojure {:mvn/version "1.12.6"}
           io.github.clojure/tools.build {:git/tag "v0.10.5" :git/sha "2a21b7a"}}
    :ns-default build}
 
   :junit
   {:extra-deps {junit/junit {:mvn/version "4.13.2"}
-                org.slf4j/slf4j-simple {:mvn/version "1.7.32"}
+                org.slf4j/slf4j-simple {:mvn/version "2.0.19"}
                 org.junit.platform/junit-platform-console-standalone {:mvn/version "1.10.3"}}
    :extra-paths ["target/classes" "test-resources"]}
 

@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file. This change
 ### Changed
 - ....
 
+## [0.6.7] - 2026-09-16
+### Changed
+- Updated dependencies: Clojure to 1.12.6, data.xml to 0.2.0-alpha11, slf4j-api to 2.0.19
+- Wrote about handling SVG graphics
+
 ## [0.6.6] - 2025-10-07
 ### Changed
 - Remove template file enumeration on startup of the Stencil service. Fixes issue https://github.com/erdos/stencil/issues/176
