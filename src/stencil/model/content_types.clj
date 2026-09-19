@@ -8,6 +8,8 @@
 
 (def xmlns "http://schemas.openxmlformats.org/package/2006/content-types")
 
+(def content-types-file "[Content_Types].xml")
+
 (def tag-types :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fpackage%2F2006%2Fcontent-types/Types)
 (def tag-override :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fpackage%2F2006%2Fcontent-types/Override)
 (def tag-default :xmlns.http%3A%2F%2Fschemas.openxmlformats.org%2Fpackage%2F2006%2Fcontent-types/Default)
@@ -17,24 +19,23 @@
 (def attr-content-type :ContentType)
 
 
-(defn- parse-ct-file [content-types-file]
-  (with-open [reader (input-stream (file content-types-file))]
+(defn- parse-ct-file [ct-file]
+  (with-open [reader (input-stream ct-file)]
     (let [parsed (xml/parse reader)]
-      (assert (= "Types" (name (:tag parsed))))
+      (assert (= tag-types (:tag parsed)))
       (reduce (fn [m elem]
-                (case (name (:tag elem))
-                  "Default"  (assoc-in m [::default (attr-extension (:attrs elem))] (attr-content-type (:attrs elem)))
-                  "Override" (assoc-in m [::override (attr-part-name (:attrs elem))] (attr-content-type (:attrs elem)))))
+                (condp = (:tag elem)
+                  tag-default  (assoc-in m [::default (attr-extension (:attrs elem))] (attr-content-type (:attrs elem)))
+                  tag-override (assoc-in m [::override (attr-part-name (:attrs elem))] (attr-content-type (:attrs elem)))))
               {} (remove string? (:content parsed)))))) ;; rm empty strings
 
 
 (defn parse-content-types [dir]
   (assert (fs/directory? dir))
-  (let [cts (file dir "[Content_Types].xml")]
+  (let [cts (file dir content-types-file)]
     (assert (fs/exists? cts))
-    (assert (.isFile cts))
     {:parsed                   (parse-ct-file cts)
-     :stencil.model/path       (.getName cts)}))
+     :stencil.model/path       content-types-file}))
 
 
 (defn with-content-types [model]

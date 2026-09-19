@@ -12,7 +12,7 @@
 ;; http://officeopenxml.com/WPnumbering-numFmt.php
 ;; http://www.datypic.com/sc/ooxml/t-w_ST_NumberFormat.html
 ;; TODO: cardinalText, ordinal, ordinalText, ...
-(defmulti render-number (fn [style number] style))
+(defmulti render-number (fn [style _number] style))
 (defmethod render-number :default [_ nr] (str nr))
 
 (def ^:private roman-digits
@@ -65,8 +65,8 @@
          (clojure.string/join (repeat i c)))
        (dec number)))
 
-(defmethod render-number "none" [_ number] "")
-(defmethod render-number "bullet" [_ number] "")
+(defmethod render-number "none" [_ _number] "")
+(defmethod render-number "bullet" [_ _number] "")
 
 ;; reference: https://c-rex.net/projects/samples/ooxml/e1/Part4/OOXML_P4_DOCX_REFREF_topic_ID0ESRL1.html#topic_ID0ESRL1
 

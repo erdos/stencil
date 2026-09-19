@@ -176,3 +176,10 @@
                 {:stencil.model/type type
                  :stencil.model/target target})
       (update-in [:main :relations] dissoc :source-file)))
+
+(defn path-by-type [model rel-type]
+  (assert (:relations model))
+  (assert (string? rel-type))
+  (some->> model :relations :parsed vals
+           (find-first #(= rel-type (:stencil.model/type %)))
+           :stencil.model/target))
