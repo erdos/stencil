@@ -5,9 +5,9 @@ The lifecycle of a template (fragment or document) consists of three stages:
 
 ```mermaid
 flowchart TB
-   Prepare --> Render --> Cleanup
+   Prepare --> Render --> Clear
    Render --> Render
-   Prepare --> Cleanup
+   Prepare --> Clear
 ```
 
 ## Prepare
@@ -20,13 +20,8 @@ Preparing a `docx` template file starts with uncompressing it's content into a t
 - These relation files point to other parts of the template: style definition files, numbering definitions, headers and footers.
 - Header and footer files are just like our main document xml file so we continue parsing the template recursively there.
 
-### Merge and Cleanup steps
-
-TODO!
-
 ```mermaid
 flowchart LR
-      direction TB
       p1("unzip docx file") --> Parse
 
       subgraph Parse
@@ -35,14 +30,16 @@ flowchart LR
         pp1("Relations")
         pp1 --> pp2("Style")
         pp1 --> pp3("Numbering")
+        pp1 --> ppm("Main document")
         pp1 --> pphf("Headers and Footers")
       end
 
+      ppm  --> Merge
       pphf --> Merge --> Cleanup
 
       subgraph Merge
         direction TB
-        mm1("parse xml") --> mm2("map ignored attributes") -->  mm3("tokenize") --> mm4("cleanup runs")
+        mm1("parse xml") --> mm2("map ignored attributes") --> flatten("flatten") -->  mm3("tokenize") --> mm4("cleanup runs")
       end
 
       subgraph Cleanup
@@ -53,14 +50,45 @@ flowchart LR
       Cleanup --> done("Prepared Template")
 ```
 
-### Rendering
+### Merge and Cleanup steps
+
+The central idea of Stencil is an algorithm to make sure that templating expressions embedded in an OOXML document can be evaluated while the semantic correctness of the document is maintained.
+
+## Rendering
+
+```mermaid
+flowchart LR
+  data("Template Data") --> RR -- "unflatten" --> xmltree("XML tree") --> Postprocess -- "collect" --> wm("Writers Map") -- "write file" --> ednd("docx file")
+
+  subgraph RR [Render part]
+    direction LR
+    r2("Substitute values")
+    r3("Evaluate conditions")
+    r4("Unroll loops")
+    re("Include fragments")
+  end
+
+  subgraph Postprocess [Postprocess step]
+    direction LR
+    pp1("Images")
+    pp2("Links")
+    pp3("Numberings")
+    pp4("Tables")
+    pp5("Whitespaces")
+    pp6("List refs")
+    pp7("Embed HTML")
+    pp8("Ignored tag")
+  end
+```
 
 TODO!
 
-### Cleanup step
+## Clearing step
 
-When a prepared template is cleaned up, the allocated resources are freed, such as:
+When a prepared template is cleared, the allocated resources are freed, such as:
 - The temporary files that were created when uncompressing the template file in the first step.
 - Any associated in-memory buffers.
 
 Finally, the template object in the memory is marked as cleaned up to prevent accidentally rendering it again and producing incomplete documents.
+
+A Read-Write lock is used to make sure that it is not possible to clear up a template that is still being rendered. Also, it is not possible to render a template that has already been cleared up, and an exception is thrown when tried.
