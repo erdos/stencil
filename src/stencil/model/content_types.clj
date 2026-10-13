@@ -37,8 +37,21 @@
      :stencil.model/path       (.getName cts)}))
 
 
+(defn- extra-file-overrides [model]
+  (for [section [[(-> model :main)]
+                 (-> model :main :headers+footers)
+                 (-> model :main :stencil.model/slide-layouts)]
+        part    section
+        :when   (:stencil.model/path part)
+        [_ rel] (-> part :relations :parsed)
+        :when   (:stencil.model/mime-type rel)]
+    [(str "/" (fs/unix-path (fs/unroll (file (fs/parent-file (file (:stencil.model/path part)))
+                                             (:stencil.model/target rel)))))
+     (:stencil.model/mime-type rel)]))
+
 (defn with-content-types [model]
   (let [parsed (-> model :content-types :parsed)
+        parsed (update parsed ::override into (extra-file-overrides model))
         tree   {:tag tag-types
                 :attrs {:xmlns xmlns}
                 :content (concat (for [[k v] (::default parsed)]
